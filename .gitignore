@@ -12,3 +12,4 @@ nginx/certs/
 reports_output/
 *.pdf
 .DS_Store
+*.pem

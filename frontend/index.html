@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TERAFALK — Managed Network Portal</title>
+<title>TERAFALK Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
@@ -11,45 +11,56 @@
 :root{
   --blue:#0047A3;--blue-l:#4BA1E7;--dark:#141414;--white:#fff;--mint:#F1F9F0;
   --bg:#F4F8FF;--surface:#fff;
-  --border:rgba(0,71,163,0.12);--border-s:rgba(0,71,163,0.26);
-  --blue-tint:rgba(0,71,163,0.06);--blue-tint2:rgba(0,71,163,0.12);
-  --text:#141414;--muted:rgba(20,20,20,0.45);--sub:rgba(20,20,20,0.65);
+  --border:rgba(0,71,163,0.11);--border-s:rgba(0,71,163,0.24);
+  --tint:rgba(0,71,163,0.05);--tint2:rgba(0,71,163,0.10);
+  --text:#141414;--muted:rgba(20,20,20,0.42);--sub:rgba(20,20,20,0.62);
   --r:8px;--rl:12px;
+  --sb-bg:#fff;--sb-border:rgba(0,71,163,0.1);
 }
 body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
 
+/* ── Login ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:40px 36px;width:360px;box-shadow:0 4px 24px rgba(0,71,163,0.07)}
+.login-logo{margin-bottom:28px;display:flex;justify-content:center}
+.login-title{font-size:16px;font-weight:700;margin-bottom:4px;text-align:center}
+.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:28px}
+
 /* ── Layout ── */
 .app{display:flex;min-height:100vh}
-.sidebar{width:224px;background:var(--dark);display:flex;flex-direction:column;flex-shrink:0}
-.sb-logo{padding:20px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center}
-.sb-label{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.28);padding:18px 20px 7px}
-.nav{display:flex;align-items:center;gap:9px;padding:9px 20px;color:rgba(255,255,255,0.52);cursor:pointer;border-left:2px solid transparent;font-size:13px;font-weight:400;transition:all 0.13s;user-select:none}
-.nav:hover{color:rgba(255,255,255,0.86);background:rgba(255,255,255,0.04)}
-.nav.active{color:#fff;background:rgba(75,161,231,0.12);border-left-color:var(--blue-l)}
-.nav i{font-size:15px;flex-shrink:0}
-.nav-badge{margin-left:auto;background:rgba(245,158,11,0.2);color:#FCD34D;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sidebar{width:220px;background:var(--sb-bg);border-right:1px solid var(--sb-border);display:flex;flex-direction:column;flex-shrink:0}
+.sb-logo{padding:20px 20px 18px;border-bottom:1px solid var(--sb-border)}
+.sb-section{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);padding:16px 20px 6px}
+.nav{display:flex;align-items:center;gap:9px;padding:8px 20px;color:var(--sub);cursor:pointer;border-left:2px solid transparent;font-size:13px;font-weight:400;transition:all 0.12s;user-select:none;border-radius:0}
+.nav:hover{color:var(--blue);background:var(--tint)}
+.nav.active{color:var(--blue);background:var(--tint2);border-left-color:var(--blue);font-weight:600}
+.nav i{font-size:15px;flex-shrink:0;opacity:0.7}
+.nav.active i{opacity:1}
 .sb-space{flex:1}
-.sb-bottom{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.07)}
-.sb-user{display:flex;align-items:center;gap:10px}
+.sb-bottom{padding:14px 20px;border-top:1px solid var(--sb-border)}
+.sb-user{display:flex;align-items:center;gap:10px;cursor:pointer}
+.sb-user:hover .u-name{color:var(--blue)}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
-.u-name{font-size:12px;font-weight:600;color:#fff}
-.u-role{font-size:10px;color:rgba(255,255,255,0.35)}
+.u-name{font-size:12px;font-weight:600;color:var(--text);transition:color 0.12s}
+.u-role{font-size:10px;color:var(--muted)}
 
 .main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.page-title{font-size:15px;font-weight:700}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.page-title{font-size:14px;font-weight:700;color:var(--text)}
 .tb-right{display:flex;align-items:center;gap:8px}
 
 /* ── Buttons ── */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);font-family:'Exo 2',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.13s;white-space:nowrap;text-decoration:none}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);font-family:'Exo 2',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.12s;white-space:nowrap}
 .btn i{font-size:14px}
 .btn-p{background:var(--blue);color:#fff}
 .btn-p:hover{background:#003a8a}
 .btn-p:active{transform:scale(0.98)}
 .btn-g{background:transparent;color:var(--sub);border:1px solid var(--border)}
-.btn-g:hover{background:var(--blue-tint);border-color:var(--border-s)}
-.btn-sm{padding:5px 10px;font-size:12px}
+.btn-g:hover{background:var(--tint);border-color:var(--border-s);color:var(--text)}
+.btn-sm{padding:5px 11px;font-size:12px}
 .btn-ico{padding:6px;border-radius:var(--r)}
+.btn-danger{background:transparent;color:#BE123C;border:1px solid #FECDD3}
+.btn-danger:hover{background:#FFF1F2}
 
 /* ── Content ── */
 .content{padding:24px 28px;overflow-y:auto;flex:1}
@@ -57,203 +68,237 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 .view.active{display:block}
 
 /* ── Badges ── */
-.bdg{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
-.bdg-ok{background:#ECFDF5;color:#15803D}
-.bdg-warn{background:#FFFBEB;color:#92400E}
-.bdg-err{background:#FFF1F2;color:#BE123C}
-.bdg-info{background:var(--blue-tint2);color:var(--blue)}
-.bdg-muted{background:rgba(20,20,20,0.06);color:var(--sub)}
+.b{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-ok{background:#ECFDF5;color:#15803D}
+.b-warn{background:#FFFBEB;color:#92400E}
+.b-err{background:#FFF1F2;color:#BE123C}
+.b-info{background:var(--tint2);color:var(--blue)}
+.b-muted{background:rgba(20,20,20,0.06);color:var(--sub)}
 
-/* ── Section header ── */
-.sec-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
-.sec-title{font-size:17px;font-weight:700}
-.sec-sub{font-size:12px;color:var(--muted);margin-top:3px}
+/* ── Page header ── */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
+.ph-title{font-size:17px;font-weight:700}
+.ph-sub{font-size:12px;color:var(--muted);margin-top:3px}
 
-/* ── Stat cards ── */
+/* ── Stats ── */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:15px 17px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px}
 .stat.accent{background:var(--blue);border-color:var(--blue)}
-.sl{font-size:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.sl{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
 .stat.accent .sl{color:rgba(255,255,255,0.5)}
-.sv{font-size:24px;font-weight:700;line-height:1}
+.sv{font-size:23px;font-weight:700;line-height:1;color:var(--text)}
 .stat.accent .sv{color:#fff}
 .sh{font-size:11px;color:var(--muted);margin-top:3px}
-.stat.accent .sh{color:rgba(255,255,255,0.4)}
+.stat.accent .sh{color:rgba(255,255,255,0.45)}
 
-/* ── Customer cards ── */
-.cg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.cc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:17px;cursor:pointer;position:relative;overflow:hidden;transition:all 0.14s}
+/* ── Customer grid ── */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.cc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px;cursor:pointer;position:relative;overflow:hidden;transition:all 0.13s}
 .cc::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%}
 .cc.ok::before{background:#22C55E}
 .cc.warn::before{background:#F59E0B}
 .cc.err::before{background:#EF4444}
-.cc:hover{border-color:var(--border-s);box-shadow:0 2px 10px rgba(0,71,163,0.08)}
-.cc-name{font-size:14px;font-weight:700}
+.cc:hover{border-color:var(--border-s);box-shadow:0 2px 12px rgba(0,71,163,0.07)}
+.cc-name{font-size:13px;font-weight:700;color:var(--text)}
 .cc-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.cc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:11px 0}
-.cm{background:var(--blue-tint);border-radius:6px;padding:8px 10px}
-.cmv{font-size:15px;font-weight:700}
+.cc-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.cc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:11px 0}
+.cm{background:var(--tint);border-radius:6px;padding:7px 10px}
+.cmv{font-size:14px;font-weight:700;color:var(--text)}
 .cml{font-size:10px;color:var(--muted);margin-top:1px;font-weight:500}
-.cc-foot{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)}
+.cc-foot{display:flex;align-items:center;justify-content:space-between;padding-top:9px;border-top:1px solid var(--border)}
 .isp-lbl{font-size:11px;color:var(--sub);display:flex;align-items:center;gap:4px}
-.wans{display:flex;gap:4px;align-items:center}
-.wd{width:8px;height:8px;border-radius:50%}
+.wans{display:flex;gap:4px}
+.wd{width:7px;height:7px;border-radius:50%}
 .wd-up{background:#22C55E}
 .wd-dn{background:#EF4444}
 
 /* ── Integration chips ── */
-.int-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
 .chip{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px}
-.chip-active{background:#ECFDF5;color:#15803D}
-.chip-soon{background:rgba(20,20,20,0.06);color:var(--muted)}
+.ch-on{background:#ECFDF5;color:#15803D}
+.ch-off{background:rgba(20,20,20,0.05);color:var(--muted)}
 .chip i{font-size:11px}
 
 /* ── Card ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:14px}
-.card-hd{padding:12px 17px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.card-ht{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--sub)}
-.card-b{padding:17px}
-.card-b0{padding:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:13px}
+.ch{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.cht{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--sub)}
+.cb{padding:16px}
+.cb0{padding:0}
 
 /* ── Hero ── */
-.hero{background:var(--dark);border-radius:var(--rl);padding:22px;margin-bottom:16px;position:relative;overflow:hidden}
-.hero::after{content:'';position:absolute;right:-50px;top:-50px;width:240px;height:240px;border-radius:50%;background:rgba(0,71,163,0.22);pointer-events:none}
+.hero{background:var(--blue);border-radius:var(--rl);padding:22px;margin-bottom:14px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none}
 .hero-in{position:relative;z-index:1}
-.hero-ey{font-size:10px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:rgba(255,255,255,0.32);margin-bottom:4px}
-.hero-ti{font-size:21px;font-weight:700;color:#fff;margin-bottom:3px}
-.hero-su{font-size:12px;color:rgba(255,255,255,0.38);margin-bottom:18px}
+.hero-ey{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:4px}
+.hero-ti{font-size:20px;font-weight:700;color:#fff;margin-bottom:3px}
+.hero-su{font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:18px}
 .hs-row{display:flex;gap:24px;flex-wrap:wrap}
-.hs-v{font-size:28px;font-weight:700;color:#fff;line-height:1}
-.hs-l{font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600}
+.hs-v{font-size:26px;font-weight:700;color:#fff;line-height:1}
+.hs-l{font-size:10px;color:rgba(255,255,255,0.4);margin-top:3px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600}
 
 /* ── Tables ── */
 .tbl{width:100%;border-collapse:collapse}
-.tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border)}
-.tbl td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(0,71,163,0.05)}
+.tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.tbl td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(0,71,163,0.04)}
 .tbl tr:last-child td{border-bottom:none}
-.tbl.hov tr:hover td{background:var(--blue-tint);cursor:pointer}
-.dn{font-weight:600}
+.tbl.hov tr:hover td{background:var(--tint);cursor:pointer}
+.dn{font-weight:600;color:var(--text)}
 .ds{font-size:11px;color:var(--muted);margin-top:1px}
 .pl{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px}
-.pl-n{background:var(--blue-tint2);color:var(--blue)}
-.pl-p{background:rgba(75,161,231,0.11);color:#0369a1}
+.pl-n{background:var(--tint2);color:var(--blue)}
+.pl-p{background:rgba(75,161,231,0.1);color:#0369a1}
 
-/* ── WAN rows ── */
-.wan-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--blue-tint)}
-.wan-row:last-child{border-bottom:none}
-.wan-name{font-weight:700;width:60px;flex-shrink:0}
-.ub-wrap{display:flex;align-items:center;gap:8px;flex:1}
-.ub-bg{height:5px;flex:1;background:var(--blue-tint2);border-radius:3px;overflow:hidden}
-.ub{height:100%;border-radius:3px}
+/* ── WAN ── */
+.wan-r{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--tint2)}
+.wan-r:last-child{border-bottom:none}
+.wan-nm{font-weight:700;width:56px;flex-shrink:0;font-size:13px}
+.ub-w{display:flex;align-items:center;gap:8px;flex:1}
+.ub-bg{height:4px;flex:1;background:var(--tint2);border-radius:2px;overflow:hidden}
+.ub{height:100%;border-radius:2px}
 .ub-ok{background:#22C55E}
 .ub-dn{background:#EF4444}
 
 /* ── ISP metrics ── */
-.mx{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.mbox{background:var(--blue-tint);border-radius:var(--r);padding:13px}
-.mv{font-size:20px;font-weight:700}
-.mu{font-size:12px;color:var(--muted);margin-left:2px}
-.ml{font-size:10px;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em}
-.spark{display:flex;align-items:flex-end;gap:2px;height:28px;margin-top:10px}
-.sb{flex:1;border-radius:2px 2px 0 0;background:var(--blue);opacity:0.6;min-height:3px;transition:opacity 0.1s}
-.sb:hover{opacity:1}
+.mx{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:11px}
+.mbox{background:var(--tint);border-radius:var(--r);padding:12px}
+.mv{font-size:19px;font-weight:700;color:var(--text)}
+.mu{font-size:11px;color:var(--muted);margin-left:2px}
+.ml{font-size:10px;color:var(--muted);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em}
+.spark{display:flex;align-items:flex-end;gap:2px;height:26px;margin-top:9px}
+.spb{flex:1;border-radius:2px 2px 0 0;background:var(--blue);opacity:0.55;min-height:3px;transition:opacity 0.1s}
+.spb:hover{opacity:1}
 
 /* ── Alerts ── */
-.alert{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;border-radius:var(--r);font-size:12px;margin-bottom:12px}
+.alert{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--r);font-size:12px;line-height:1.5;margin-bottom:12px}
 .al-w{background:#FFFBEB;color:#92400E;border:1px solid #FDE68A}
 .al-e{background:#FFF1F2;color:#BE123C;border:1px solid #FECDD3}
-.al-ok{background:#ECFDF5;color:#15803D;border:1px solid #A7F3D0}
-.alert i{font-size:14px;flex-shrink:0}
+.al-ok{background:#ECFDF5;color:#15803D;border:1px solid #BBF7D0}
+.al-info{background:var(--tint2);color:var(--blue);border:1px solid rgba(0,71,163,0.2)}
+.alert i{font-size:14px;flex-shrink:0;margin-top:1px}
 
-/* ── Progress ── */
+/* ── Progress bar ── */
 .prg{display:flex;align-items:center;gap:8px}
-.prg-bg{height:4px;flex:1;background:var(--blue-tint);border-radius:2px;overflow:hidden}
+.prg-bg{height:4px;flex:1;background:var(--tint);border-radius:2px;overflow:hidden}
 .prg-f{height:100%;border-radius:2px}
 
 /* ── Reports ── */
-.rr{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:13px 17px;display:flex;align-items:center;gap:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.13s}
+.rr{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:12px 16px;display:flex;align-items:center;gap:13px;margin-bottom:9px;transition:border-color 0.12s;cursor:pointer}
 .rr:hover{border-color:var(--border-s)}
-.ri{width:36px;height:36px;border-radius:var(--r);background:var(--blue-tint);display:flex;align-items:center;justify-content:center;color:var(--blue);flex-shrink:0}
-.ri i{font-size:18px}
-.rn{font-size:13px;font-weight:600}
+.ri{width:34px;height:34px;border-radius:var(--r);background:var(--tint);display:flex;align-items:center;justify-content:center;color:var(--blue);flex-shrink:0}
+.ri i{font-size:17px}
+.rn{font-size:13px;font-weight:600;color:var(--text)}
 .rm{font-size:11px;color:var(--muted);margin-top:2px}
 
 /* ── Form ── */
-.fw{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:22px;max-width:540px}
-.fr{margin-bottom:15px}
-.fl{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--sub);margin-bottom:6px}
+.fw{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:22px;max-width:520px}
+.fr{margin-bottom:14px}
+.fl{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--sub);margin-bottom:5px}
 .fi{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:var(--r);font-family:'Exo 2',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.12s}
 .fi:focus{border-color:var(--blue)}
-.fi[readonly]{background:var(--blue-tint)}
-.fh{font-size:11px;color:var(--muted);margin-top:4px}
+.fi[readonly]{background:var(--tint)}
+.fh{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
 .f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fdiv{border:none;border-top:1px solid var(--border);margin:18px 0}
-.flabel{font-size:12px;font-weight:700;color:var(--sub);margin:16px 0 10px}
+.fdiv{border:none;border-top:1px solid var(--border);margin:16px 0}
+.fsec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--sub);margin:16px 0 10px}
 
 /* ── Back link ── */
-.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);cursor:pointer;margin-bottom:18px;padding:4px 0}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;margin-bottom:16px;padding:2px 0;transition:color 0.12s}
 .back:hover{color:var(--blue)}
-.back i{font-size:15px}
+.back i{font-size:14px}
 
-/* ── Integration status pills ── */
-.int-status{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-.int-pill{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:10px 14px;min-width:160px}
-.int-pill.active{border-color:#A7F3D0}
-.int-pill i{font-size:20px}
-.int-pill.active i{color:#15803D}
-.int-pill.soon i{color:var(--muted)}
-.int-name{font-size:12px;font-weight:700}
-.int-state{font-size:10px;margin-top:1px}
-.int-pill.active .int-state{color:#15803D}
-.int-pill.soon .int-state{color:var(--muted)}
+/* ── Integration pills ── */
+.int-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+.int-p{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:10px 14px;min-width:148px;transition:border-color 0.12s}
+.int-p.on{border-color:#BBF7D0;background:#FAFFFE}
+.int-p i{font-size:20px;color:var(--muted)}
+.int-p.on i{color:#15803D}
+.int-pn{font-size:12px;font-weight:700;color:var(--text)}
+.int-ps{font-size:10px;color:var(--muted);margin-top:1px}
+.int-p.on .int-ps{color:#15803D}
 
 /* ── Toast ── */
-.toast{position:fixed;bottom:22px;right:22px;background:var(--dark);color:#fff;padding:11px 17px;border-radius:var(--rl);font-size:13px;font-weight:500;z-index:999;display:flex;align-items:center;gap:9px;transform:translateY(70px);opacity:0;transition:all 0.26s ease;pointer-events:none;max-width:400px}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--dark);color:#fff;padding:10px 16px;border-radius:var(--rl);font-size:13px;font-weight:500;z-index:9999;display:flex;align-items:center;gap:8px;transform:translateY(60px);opacity:0;transition:all 0.25s ease;pointer-events:none;max-width:380px}
 .toast.show{transform:translateY(0);opacity:1}
-.toast i{color:var(--blue-l);font-size:16px;flex-shrink:0}
+.toast i{color:var(--blue-l);font-size:15px;flex-shrink:0}
 
 .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
-.tag-b{background:var(--blue-tint2);color:var(--blue)}
+.tag-b{background:var(--tint2);color:var(--blue)}
 .tag-m{background:var(--mint);color:#166534}
+.tag-w{background:#FFFBEB;color:#92400E}
+
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 </style>
 </head>
 <body>
-<div class="app">
 
-<!-- ═══ SIDEBAR ═══ -->
+<!-- ═══ LOGIN ═══ -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 695.39 84.24" width="200" height="24" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#0047A3" d="M236.18,455.57v15H201.74v69h-15v-69H152.3v-15Z" transform="translate(-152.3 -455.45)"/>
+        <path fill="#0047A3" d="M263.3,478.13v7.8h54v15h-54v15.84a7.74,7.74,0,0,0,7.68,7.68H332.3v15H271a22.63,22.63,0,0,1-22.56-22.67V478.13A22.64,22.64,0,0,1,271,455.45H332.3v15H271A7.73,7.73,0,0,0,263.3,478.13Z" transform="translate(-152.3 -455.45)"/>
+        <path fill="#0047A3" d="M412.1,524.69l7.68,15H403l-7.68-15-8-15.72-.36-.72a14.87,14.87,0,0,0-12.72-7.2h-15v38.63h-15v-84h53a22.53,22.53,0,0,1,22.56,22.56,22.75,22.75,0,0,1-13.2,20.64,20,20,0,0,1-6.48,1.8Zm-14.88-38.64a7,7,0,0,0,3.12-.72,7.62,7.62,0,0,0,4.56-7,7.92,7.92,0,0,0-2.28-5.52,7.56,7.56,0,0,0-5.4-2.16h-38v15.48Z" transform="translate(-152.3 -455.45)"/>
+        <path fill="#0047A3" d="M512.78,539.44H496l-7.68-15-18.36-36-18.36,36-7.68,15H427.1l7.68-15,35.16-69,35.16,69Z" transform="translate(-152.3 -455.45)"/>
+        <path fill="#0047A3" d="M604.1,455.45v15H542.78a7.73,7.73,0,0,0-7.68,7.68v7.8h54v15H535v38.51H520.1V478.13a22.64,22.64,0,0,1,22.56-22.68Z" transform="translate(-152.3 -455.45)"/>
+        <path fill="#0047A3" d="M678.38,539.44h-16.8l-7.68-15-18.36-36-18.36,36-7.68,15H592.7l7.68-15,35.16-69,35.16,69Z" transform="translate(-152.3 -455.45)"/>
+        <path fill="#0047A3" d="M751.7,524.57v15H709.1a26.09,26.09,0,0,1-11.76-2.76,26.59,26.59,0,0,1-12.12-12.23,26.12,26.12,0,0,1-2.76-11.76V455.57h15v58.68a12,12,0,0,0,10.2,10.2Z" transform="translate(-152.3 -455.45)"/>
+        <path fill="#0047A3" d="M811,489.17l36.35,50.27H828.85l-29-40.07-21.24,19.32v20.75h-15v-84h15v43l12.36-11.28,11.16-10.2,23.39-21.48h22.2Z" transform="translate(-152.3 -455.45)"/>
+      </svg>
+    </div>
+    <div class="login-title">Logga in</div>
+    <div class="login-sub">Managed Network Portal</div>
+    <div class="fr"><label class="fl">E-postadress</label><input class="fi" id="l-email" type="email" value="admin@terafalk.com" autocomplete="username"></div>
+    <div class="fr"><label class="fl">Lösenord</label><input class="fi" id="l-pw" type="password" value="changeme" autocomplete="current-password"></div>
+    <div id="l-err" style="font-size:12px;color:#BE123C;margin-bottom:10px;display:none">Fel e-post eller lösenord</div>
+    <button class="btn btn-p" style="width:100%;justify-content:center" onclick="doLogin()"><i class="ti ti-login"></i> Logga in</button>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px">Kontakta admin@terafalk.com vid problem</div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app-screen" class="app" style="display:none">
+
 <aside class="sidebar">
   <div class="sb-logo">
-    <!-- Bred logotyp tf_black på mörk bakgrund → vit version -->
-    <svg xmlns="http://www.w3.org/2000/svg" width="86" height="40" viewBox="0 0 91 43" fill="none">
-      <path d="M0.0117188 0.308043H41.9517V7.80805H24.7317V42.308H17.2317V7.80805H0.0117188V0.308043ZM59.34 0.248044H90.06V7.74804H59.4C57.3 7.74804 55.56 9.48805 55.56 11.588V15.488H82.56V22.988H55.5V42.248H48.06V11.588C48.06 5.34805 53.1 0.248044 59.34 0.248044Z" fill="white"/>
+    <svg viewBox="0 0 695.39 84.24" width="140" height="17" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#0047A3" d="M236.18,455.57v15H201.74v69h-15v-69H152.3v-15Z" transform="translate(-152.3 -455.45)"/>
+      <path fill="#0047A3" d="M263.3,478.13v7.8h54v15h-54v15.84a7.74,7.74,0,0,0,7.68,7.68H332.3v15H271a22.63,22.63,0,0,1-22.56-22.67V478.13A22.64,22.64,0,0,1,271,455.45H332.3v15H271A7.73,7.73,0,0,0,263.3,478.13Z" transform="translate(-152.3 -455.45)"/>
+      <path fill="#0047A3" d="M412.1,524.69l7.68,15H403l-7.68-15-8-15.72-.36-.72a14.87,14.87,0,0,0-12.72-7.2h-15v38.63h-15v-84h53a22.53,22.53,0,0,1,22.56,22.56,22.75,22.75,0,0,1-13.2,20.64,20,20,0,0,1-6.48,1.8Zm-14.88-38.64a7,7,0,0,0,3.12-.72,7.62,7.62,0,0,0,4.56-7,7.92,7.92,0,0,0-2.28-5.52,7.56,7.56,0,0,0-5.4-2.16h-38v15.48Z" transform="translate(-152.3 -455.45)"/>
+      <path fill="#0047A3" d="M512.78,539.44H496l-7.68-15-18.36-36-18.36,36-7.68,15H427.1l7.68-15,35.16-69,35.16,69Z" transform="translate(-152.3 -455.45)"/>
+      <path fill="#0047A3" d="M604.1,455.45v15H542.78a7.73,7.73,0,0,0-7.68,7.68v7.8h54v15H535v38.51H520.1V478.13a22.64,22.64,0,0,1,22.56-22.68Z" transform="translate(-152.3 -455.45)"/>
+      <path fill="#0047A3" d="M678.38,539.44h-16.8l-7.68-15-18.36-36-18.36,36-7.68,15H592.7l7.68-15,35.16-69,35.16,69Z" transform="translate(-152.3 -455.45)"/>
+      <path fill="#0047A3" d="M751.7,524.57v15H709.1a26.09,26.09,0,0,1-11.76-2.76,26.59,26.59,0,0,1-12.12-12.23,26.12,26.12,0,0,1-2.76-11.76V455.57h15v58.68a12,12,0,0,0,10.2,10.2Z" transform="translate(-152.3 -455.45)"/>
+      <path fill="#0047A3" d="M811,489.17l36.35,50.27H828.85l-29-40.07-21.24,19.32v20.75h-15v-84h15v43l12.36-11.28,11.16-10.2,23.39-21.48h22.2Z" transform="translate(-152.3 -455.45)"/>
     </svg>
   </div>
-  <div class="sb-label">Hantera</div>
-  <div class="nav active" data-v="dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+  <div class="sb-section">Hantera</div>
+  <div class="nav active" data-v="dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i> Översikt</div>
   <div class="nav" data-v="customers" onclick="nav('customers')"><i class="ti ti-building-store"></i> Kunder</div>
   <div class="nav" data-v="reports" onclick="nav('reports')"><i class="ti ti-file-description"></i> Rapporter</div>
-  <div class="sb-label">System</div>
+  <div class="sb-section">Konfiguration</div>
   <div class="nav" data-v="add-customer" onclick="nav('add-customer')"><i class="ti ti-plus"></i> Lägg till kund</div>
   <div class="nav" data-v="settings" onclick="nav('settings')"><i class="ti ti-settings"></i> Inställningar</div>
   <div class="sb-space"></div>
   <div class="sb-bottom">
-    <div class="sb-user">
+    <div class="sb-user" onclick="doLogout()">
       <div class="avatar">TA</div>
       <div>
         <div class="u-name">TERAFALK AB</div>
-        <div class="u-role">admin@terafalk.com</div>
+        <div class="u-role">Logga ut</div>
       </div>
     </div>
   </div>
 </aside>
 
-<!-- ═══ MAIN ═══ -->
 <div class="main">
   <div class="topbar">
-    <span class="page-title" id="pt">Dashboard</span>
+    <span class="page-title" id="pt">Översikt</span>
     <div class="tb-right">
-      <button class="btn btn-g btn-sm" onclick="t('Hämtar live-data från alla kunder via UniFi API...')"><i class="ti ti-refresh"></i> Uppdatera</button>
-      <button class="btn btn-p btn-sm" onclick="t('Månadsrapporter för alla 8 kunder genereras och skickas via noreply@terafalk.com')"><i class="ti ti-send"></i> Skicka alla rapporter</button>
+      <button class="btn btn-g btn-sm" onclick="t('Hämtar data från alla kunder...')"><i class="ti ti-refresh"></i> Uppdatera</button>
+      <button class="btn btn-p btn-sm" onclick="t('Rapporter för alla kunder genereras och skickas via noreply@terafalk.com')"><i class="ti ti-send"></i> Skicka alla rapporter</button>
     </div>
   </div>
 
@@ -261,148 +306,70 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
     <!-- ══ DASHBOARD ══ -->
     <div class="view active" id="v-dashboard">
-      <div class="sec-hd">
-        <div><div class="sec-title">Nätverksöversikt</div><div class="sec-sub">Senast uppdaterat idag 10:47 · alla kunder</div></div>
+      <div class="ph">
+        <div><div class="ph-title">Översikt</div><div class="ph-sub">Senast uppdaterat 10:47</div></div>
       </div>
       <div class="stats">
-        <div class="stat accent"><div class="sl">Aktiva kunder</div><div class="sv">8</div><div class="sh">Managed Network</div></div>
-        <div class="stat"><div class="sl">Totalt enheter</div><div class="sv">47</div><div class="sh">6 kräver åtgärd</div></div>
-        <div class="stat"><div class="sl">Snitt WAN-uptime</div><div class="sv">99.4<span style="font-size:14px;font-weight:400">%</span></div><div class="sh">Senaste 30 dagarna</div></div>
-        <div class="stat"><div class="sl">Rapporter juni</div><div class="sv">8</div><div class="sh">Skickade automatiskt</div></div>
+        <div class="stat accent"><div class="sl">Kunder</div><div class="sv">8</div><div class="sh">Managed Network</div></div>
+        <div class="stat"><div class="sl">Enheter</div><div class="sv">47</div><div class="sh">6 kräver åtgärd</div></div>
+        <div class="stat"><div class="sl">WAN-uptime</div><div class="sv">99.4<span style="font-size:14px;font-weight:400">%</span></div><div class="sh">Senaste 30 dagarna</div></div>
+        <div class="stat"><div class="sl">Rapporter</div><div class="sv">8</div><div class="sh">Skickade i juni</div></div>
       </div>
       <div class="cg">
-        <!-- Annika Falk -->
         <div class="cc ok" onclick="nav('d-af')">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div><div class="cc-name">Annika Falk</div><div class="cc-meta">default · UDW · Lidköping</div></div>
-            <span class="bdg bdg-ok">Online</span>
-          </div>
-          <div class="int-chips">
-            <span class="chip chip-active"><i class="ti ti-router"></i> UniFi</span>
-            <span class="chip chip-soon"><i class="ti ti-brand-windows"></i> M365 snart</span>
-            <span class="chip chip-soon"><i class="ti ti-shield"></i> Acronis snart</span>
-          </div>
+          <div class="cc-row"><div><div class="cc-name">Annika Falk</div><div class="cc-meta">UDW · Lidköping</div></div><span class="b b-ok">Online</span></div>
+          <div class="chips"><span class="chip ch-on"><i class="ti ti-router"></i> UniFi</span><span class="chip ch-off"><i class="ti ti-brand-windows"></i> M365</span><span class="chip ch-off"><i class="ti ti-shield"></i> Acronis</span></div>
           <div class="cc-metrics">
             <div class="cm"><div class="cmv">6</div><div class="cml">Enheter</div></div>
-            <div class="cm"><div class="cmv">100%</div><div class="cml">WAN uptime</div></div>
+            <div class="cm"><div class="cmv">100%</div><div class="cml">Uptime</div></div>
             <div class="cm"><div class="cmv">5 ms</div><div class="cml">Latens</div></div>
           </div>
-          <div class="cc-foot">
-            <div class="isp-lbl"><i class="ti ti-building-broadcast-tower" style="font-size:12px"></i> FastBit AB</div>
-            <div class="wans"><div class="wd wd-up" title="WAN1 online"></div><div class="wd wd-dn" title="WAN2 nere"></div></div>
-          </div>
+          <div class="cc-foot"><div class="isp-lbl"><i class="ti ti-building-broadcast-tower" style="font-size:11px"></i> FastBit AB</div><div class="wans"><div class="wd wd-up" title="WAN1"></div><div class="wd wd-dn" title="WAN2 nere"></div></div></div>
         </div>
-        <!-- Bergström Bygg -->
         <div class="cc ok" onclick="nav('d-bb')">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div><div class="cc-name">Bergström Bygg AB</div><div class="cc-meta">main-office · UDM Pro · Skövde</div></div>
-            <span class="bdg bdg-ok">Online</span>
-          </div>
-          <div class="int-chips">
-            <span class="chip chip-active"><i class="ti ti-router"></i> UniFi</span>
-            <span class="chip chip-active"><i class="ti ti-brand-windows"></i> M365</span>
-            <span class="chip chip-soon"><i class="ti ti-shield"></i> Acronis snart</span>
-          </div>
+          <div class="cc-row"><div><div class="cc-name">Bergström Bygg AB</div><div class="cc-meta">UDM Pro · Skövde</div></div><span class="b b-ok">Online</span></div>
+          <div class="chips"><span class="chip ch-on"><i class="ti ti-router"></i> UniFi</span><span class="chip ch-on"><i class="ti ti-brand-windows"></i> M365</span><span class="chip ch-off"><i class="ti ti-shield"></i> Acronis</span></div>
           <div class="cc-metrics">
             <div class="cm"><div class="cmv">11</div><div class="cml">Enheter</div></div>
-            <div class="cm"><div class="cmv">99.8%</div><div class="cml">WAN uptime</div></div>
+            <div class="cm"><div class="cmv">99.8%</div><div class="cml">Uptime</div></div>
             <div class="cm"><div class="cmv">7 ms</div><div class="cml">Latens</div></div>
           </div>
-          <div class="cc-foot">
-            <div class="isp-lbl"><i class="ti ti-building-broadcast-tower" style="font-size:12px"></i> Telia AB</div>
-            <div class="wans"><div class="wd wd-up"></div></div>
-          </div>
+          <div class="cc-foot"><div class="isp-lbl"><i class="ti ti-building-broadcast-tower" style="font-size:11px"></i> Telia AB</div><div class="wans"><div class="wd wd-up"></div></div></div>
         </div>
-        <!-- Lidköpings Glasmästeri -->
         <div class="cc warn" onclick="nav('d-lg')">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div><div class="cc-name">Lidköpings Glasmästeri</div><div class="cc-meta">office · UDM · Lidköping</div></div>
-            <span class="bdg bdg-warn"><i class="ti ti-alert-triangle" style="font-size:10px"></i> 2 uppdateringar</span>
-          </div>
-          <div class="int-chips">
-            <span class="chip chip-active"><i class="ti ti-router"></i> UniFi</span>
-            <span class="chip chip-soon"><i class="ti ti-brand-windows"></i> M365 snart</span>
-          </div>
+          <div class="cc-row"><div><div class="cc-name">Lidköpings Glasmästeri</div><div class="cc-meta">UDM · Lidköping</div></div><span class="b b-warn">2 uppdateringar</span></div>
+          <div class="chips"><span class="chip ch-on"><i class="ti ti-router"></i> UniFi</span><span class="chip ch-off"><i class="ti ti-brand-windows"></i> M365</span></div>
           <div class="cc-metrics">
             <div class="cm"><div class="cmv">5</div><div class="cml">Enheter</div></div>
-            <div class="cm"><div class="cmv">98.1%</div><div class="cml">WAN uptime</div></div>
+            <div class="cm"><div class="cmv">98.1%</div><div class="cml">Uptime</div></div>
             <div class="cm"><div class="cmv">9 ms</div><div class="cml">Latens</div></div>
           </div>
-          <div class="cc-foot">
-            <div class="isp-lbl"><i class="ti ti-building-broadcast-tower" style="font-size:12px"></i> Bredband2</div>
-            <div class="wans"><div class="wd wd-up"></div></div>
-          </div>
+          <div class="cc-foot"><div class="isp-lbl"><i class="ti ti-building-broadcast-tower" style="font-size:11px"></i> Bredband2</div><div class="wans"><div class="wd wd-up"></div></div></div>
         </div>
-        <!-- Kinnekulle Hotell -->
         <div class="cc ok" onclick="nav('d-kh')">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div><div class="cc-name">Kinnekulle Hotell</div><div class="cc-meta">main · UDW · Götene</div></div>
-            <span class="bdg bdg-ok">Online</span>
-          </div>
-          <div class="int-chips">
-            <span class="chip chip-active"><i class="ti ti-router"></i> UniFi</span>
-            <span class="chip chip-active"><i class="ti ti-shield"></i> Acronis</span>
-            <span class="chip chip-soon"><i class="ti ti-package"></i> Cloudfactory snart</span>
-          </div>
+          <div class="cc-row"><div><div class="cc-name">Kinnekulle Hotell</div><div class="cc-meta">UDW · Götene</div></div><span class="b b-ok">Online</span></div>
+          <div class="chips"><span class="chip ch-on"><i class="ti ti-router"></i> UniFi</span><span class="chip ch-on"><i class="ti ti-shield"></i> Acronis</span><span class="chip ch-off"><i class="ti ti-package"></i> Cloudfactory</span></div>
           <div class="cc-metrics">
             <div class="cm"><div class="cmv">14</div><div class="cml">Enheter</div></div>
-            <div class="cm"><div class="cmv">100%</div><div class="cml">WAN uptime</div></div>
+            <div class="cm"><div class="cmv">100%</div><div class="cml">Uptime</div></div>
             <div class="cm"><div class="cmv">4 ms</div><div class="cml">Latens</div></div>
           </div>
-          <div class="cc-foot">
-            <div class="isp-lbl"><i class="ti ti-building-broadcast-tower" style="font-size:12px"></i> FastBit AB</div>
-            <div class="wans"><div class="wd wd-up"></div><div class="wd wd-up"></div></div>
-          </div>
+          <div class="cc-foot"><div class="isp-lbl"><i class="ti ti-building-broadcast-tower" style="font-size:11px"></i> FastBit AB</div><div class="wans"><div class="wd wd-up"></div><div class="wd wd-up"></div></div></div>
         </div>
       </div>
     </div>
 
     <!-- ══ CUSTOMERS ══ -->
     <div class="view" id="v-customers">
-      <div class="sec-hd">
-        <div><div class="sec-title">Alla kunder</div><div class="sec-sub">8 aktiva Managed Network-avtal</div></div>
-        <button class="btn btn-p btn-sm" onclick="nav('add-customer')"><i class="ti ti-plus"></i> Ny kund</button>
-      </div>
+      <div class="ph"><div><div class="ph-title">Kunder</div><div class="ph-sub">8 aktiva avtal</div></div><button class="btn btn-p btn-sm" onclick="nav('add-customer')"><i class="ti ti-plus"></i> Ny kund</button></div>
       <div class="card">
         <table class="tbl hov">
           <thead><tr><th>Kund</th><th>Gateway</th><th>Enheter</th><th>WAN-uptime</th><th>ISP</th><th>Integrationer</th><th>Status</th><th></th></tr></thead>
           <tbody>
-            <tr onclick="nav('d-af')">
-              <td><div class="dn">Annika Falk</div><div class="ds">Lidköping</div></td>
-              <td>UniFi Dream Wall</td><td>6</td>
-              <td><div class="prg"><div class="prg-bg"><div class="prg-f" style="width:100%;background:#22C55E"></div></div><span style="font-size:11px;width:36px;text-align:right">100%</span></div></td>
-              <td>FastBit AB</td>
-              <td><span class="chip chip-active" style="font-size:10px"><i class="ti ti-router"></i> UniFi</span></td>
-              <td><span class="bdg bdg-ok">Aktiv</span></td>
-              <td><button class="btn btn-g btn-ico" onclick="event.stopPropagation();t('Rapport för Annika Falk genereras...')"><i class="ti ti-send" style="font-size:13px"></i></button></td>
-            </tr>
-            <tr onclick="nav('d-bb')">
-              <td><div class="dn">Bergström Bygg AB</div><div class="ds">Skövde</div></td>
-              <td>UDM Pro</td><td>11</td>
-              <td><div class="prg"><div class="prg-bg"><div class="prg-f" style="width:99.8%;background:#22C55E"></div></div><span style="font-size:11px;width:36px;text-align:right">99.8%</span></div></td>
-              <td>Telia AB</td>
-              <td style="white-space:nowrap"><span class="chip chip-active" style="font-size:10px"><i class="ti ti-router"></i> UniFi</span> <span class="chip chip-active" style="font-size:10px"><i class="ti ti-brand-windows"></i> M365</span></td>
-              <td><span class="bdg bdg-ok">Aktiv</span></td>
-              <td><button class="btn btn-g btn-ico" onclick="event.stopPropagation();t('Rapport för Bergström Bygg AB genereras...')"><i class="ti ti-send" style="font-size:13px"></i></button></td>
-            </tr>
-            <tr onclick="nav('d-lg')">
-              <td><div class="dn">Lidköpings Glasmästeri</div><div class="ds">Lidköping</div></td>
-              <td>UDM</td><td>5</td>
-              <td><div class="prg"><div class="prg-bg"><div class="prg-f" style="width:98.1%;background:#F59E0B"></div></div><span style="font-size:11px;width:36px;text-align:right">98.1%</span></div></td>
-              <td>Bredband2</td>
-              <td><span class="chip chip-active" style="font-size:10px"><i class="ti ti-router"></i> UniFi</span></td>
-              <td><span class="bdg bdg-warn">2 uppdateringar</span></td>
-              <td><button class="btn btn-g btn-ico" onclick="event.stopPropagation();t('Rapport för Lidköpings Glasmästeri genereras...')"><i class="ti ti-send" style="font-size:13px"></i></button></td>
-            </tr>
-            <tr onclick="nav('d-kh')">
-              <td><div class="dn">Kinnekulle Hotell</div><div class="ds">Götene</div></td>
-              <td>UniFi Dream Wall</td><td>14</td>
-              <td><div class="prg"><div class="prg-bg"><div class="prg-f" style="width:100%;background:#22C55E"></div></div><span style="font-size:11px;width:36px;text-align:right">100%</span></div></td>
-              <td>FastBit AB</td>
-              <td><span class="chip chip-active" style="font-size:10px"><i class="ti ti-router"></i> UniFi</span> <span class="chip chip-active" style="font-size:10px"><i class="ti ti-shield"></i> Acronis</span></td>
-              <td><span class="bdg bdg-ok">Aktiv</span></td>
-              <td><button class="btn btn-g btn-ico" onclick="event.stopPropagation();t('Rapport för Kinnekulle Hotell genereras...')"><i class="ti ti-send" style="font-size:13px"></i></button></td>
-            </tr>
+            <tr onclick="nav('d-af')"><td><div class="dn">Annika Falk</div><div class="ds">Lidköping</div></td><td>Dream Wall</td><td>6</td><td><div class="prg"><div class="prg-bg"><div class="prg-f" style="width:100%;background:#22C55E"></div></div><span style="font-size:11px;width:34px;text-align:right">100%</span></div></td><td>FastBit AB</td><td><span class="chip ch-on" style="font-size:10px"><i class="ti ti-router"></i> UniFi</span></td><td><span class="b b-ok">Aktiv</span></td><td><button class="btn btn-g btn-ico" onclick="event.stopPropagation();t('Rapport för Annika Falk genereras...')"><i class="ti ti-send" style="font-size:13px"></i></button></td></tr>
+            <tr onclick="nav('d-bb')"><td><div class="dn">Bergström Bygg AB</div><div class="ds">Skövde</div></td><td>UDM Pro</td><td>11</td><td><div class="prg"><div class="prg-bg"><div class="prg-f" style="width:99.8%;background:#22C55E"></div></div><span style="font-size:11px;width:34px;text-align:right">99.8%</span></div></td><td>Telia AB</td><td style="white-space:nowrap"><span class="chip ch-on" style="font-size:10px"><i class="ti ti-router"></i> UniFi</span> <span class="chip ch-on" style="font-size:10px"><i class="ti ti-brand-windows"></i> M365</span></td><td><span class="b b-ok">Aktiv</span></td><td><button class="btn btn-g btn-ico" onclick="event.stopPropagation();t('Rapport för Bergström Bygg AB genereras...')"><i class="ti ti-send" style="font-size:13px"></i></button></td></tr>
+            <tr onclick="nav('d-lg')"><td><div class="dn">Lidköpings Glasmästeri</div><div class="ds">Lidköping</div></td><td>UDM</td><td>5</td><td><div class="prg"><div class="prg-bg"><div class="prg-f" style="width:98.1%;background:#F59E0B"></div></div><span style="font-size:11px;width:34px;text-align:right">98.1%</span></div></td><td>Bredband2</td><td><span class="chip ch-on" style="font-size:10px"><i class="ti ti-router"></i> UniFi</span></td><td><span class="b b-warn">Åtgärd krävs</span></td><td><button class="btn btn-g btn-ico" onclick="event.stopPropagation();t('Rapport genereras...')"><i class="ti ti-send" style="font-size:13px"></i></button></td></tr>
+            <tr onclick="nav('d-kh')"><td><div class="dn">Kinnekulle Hotell</div><div class="ds">Götene</div></td><td>Dream Wall</td><td>14</td><td><div class="prg"><div class="prg-bg"><div class="prg-f" style="width:100%;background:#22C55E"></div></div><span style="font-size:11px;width:34px;text-align:right">100%</span></div></td><td>FastBit AB</td><td style="white-space:nowrap"><span class="chip ch-on" style="font-size:10px"><i class="ti ti-router"></i> UniFi</span> <span class="chip ch-on" style="font-size:10px"><i class="ti ti-shield"></i> Acronis</span></td><td><span class="b b-ok">Aktiv</span></td><td><button class="btn btn-g btn-ico" onclick="event.stopPropagation();t('Rapport genereras...')"><i class="ti ti-send" style="font-size:13px"></i></button></td></tr>
           </tbody>
         </table>
       </div>
@@ -415,88 +382,71 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <div class="hero-in">
           <div class="hero-ey">Kund · UniFi Dream Wall · Lidköping</div>
           <div class="hero-ti">Annika Falk</div>
-          <div class="hero-su">default · FastBit AB (ASN 42318) · network 10.4.57 · Protect 7.1.83</div>
+          <div class="hero-su">FastBit AB (ASN 42318) · Network 10.4.57 · Protect 7.1.83</div>
           <div class="hs-row">
-            <div><div class="hs-v">100<span style="font-size:16px">%</span></div><div class="hs-l">WAN-uptime</div></div>
+            <div><div class="hs-v">100<span style="font-size:15px">%</span></div><div class="hs-l">WAN-uptime</div></div>
             <div><div class="hs-v">6</div><div class="hs-l">Enheter</div></div>
-            <div><div class="hs-v">5 ms</div><div class="hs-l">Snittlatens</div></div>
-            <div><div class="hs-v">29/31</div><div class="hs-l">Mbit ner/upp</div></div>
-            <div><div class="hs-v">6</div><div class="hs-l">WiFi-klienter</div></div>
+            <div><div class="hs-v">5 ms</div><div class="hs-l">Latens</div></div>
+            <div><div class="hs-v">29/31</div><div class="hs-l">Mbit/s</div></div>
+            <div><div class="hs-v">6</div><div class="hs-l">Klienter</div></div>
           </div>
         </div>
       </div>
-
-      <!-- Integration status -->
-      <div class="int-status">
-        <div class="int-pill active"><i class="ti ti-router"></i><div><div class="int-name">UniFi</div><div class="int-state">Aktiv · 6 enheter</div></div></div>
-        <div class="int-pill soon"><i class="ti ti-brand-windows"></i><div><div class="int-name">Microsoft 365</div><div class="int-state">Ej konfigurerat</div></div></div>
-        <div class="int-pill soon"><i class="ti ti-shield"></i><div><div class="int-name">Acronis Backup</div><div class="int-state">Ej konfigurerat</div></div></div>
-        <div class="int-pill soon"><i class="ti ti-package"></i><div><div class="int-name">Cloudfactory</div><div class="int-state">Ej konfigurerat</div></div></div>
+      <div class="int-row">
+        <div class="int-p on"><i class="ti ti-router"></i><div><div class="int-pn">UniFi</div><div class="int-ps">6 enheter online</div></div></div>
+        <div class="int-p"><i class="ti ti-brand-windows"></i><div><div class="int-pn">Microsoft 365</div><div class="int-ps">Ej konfigurerat</div></div></div>
+        <div class="int-p"><i class="ti ti-shield"></i><div><div class="int-pn">Acronis</div><div class="int-ps">Ej konfigurerat</div></div></div>
+        <div class="int-p"><i class="ti ti-package"></i><div><div class="int-pn">Cloudfactory</div><div class="int-ps">Ej konfigurerat</div></div></div>
       </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">
         <div class="card">
-          <div class="card-hd"><span class="card-ht">WAN-status</span><span class="bdg bdg-warn">1/2 aktiv</span></div>
-          <div class="card-b">
-            <div class="wan-row">
-              <span class="wan-name">WAN 1</span>
-              <span class="bdg bdg-ok" style="margin-right:8px;flex-shrink:0">Online</span>
-              <div class="ub-wrap"><div class="ub-bg"><div class="ub ub-ok" style="width:100%"></div></div><span style="font-size:12px;font-weight:700;width:38px;text-align:right">100%</span></div>
-            </div>
-            <div class="wan-row">
-              <span class="wan-name">WAN 2</span>
-              <span class="bdg bdg-err" style="margin-right:8px;flex-shrink:0">Nere</span>
-              <div class="ub-wrap"><div class="ub-bg"><div class="ub ub-dn" style="width:0%"></div></div><span style="font-size:12px;font-weight:700;width:38px;text-align:right;color:#BE123C">0%</span></div>
-            </div>
-            <div class="alert al-e" style="margin-top:12px;margin-bottom:0">
-              <i class="ti ti-alert-circle"></i>
-              <span>WAN2 har 288 avbrottstillfällen — SFP+-porten ej inkopplad (backup-länk inaktiv)</span>
-            </div>
+          <div class="ch"><span class="cht">WAN</span><span class="b b-warn">1/2 aktiv</span></div>
+          <div class="cb">
+            <div class="wan-r"><span class="wan-nm">WAN 1</span><span class="b b-ok" style="margin-right:8px;flex-shrink:0">Online</span><div class="ub-w"><div class="ub-bg"><div class="ub ub-ok" style="width:100%"></div></div><span style="font-size:12px;font-weight:700;width:36px;text-align:right">100%</span></div></div>
+            <div class="wan-r"><span class="wan-nm">WAN 2</span><span class="b b-err" style="margin-right:8px;flex-shrink:0">Nere</span><div class="ub-w"><div class="ub-bg"><div class="ub ub-dn" style="width:0%"></div></div><span style="font-size:12px;font-weight:700;width:36px;text-align:right;color:#BE123C">0%</span></div></div>
+            <div class="alert al-e" style="margin-top:11px;margin-bottom:0"><i class="ti ti-alert-circle"></i><span>WAN2 har 288 avbrottstillfällen — SFP+ ej inkopplad</span></div>
           </div>
         </div>
         <div class="card">
-          <div class="card-hd"><span class="card-ht">ISP-mått · senaste 22 h</span></div>
-          <div class="card-b">
+          <div class="ch"><span class="cht">ISP-mått · 22 h</span></div>
+          <div class="cb">
             <div class="mx">
-              <div class="mbox"><div class="mv">5<span class="mu">ms</span></div><div class="ml">Snittlatens</div></div>
+              <div class="mbox"><div class="mv">5<span class="mu">ms</span></div><div class="ml">Latens</div></div>
               <div class="mbox"><div class="mv">0<span class="mu">%</span></div><div class="ml">Paketförlust</div></div>
               <div class="mbox"><div class="mv">100<span class="mu">%</span></div><div class="ml">Uptime</div></div>
             </div>
             <div class="spark" id="spk"></div>
-            <div style="font-size:10px;color:var(--muted);margin-top:5px">Latens per timme (ms)</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">Latens per timme (ms)</div>
           </div>
         </div>
       </div>
-
       <div class="card">
-        <div class="card-hd"><span class="card-ht">Enheter (6)</span><span class="tag tag-m">Alla uppdaterade</span></div>
-        <div class="card-b0">
+        <div class="ch"><span class="cht">Enheter</span><span class="tag tag-m">Alla uppdaterade</span></div>
+        <div class="cb0">
           <table class="tbl">
-            <thead><tr><th>Enhetsnamn</th><th>Modell</th><th>Typ</th><th>Firmware</th><th>Status</th><th>Driftsatt</th></tr></thead>
+            <thead><tr><th>Enhet</th><th>Modell</th><th>Typ</th><th>Firmware</th><th>Status</th><th>Driftsatt</th></tr></thead>
             <tbody>
-              <tr><td><div class="dn">Annika Falk</div><div class="ds">83.223.6.190 · gateway</div></td><td>UniFi Dream Wall</td><td><span class="pl pl-n">Nätverk</span></td><td style="font-family:monospace;font-size:12px">5.1.15 <span style="color:#22C55E">✓</span></td><td><span class="bdg bdg-ok">Online</span></td><td style="color:var(--muted);font-size:12px">—</td></tr>
-              <tr><td><div class="dn">AF-LIDK-ACC-SW-01</div><div class="ds">192.168.10.16</div></td><td>USW Flex Mini</td><td><span class="pl pl-n">Nätverk</span></td><td style="font-family:monospace;font-size:12px">2.1.6 <span style="color:#22C55E">✓</span></td><td><span class="bdg bdg-ok">Online</span></td><td style="color:var(--muted);font-size:12px">2023-09-30</td></tr>
-              <tr><td><div class="dn">AF-LIDK-ACC-SW-02</div><div class="ds">192.168.10.164</div></td><td>USW Lite 8 PoE</td><td><span class="pl pl-n">Nätverk</span></td><td style="font-family:monospace;font-size:12px">7.4.1 <span style="color:#22C55E">✓</span></td><td><span class="bdg bdg-ok">Online</span></td><td style="color:var(--muted);font-size:12px">2023-10-07</td></tr>
-              <tr><td><div class="dn">AF-LIDK-ACC-AP-01</div><div class="ds">192.168.10.7</div></td><td>U6 Extender</td><td><span class="pl pl-n">Nätverk</span></td><td style="font-family:monospace;font-size:12px">6.8.2 <span style="color:#22C55E">✓</span></td><td><span class="bdg bdg-ok">Online</span></td><td style="color:var(--muted);font-size:12px">2023-12-13</td></tr>
-              <tr><td><div class="dn">Butik</div><div class="ds">192.168.10.61</div></td><td>G5 Bullet</td><td><span class="pl pl-p">Protect</span></td><td style="font-family:monospace;font-size:12px">v5.3.94 <span style="color:#22C55E">✓</span></td><td><span class="bdg bdg-ok">Online</span></td><td style="color:var(--muted);font-size:12px">2023-10-14</td></tr>
-              <tr><td><div class="dn">AF-LIDK-VP-01</div><div class="ds">192.168.10.50</div></td><td>Viewport</td><td><span class="pl pl-p">Protect</span></td><td style="font-family:monospace;font-size:12px">v1.4.33 <span style="color:#22C55E">✓</span></td><td><span class="bdg bdg-ok">Online</span></td><td style="color:var(--muted);font-size:12px">2024-07-13</td></tr>
+              <tr><td><div class="dn">Annika Falk</div><div class="ds">83.223.6.190 · gateway</div></td><td>Dream Wall</td><td><span class="pl pl-n">Nätverk</span></td><td style="font-family:monospace;font-size:12px">5.1.15 <span style="color:#22C55E">✓</span></td><td><span class="b b-ok">Online</span></td><td style="color:var(--muted);font-size:11px">—</td></tr>
+              <tr><td><div class="dn">AF-LIDK-ACC-SW-01</div><div class="ds">192.168.10.16</div></td><td>USW Flex Mini</td><td><span class="pl pl-n">Nätverk</span></td><td style="font-family:monospace;font-size:12px">2.1.6 <span style="color:#22C55E">✓</span></td><td><span class="b b-ok">Online</span></td><td style="color:var(--muted);font-size:11px">2023-09-30</td></tr>
+              <tr><td><div class="dn">AF-LIDK-ACC-SW-02</div><div class="ds">192.168.10.164</div></td><td>USW Lite 8 PoE</td><td><span class="pl pl-n">Nätverk</span></td><td style="font-family:monospace;font-size:12px">7.4.1 <span style="color:#22C55E">✓</span></td><td><span class="b b-ok">Online</span></td><td style="color:var(--muted);font-size:11px">2023-10-07</td></tr>
+              <tr><td><div class="dn">AF-LIDK-ACC-AP-01</div><div class="ds">192.168.10.7</div></td><td>U6 Extender</td><td><span class="pl pl-n">Nätverk</span></td><td style="font-family:monospace;font-size:12px">6.8.2 <span style="color:#22C55E">✓</span></td><td><span class="b b-ok">Online</span></td><td style="color:var(--muted);font-size:11px">2023-12-13</td></tr>
+              <tr><td><div class="dn">Butik</div><div class="ds">192.168.10.61</div></td><td>G5 Bullet</td><td><span class="pl pl-p">Protect</span></td><td style="font-family:monospace;font-size:12px">v5.3.94 <span style="color:#22C55E">✓</span></td><td><span class="b b-ok">Online</span></td><td style="color:var(--muted);font-size:11px">2023-10-14</td></tr>
+              <tr><td><div class="dn">AF-LIDK-VP-01</div><div class="ds">192.168.10.50</div></td><td>Viewport</td><td><span class="pl pl-p">Protect</span></td><td style="font-family:monospace;font-size:12px">v1.4.33 <span style="color:#22C55E">✓</span></td><td><span class="b b-ok">Online</span></td><td style="color:var(--muted);font-size:11px">2024-07-13</td></tr>
             </tbody>
           </table>
         </div>
       </div>
-
       <div class="card">
-        <div class="card-hd"><span class="card-ht">IPS-skydd</span><span class="bdg bdg-ok"><i class="ti ti-shield-check" style="font-size:10px"></i> Aktivt</span></div>
-        <div class="card-b" style="display:flex;align-items:center;gap:24px">
-          <div><div style="font-size:22px;font-weight:700;color:var(--blue)">32 325</div><div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em">IPS-regler (ET)</div></div>
-          <div style="font-size:13px;color:var(--sub);line-height:1.6;flex:1">Emergingthreats signaturdatabas · uppdateras automatiskt · realtidsinspekterad trafik</div>
+        <div class="ch"><span class="cht">IPS-skydd</span><span class="b b-ok"><i class="ti ti-shield-check" style="font-size:10px"></i> Aktivt</span></div>
+        <div class="cb" style="display:flex;align-items:center;gap:20px">
+          <div><div style="font-size:20px;font-weight:700;color:var(--blue)">32 325</div><div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">Aktiva regler</div></div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.6;flex:1">Emergingthreats-signaturdatabas · uppdateras automatiskt · realtidsinspekterad trafik</div>
         </div>
       </div>
-
-      <div style="display:flex;gap:10px;margin-top:4px">
-        <button class="btn btn-p" onclick="t('PDF-rapport för Annika Falk genereras och skickas via noreply@terafalk.com')"><i class="ti ti-send"></i> Skicka månadsrapport</button>
-        <button class="btn btn-g" onclick="t('Förhandsgranskar rapport...')"><i class="ti ti-eye"></i> Förhandsgranska PDF</button>
-        <button class="btn btn-g" onclick="t('Öppnar integration-inställningar...')"><i class="ti ti-plug"></i> Konfigurera integrationer</button>
+      <div style="display:flex;gap:9px">
+        <button class="btn btn-p" onclick="t('Rapport för Annika Falk genereras och skickas via noreply@terafalk.com')"><i class="ti ti-send"></i> Skicka rapport</button>
+        <button class="btn btn-g" onclick="t('Öppnar PDF-förhandsgranskning...')"><i class="ti ti-eye"></i> Förhandsgranska</button>
+        <button class="btn btn-g" onclick="t('Öppnar integrationsinställningar...')"><i class="ti ti-plug"></i> Integrationer</button>
       </div>
     </div>
 
@@ -507,24 +457,25 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <div class="hero-in">
           <div class="hero-ey">Kund · UDM Pro · Skövde</div>
           <div class="hero-ti">Bergström Bygg AB</div>
-          <div class="hero-su">main-office · Telia AB · 11 enheter · Microsoft 365 aktivt</div>
+          <div class="hero-su">Telia AB · 11 enheter · Microsoft 365 aktivt</div>
           <div class="hs-row">
-            <div><div class="hs-v">99.8<span style="font-size:16px">%</span></div><div class="hs-l">WAN-uptime</div></div>
+            <div><div class="hs-v">99.8<span style="font-size:15px">%</span></div><div class="hs-l">WAN-uptime</div></div>
             <div><div class="hs-v">11</div><div class="hs-l">Enheter</div></div>
-            <div><div class="hs-v">7 ms</div><div class="hs-l">Snittlatens</div></div>
-            <div><div class="hs-v">0%</div><div class="hs-l">Paketförlust</div></div>
+            <div><div class="hs-v">7 ms</div><div class="hs-l">Latens</div></div>
+            <div><div class="hs-v">12</div><div class="hs-l">M365-licenser</div></div>
           </div>
         </div>
       </div>
-      <div class="int-status">
-        <div class="int-pill active"><i class="ti ti-router"></i><div><div class="int-name">UniFi</div><div class="int-state">Aktiv · 11 enheter</div></div></div>
-        <div class="int-pill active"><i class="ti ti-brand-windows"></i><div><div class="int-name">Microsoft 365</div><div class="int-state">Aktiv · 12 licenser</div></div></div>
-        <div class="int-pill soon"><i class="ti ti-shield"></i><div><div class="int-name">Acronis Backup</div><div class="int-state">Ej konfigurerat</div></div></div>
-        <div class="int-pill soon"><i class="ti ti-package"></i><div><div class="int-name">Cloudfactory</div><div class="int-state">Ej konfigurerat</div></div></div>
+      <div class="int-row">
+        <div class="int-p on"><i class="ti ti-router"></i><div><div class="int-pn">UniFi</div><div class="int-ps">11 enheter online</div></div></div>
+        <div class="int-p on"><i class="ti ti-brand-windows"></i><div><div class="int-pn">Microsoft 365</div><div class="int-ps">12 licenser aktiva</div></div></div>
+        <div class="int-p"><i class="ti ti-shield"></i><div><div class="int-pn">Acronis</div><div class="int-ps">Ej konfigurerat</div></div></div>
+        <div class="int-p"><i class="ti ti-package"></i><div><div class="int-pn">Cloudfactory</div><div class="int-ps">Ej konfigurerat</div></div></div>
       </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-p" onclick="t('Rapport för Bergström Bygg AB genereras och skickas...')"><i class="ti ti-send"></i> Skicka månadsrapport</button>
-        <button class="btn btn-g" onclick="t('Förhandsgranskar...')"><i class="ti ti-eye"></i> Förhandsgranska PDF</button>
+      <div class="alert al-info"><i class="ti ti-info-circle"></i><span>Microsoft 365-data inkluderas i nästa månadsrapport: licensöversikt, MFA-status och säkerhetspoäng.</span></div>
+      <div style="display:flex;gap:9px">
+        <button class="btn btn-p" onclick="t('Rapport för Bergström Bygg AB genereras och skickas...')"><i class="ti ti-send"></i> Skicka rapport</button>
+        <button class="btn btn-g" onclick="t('Förhandsgranskar...')"><i class="ti ti-eye"></i> Förhandsgranska</button>
       </div>
     </div>
 
@@ -535,21 +486,18 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <div class="hero-in">
           <div class="hero-ey">Kund · UDM · Lidköping</div>
           <div class="hero-ti">Lidköpings Glasmästeri</div>
-          <div class="hero-su">office · Bredband2 · 5 enheter</div>
+          <div class="hero-su">Bredband2 · 5 enheter</div>
           <div class="hs-row">
-            <div><div class="hs-v">98.1<span style="font-size:16px">%</span></div><div class="hs-l">WAN-uptime</div></div>
+            <div><div class="hs-v">98.1<span style="font-size:15px">%</span></div><div class="hs-l">WAN-uptime</div></div>
             <div><div class="hs-v">5</div><div class="hs-l">Enheter</div></div>
-            <div><div class="hs-v">9 ms</div><div class="hs-l">Snittlatens</div></div>
+            <div><div class="hs-v">9 ms</div><div class="hs-l">Latens</div></div>
           </div>
         </div>
       </div>
-      <div class="alert al-w" style="margin-top:4px">
-        <i class="ti ti-alert-triangle"></i>
-        <span>2 enheter har väntande firmware-uppdateringar — schemalagd patchning körs nästa underhållsfönster (söndag 03:00)</span>
-      </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-p" onclick="t('Rapport för Lidköpings Glasmästeri genereras och skickas...')"><i class="ti ti-send"></i> Skicka månadsrapport</button>
-        <button class="btn btn-g" onclick="t('Förhandsgranskar...')"><i class="ti ti-eye"></i> Förhandsgranska PDF</button>
+      <div class="alert al-w" style="margin-top:4px"><i class="ti ti-alert-triangle"></i><span>2 enheter har väntande uppdateringar — schemalagd patchning körs söndag 03:00</span></div>
+      <div style="display:flex;gap:9px">
+        <button class="btn btn-p" onclick="t('Rapport genereras och skickas...')"><i class="ti ti-send"></i> Skicka rapport</button>
+        <button class="btn btn-g" onclick="t('Förhandsgranskar...')"><i class="ti ti-eye"></i> Förhandsgranska</button>
       </div>
     </div>
 
@@ -558,70 +506,60 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="back" onclick="nav('customers')"><i class="ti ti-arrow-left"></i> Alla kunder</div>
       <div class="hero">
         <div class="hero-in">
-          <div class="hero-ey">Kund · UniFi Dream Wall · Götene</div>
+          <div class="hero-ey">Kund · Dream Wall · Götene</div>
           <div class="hero-ti">Kinnekulle Hotell</div>
-          <div class="hero-su">main · FastBit AB · 14 enheter · Acronis aktivt</div>
+          <div class="hero-su">FastBit AB · 14 enheter · Acronis aktivt</div>
           <div class="hs-row">
-            <div><div class="hs-v">100<span style="font-size:16px">%</span></div><div class="hs-l">WAN-uptime</div></div>
+            <div><div class="hs-v">100<span style="font-size:15px">%</span></div><div class="hs-l">WAN-uptime</div></div>
             <div><div class="hs-v">14</div><div class="hs-l">Enheter</div></div>
-            <div><div class="hs-v">4 ms</div><div class="hs-l">Snittlatens</div></div>
-            <div><div class="hs-v">0%</div><div class="hs-l">Paketförlust</div></div>
+            <div><div class="hs-v">4 ms</div><div class="hs-l">Latens</div></div>
+            <div><div class="hs-v">8</div><div class="hs-l">Acronis-jobb</div></div>
           </div>
         </div>
       </div>
-      <div class="int-status">
-        <div class="int-pill active"><i class="ti ti-router"></i><div><div class="int-name">UniFi</div><div class="int-state">Aktiv · 14 enheter</div></div></div>
-        <div class="int-pill active"><i class="ti ti-shield"></i><div><div class="int-name">Acronis Backup</div><div class="int-state">Aktiv · 8 jobb OK</div></div></div>
-        <div class="int-pill soon"><i class="ti ti-brand-windows"></i><div><div class="int-name">Microsoft 365</div><div class="int-state">Ej konfigurerat</div></div></div>
-        <div class="int-pill soon"><i class="ti ti-package"></i><div><div class="int-name">Cloudfactory</div><div class="int-state">Ej konfigurerat</div></div></div>
+      <div class="int-row">
+        <div class="int-p on"><i class="ti ti-router"></i><div><div class="int-pn">UniFi</div><div class="int-ps">14 enheter online</div></div></div>
+        <div class="int-p on"><i class="ti ti-shield"></i><div><div class="int-pn">Acronis</div><div class="int-ps">8 jobb OK · idag 02:17</div></div></div>
+        <div class="int-p"><i class="ti ti-brand-windows"></i><div><div class="int-pn">Microsoft 365</div><div class="int-ps">Ej konfigurerat</div></div></div>
+        <div class="int-p"><i class="ti ti-package"></i><div><div class="int-pn">Cloudfactory</div><div class="int-ps">Ej konfigurerat</div></div></div>
       </div>
-      <div class="alert al-ok">
-        <i class="ti ti-circle-check"></i>
-        <span>Alla 14 enheter online och uppdaterade. Redundant WAN med 100% uptime. Senaste Acronis-säkerhetskopia: idag 02:17.</span>
-      </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-p" onclick="t('Rapport för Kinnekulle Hotell genereras och skickas...')"><i class="ti ti-send"></i> Skicka månadsrapport</button>
-        <button class="btn btn-g" onclick="t('Förhandsgranskar...')"><i class="ti ti-eye"></i> Förhandsgranska PDF</button>
+      <div class="alert al-ok"><i class="ti ti-circle-check"></i><span>Alla 14 enheter online och uppdaterade. Redundant WAN med 100% uptime. Senaste säkerhetskopia idag 02:17.</span></div>
+      <div style="display:flex;gap:9px">
+        <button class="btn btn-p" onclick="t('Rapport genereras och skickas...')"><i class="ti ti-send"></i> Skicka rapport</button>
+        <button class="btn btn-g" onclick="t('Förhandsgranskar...')"><i class="ti ti-eye"></i> Förhandsgranska</button>
       </div>
     </div>
 
     <!-- ══ REPORTS ══ -->
     <div class="view" id="v-reports">
-      <div class="sec-hd">
-        <div><div class="sec-title">Rapporthistorik</div><div class="sec-sub">Automatiska månadsrapporter · avsändare: noreply@terafalk.com</div></div>
-        <button class="btn btn-p btn-sm" onclick="t('Genererar rapport för alla 8 kunder...')"><i class="ti ti-send"></i> Kör alla nu</button>
-      </div>
-      <div class="rr"><div class="ri"><i class="ti ti-file-description"></i></div><div style="flex:1"><div class="rn">Månadsrapport juni 2026 — Annika Falk</div><div class="rm">Skickad 1 jun 08:00 · 6 enheter · 100% WAN-uptime</div></div><div style="display:flex;align-items:center;gap:8px"><span class="bdg bdg-ok">Levererad</span><button class="btn btn-g btn-ico" onclick="t('Laddar ner PDF...')"><i class="ti ti-download" style="font-size:13px"></i></button></div></div>
-      <div class="rr"><div class="ri"><i class="ti ti-file-description"></i></div><div style="flex:1"><div class="rn">Månadsrapport juni 2026 — Bergström Bygg AB</div><div class="rm">Skickad 1 jun 08:00 · 11 enheter · M365 inkluderat</div></div><div style="display:flex;align-items:center;gap:8px"><span class="bdg bdg-ok">Levererad</span><button class="btn btn-g btn-ico" onclick="t('Laddar ner PDF...')"><i class="ti ti-download" style="font-size:13px"></i></button></div></div>
-      <div class="rr"><div class="ri"><i class="ti ti-file-description"></i></div><div style="flex:1"><div class="rn">Månadsrapport juni 2026 — Kinnekulle Hotell</div><div class="rm">Skickad 1 jun 08:00 · 14 enheter · Acronis inkluderat</div></div><div style="display:flex;align-items:center;gap:8px"><span class="bdg bdg-ok">Levererad</span><button class="btn btn-g btn-ico" onclick="t('Laddar ner PDF...')"><i class="ti ti-download" style="font-size:13px"></i></button></div></div>
-      <div class="rr" style="opacity:0.65"><div class="ri"><i class="ti ti-file-description"></i></div><div style="flex:1"><div class="rn">Månadsrapport maj 2026 — Lidköpings Glasmästeri</div><div class="rm">Skickad 1 maj 08:00 · Bounce — kontrollera e-postadress</div></div><div style="display:flex;align-items:center;gap:8px"><span class="bdg bdg-err">Bounce</span><button class="btn btn-g btn-ico" onclick="t('Skickar om...')"><i class="ti ti-refresh" style="font-size:13px"></i></button></div></div>
+      <div class="ph"><div><div class="ph-title">Rapporter</div><div class="ph-sub">Automatiska månadsrapporter · noreply@terafalk.com</div></div><button class="btn btn-p btn-sm" onclick="t('Genererar rapport för alla 8 kunder...')"><i class="ti ti-send"></i> Kör alla nu</button></div>
+      <div class="rr"><div class="ri"><i class="ti ti-file-description"></i></div><div style="flex:1"><div class="rn">Juni 2026 — Annika Falk</div><div class="rm">1 jun 08:00 · 6 enheter · 100% uptime</div></div><div style="display:flex;align-items:center;gap:8px"><span class="b b-ok">Levererad</span><button class="btn btn-g btn-ico" onclick="t('Laddar ner PDF...')"><i class="ti ti-download" style="font-size:13px"></i></button></div></div>
+      <div class="rr"><div class="ri"><i class="ti ti-file-description"></i></div><div style="flex:1"><div class="rn">Juni 2026 — Bergström Bygg AB</div><div class="rm">1 jun 08:00 · 11 enheter · M365 inkluderat</div></div><div style="display:flex;align-items:center;gap:8px"><span class="b b-ok">Levererad</span><button class="btn btn-g btn-ico" onclick="t('Laddar ner PDF...')"><i class="ti ti-download" style="font-size:13px"></i></button></div></div>
+      <div class="rr"><div class="ri"><i class="ti ti-file-description"></i></div><div style="flex:1"><div class="rn">Juni 2026 — Kinnekulle Hotell</div><div class="rm">1 jun 08:00 · 14 enheter · Acronis inkluderat</div></div><div style="display:flex;align-items:center;gap:8px"><span class="b b-ok">Levererad</span><button class="btn btn-g btn-ico" onclick="t('Laddar ner PDF...')"><i class="ti ti-download" style="font-size:13px"></i></button></div></div>
+      <div class="rr" style="opacity:0.6"><div class="ri"><i class="ti ti-file-description"></i></div><div style="flex:1"><div class="rn">Maj 2026 — Lidköpings Glasmästeri</div><div class="rm">Bounce — kontrollera mottagaradress</div></div><div style="display:flex;align-items:center;gap:8px"><span class="b b-err">Bounce</span><button class="btn btn-g btn-ico" onclick="t('Skickar om...')"><i class="ti ti-refresh" style="font-size:13px"></i></button></div></div>
     </div>
 
     <!-- ══ ADD CUSTOMER ══ -->
     <div class="view" id="v-add-customer">
-      <div class="sec-hd"><div class="sec-title">Lägg till kund</div></div>
+      <div class="ph"><div class="ph-title">Ny kund</div></div>
       <div class="fw">
-        <div class="fr"><label class="fl">Företagsnamn</label><input class="fi" placeholder="t.ex. Svensson & Co AB"></div>
+        <div class="fr"><label class="fl">Företagsnamn</label><input class="fi" placeholder="Svensson & Co AB"></div>
         <div class="f2">
           <div class="fr" style="margin:0"><label class="fl">Kontaktperson</label><input class="fi" placeholder="Förnamn Efternamn"></div>
-          <div class="fr" style="margin:0"><label class="fl">Ort</label><input class="fi" placeholder="t.ex. Lidköping"></div>
+          <div class="fr" style="margin:0"><label class="fl">Ort</label><input class="fi" placeholder="Lidköping"></div>
         </div>
         <hr class="fdiv">
         <div class="fr"><label class="fl">E-postadress (rapportmottagare)</label><input class="fi" type="email" placeholder="kontakt@foretaget.se"></div>
-        <div class="fr">
-          <label class="fl">UniFi API-nyckel (kundens Fabric)</label>
-          <input class="fi" type="password" placeholder="Nyckel från unifi.ui.com → Settings → API Keys">
-          <div class="fh">Gå till kundens Fabric, skapa en API-nyckel och klistra in här. Lagras krypterat.</div>
-        </div>
+        <div class="fr"><label class="fl">UniFi API-nyckel</label><input class="fi" type="password" placeholder="Från kundens Fabric → Settings → API Keys"><div class="fh">Lagras krypterat med AES-256.</div></div>
         <hr class="fdiv">
-        <div class="flabel" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--sub)">Framtida integrationer (valfritt, kan läggas till senare)</div>
-        <div class="f2" style="margin-bottom:12px">
-          <div class="fr" style="margin:0"><label class="fl">Microsoft 365 Tenant ID</label><input class="fi" placeholder="Läggs till när du kopplar M365"></div>
-          <div class="fr" style="margin:0"><label class="fl">Acronis API-nyckel</label><input class="fi" placeholder="Läggs till när du kopplar Acronis"></div>
+        <div class="fsec">Framtida integrationer (valfritt)</div>
+        <div class="f2">
+          <div class="fr" style="margin:0"><label class="fl">Microsoft 365 Tenant ID</label><input class="fi" placeholder="Läggs till senare"></div>
+          <div class="fr" style="margin:0"><label class="fl">Acronis API-nyckel</label><input class="fi" placeholder="Läggs till senare"></div>
         </div>
-        <div class="fr"><label class="fl">Cloudfactory API-nyckel</label><input class="fi" placeholder="Läggs till när du kopplar Cloudfactory"></div>
-        <div style="display:flex;gap:10px;margin-top:6px">
-          <button class="btn btn-p" onclick="t('Kund tillagd — API-nyckel verifieras mot UniFi...');nav('customers')"><i class="ti ti-check"></i> Lägg till</button>
+        <div class="fr" style="margin-top:12px"><label class="fl">Cloudfactory API-nyckel</label><input class="fi" placeholder="Läggs till senare"></div>
+        <div style="display:flex;gap:9px;margin-top:6px">
+          <button class="btn btn-p" onclick="t('Kund tillagd — nyckel verifieras...');nav('customers')"><i class="ti ti-check"></i> Spara</button>
           <button class="btn btn-g" onclick="nav('customers')">Avbryt</button>
         </div>
       </div>
@@ -629,24 +567,24 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
     <!-- ══ SETTINGS ══ -->
     <div class="view" id="v-settings">
-      <div class="sec-hd"><div class="sec-title">Inställningar</div></div>
-      <div class="fw" style="max-width:580px">
-        <div class="flabel">Microsoft Graph (utskick)</div>
+      <div class="ph"><div class="ph-title">Inställningar</div></div>
+      <div class="fw" style="max-width:560px">
+        <div class="fsec">Microsoft Graph</div>
         <div class="fr"><label class="fl">Avsändaradress</label><input class="fi" value="noreply@terafalk.com" readonly></div>
         <div class="f2">
           <div class="fr" style="margin:0"><label class="fl">Tenant ID</label><input class="fi" type="password" placeholder="Azure Entra ID Tenant ID"></div>
           <div class="fr" style="margin:0"><label class="fl">Client ID</label><input class="fi" type="password" placeholder="App Registration Client ID"></div>
         </div>
-        <div class="fr"><label class="fl">Client Secret</label><input class="fi" type="password" placeholder="Client secret från Certificates & secrets"><div class="fh">Azure Entra ID → App registrations → Certificates &amp; secrets</div></div>
+        <div class="fr"><label class="fl">Client Secret</label><input class="fi" type="password" placeholder="Certificates & secrets"><div class="fh">Azure Entra ID → App registrations → din app → Certificates &amp; secrets</div></div>
         <hr class="fdiv">
-        <div class="flabel">Rapportschema</div>
+        <div class="fsec">Rapportschema</div>
         <div class="f2">
           <div class="fr" style="margin:0"><label class="fl">Skicktillfälle</label><select class="fi"><option>1:a varje månad, 08:00</option><option>Sista dagen i månaden</option><option>Manuellt</option></select></div>
           <div class="fr" style="margin:0"><label class="fl">Tidszon</label><select class="fi"><option>Europe/Stockholm</option><option>UTC</option></select></div>
         </div>
         <hr class="fdiv">
-        <div class="flabel">Säkerhet</div>
-        <div class="fr"><label class="fl">Krypteringsnyckel (AES-256)</label><input class="fi" type="password" placeholder="Sätts via miljövariabeln ENCRYPTION_KEY"><div class="fh">Lagras aldrig i databasen — ändra bara om du vet vad du gör (befintliga credentials kan inte dekrypteras med ny nyckel)</div></div>
+        <div class="fsec">Säkerhet</div>
+        <div class="fr"><label class="fl">Krypteringsnyckel</label><input class="fi" type="password" placeholder="Sätts via ENCRYPTION_KEY i .env"><div class="fh">Ändra aldrig efter att kunder lagts in — befintliga nycklar kan inte dekrypteras.</div></div>
         <button class="btn btn-p" onclick="t('Inställningar sparade')"><i class="ti ti-check"></i> Spara</button>
       </div>
     </div>
@@ -658,7 +596,56 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 <div class="toast" id="toast"><i class="ti ti-check-circle"></i><span id="tmsg"></span></div>
 
 <script>
-const titles={dashboard:'Dashboard',customers:'Alla kunder','d-af':'Annika Falk','d-bb':'Bergström Bygg AB','d-lg':'Lidköpings Glasmästeri','d-kh':'Kinnekulle Hotell',reports:'Rapporthistorik','add-customer':'Lägg till kund',settings:'Inställningar'};
+const API = '';
+let authToken = localStorage.getItem('tf_token');
+
+async function doLogin(){
+  const email = document.getElementById('l-email').value;
+  const pw = document.getElementById('l-pw').value;
+  document.getElementById('l-err').style.display='none';
+  try {
+    const r = await fetch(API+'/api/auth/token', {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:`username=${encodeURIComponent(email)}&password=${encodeURIComponent(pw)}`
+    });
+    if(r.ok){
+      const d = await r.json();
+      authToken = d.access_token;
+      localStorage.setItem('tf_token', authToken);
+      showApp();
+    } else {
+      document.getElementById('l-err').style.display='block';
+    }
+  } catch(e) {
+    // Dev-läge: logga in utan backend
+    authToken = 'dev-token';
+    localStorage.setItem('tf_token', 'dev-token');
+    showApp();
+  }
+}
+
+function showApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='flex';
+}
+
+function doLogout(){
+  localStorage.removeItem('tf_token');
+  authToken=null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='none';
+}
+
+// Auto-login om token finns
+if(authToken){ showApp(); }
+
+// Enter-tangent i login
+document.addEventListener('keydown', e => {
+  if(e.key==='Enter' && document.getElementById('login-screen').style.display!=='none') doLogin();
+});
+
+const titles={dashboard:'Översikt',customers:'Kunder','d-af':'Annika Falk','d-bb':'Bergström Bygg AB','d-lg':'Lidköpings Glasmästeri','d-kh':'Kinnekulle Hotell',reports:'Rapporter','add-customer':'Ny kund',settings:'Inställningar'};
 const parents={dashboard:'dashboard',customers:'customers','d-af':'customers','d-bb':'customers','d-lg':'customers','d-kh':'customers',reports:'reports','add-customer':'add-customer',settings:'settings'};
 
 function nav(id){
@@ -686,14 +673,14 @@ function buildSpark(){
   if(!el||el.children.length)return;
   [5,5,5,5,5,5,5,5,5,6,5,5,5,5,6,5,5,5,5,5,6,6].forEach(v=>{
     const b=document.createElement('div');
-    b.className='sb';
+    b.className='spb';
     b.style.height=Math.round(v/6*100)+'%';
     b.title=v+' ms';
     el.appendChild(b);
   });
 }
 document.addEventListener('DOMContentLoaded',buildSpark);
-setTimeout(buildSpark,300);
+setTimeout(buildSpark,200);
 </script>
 </body>
 </html>
