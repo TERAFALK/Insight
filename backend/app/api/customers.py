@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.auth import current_user
+from app.api.auth import current_user, require_admin
 from app.core.security import encrypt
 from app.db.database import get_db
 from app.db.models import Customer, IntegrationCredential, User
@@ -43,14 +43,12 @@ class CredentialUpsert(BaseModel):
 @router.get("")
 async def list_customers(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(current_user),
+    user: User = Depends(current_user),
 ):
-    rows = await db.scalars(
-        select(Customer)
-        .where(Customer.is_active == True)
-        .options(selectinload(Customer.credentials))
-        .order_by(Customer.name)
-    )
+    q = select(Customer).where(Customer.is_active == True).options(selectinload(Customer.credentials)).order_by(Customer.name)
+    if user.role == "customer":
+        q = q.where(Customer.id == user.customer_id)
+    rows = await db.scalars(q)
     result = []
     for c in rows.all():
         verified = {cr.integration_type for cr in c.credentials if cr.is_verified}
@@ -71,7 +69,7 @@ async def list_customers(
 async def create_customer(
     body: CustomerCreate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(current_user),
+    _: User = Depends(require_admin),
 ):
     customer = Customer(**body.model_dump())
     db.add(customer)
@@ -93,8 +91,10 @@ async def list_available_integrations(_: User = Depends(current_user)):
 async def get_customer(
     customer_id: str,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(current_user),
+    user: User = Depends(current_user),
 ):
+    if user.role == "customer" and user.customer_id != customer_id:
+        raise HTTPException(403, "Åtkomst nekad")
     c = await db.scalar(
         select(Customer)
         .where(Customer.id == customer_id)
@@ -135,7 +135,7 @@ async def update_customer(
     customer_id: str,
     body: CustomerUpdate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(current_user),
+    _: User = Depends(require_admin),
 ):
     c = await db.get(Customer, customer_id)
     if not c:
@@ -151,7 +151,7 @@ async def update_customer(
 async def delete_customer(
     customer_id: str,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(current_user),
+    _: User = Depends(require_admin),
 ):
     c = await db.get(Customer, customer_id)
     if not c:

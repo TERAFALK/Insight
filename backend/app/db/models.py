@@ -24,13 +24,16 @@ def _uuid() -> str:
 
 
 class User(Base):
-    """Admin-användare som loggar in i portalen."""
+    """Användare i portalen — antingen admin eller kundanvändare."""
 
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    full_name: Mapped[str] = mapped_column(String, default="", server_default="")
+    role: Mapped[str] = mapped_column(String, default="admin", server_default="admin")  # "admin" | "customer"
+    customer_id: Mapped[str | None] = mapped_column(String, ForeignKey("customers.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

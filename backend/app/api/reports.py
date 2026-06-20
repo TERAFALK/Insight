@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.auth import current_user
+from app.api.auth import current_user, require_admin
 from app.db.database import get_db
 from app.db.models import Customer, Report, User
 
@@ -14,11 +14,12 @@ router = APIRouter()
 @router.get("")
 async def list_reports(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(current_user),
+    user: User = Depends(current_user),
 ):
-    rows = await db.scalars(
-        select(Report).order_by(Report.created_at.desc()).limit(50)
-    )
+    q = select(Report).order_by(Report.created_at.desc()).limit(50)
+    if user.role == "customer":
+        q = q.where(Report.customer_id == user.customer_id)
+    rows = await db.scalars(q)
     return [
         {
             "id": r.id,
@@ -37,7 +38,7 @@ async def list_reports(
 async def trigger_report(
     customer_id: str,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(current_user),
+    _: User = Depends(require_admin),
 ):
     """Triggar rapport-generering för en specifik kund direkt (asynkront)."""
     from app.reports.runner import run_report_for_customer
@@ -47,7 +48,7 @@ async def trigger_report(
 
 
 @router.post("/run-all", status_code=202)
-async def trigger_all_reports(_: User = Depends(current_user)):
+async def trigger_all_reports(_: User = Depends(require_admin)):
     """Triggar rapport-generering för alla aktiva kunder."""
     from app.reports.runner import run_all_reports
     import asyncio

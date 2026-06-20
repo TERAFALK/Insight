@@ -42,6 +42,18 @@ async def current_user(
     return user
 
 
+async def require_admin(user: User = Depends(current_user)) -> User:
+    if user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Åtkomst nekad")
+    return user
+
+
 @router.get("/me")
 async def me(user: User = Depends(current_user)):
-    return {"email": user.email, "id": user.id}
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "customer_id": user.customer_id,
+    }

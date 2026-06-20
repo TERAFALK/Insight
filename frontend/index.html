@@ -244,6 +244,9 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
 /* ── Skeleton-laddning ── */
 .skel{color:var(--muted);text-align:center;padding:40px 20px;font-size:13px}
+@keyframes shimmer{0%{background-position:-800px 0}100%{background-position:800px 0}}
+.skel-box{background:linear-gradient(90deg,#eceef1 25%,#e0e3e8 50%,#eceef1 75%);background-size:1600px 100%;animation:shimmer 1.4s infinite;border-radius:5px}
+.skel-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px;box-shadow:var(--shadow)}
 </style>
 </head>
 <body>
@@ -292,19 +295,20 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
     <div style="font-family:'Exo 2',sans-serif;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">Insight</div>
   </div>
   <div class="sb-section">Hantera</div>
-  <div class="nav active" data-v="dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i> Översikt</div>
-  <div class="nav" data-v="customers" onclick="nav('customers')"><i class="ti ti-building-store"></i> Kunder</div>
-  <div class="nav" data-v="reports" onclick="nav('reports')"><i class="ti ti-file-description"></i> Rapporter</div>
-  <div class="sb-section">Konfiguration</div>
-  <div class="nav" data-v="add-customer" onclick="nav('add-customer')"><i class="ti ti-plus"></i> Lägg till kund</div>
-  <div class="nav" data-v="settings" onclick="nav('settings')"><i class="ti ti-settings"></i> Inställningar</div>
+  <div class="nav active" data-v="dashboard" id="nav-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i> Översikt</div>
+  <div class="nav" data-v="customers" id="nav-customers" onclick="nav('customers')"><i class="ti ti-building-store"></i> Kunder</div>
+  <div class="nav" data-v="reports" id="nav-reports" onclick="nav('reports')"><i class="ti ti-file-description"></i> Rapporter</div>
+  <div class="sb-section" id="nav-section-config">Konfiguration</div>
+  <div class="nav" data-v="users" id="nav-users" onclick="nav('users')"><i class="ti ti-users"></i> Användare</div>
+  <div class="nav" data-v="add-customer" id="nav-add-customer" onclick="nav('add-customer')"><i class="ti ti-plus"></i> Lägg till kund</div>
+  <div class="nav" data-v="settings" id="nav-settings" onclick="nav('settings')"><i class="ti ti-settings"></i> Inställningar</div>
   <div class="sb-space"></div>
   <div class="sb-bottom">
     <div class="sb-user" onclick="doLogout()">
-      <div class="avatar">TA</div>
+      <div class="avatar" id="sb-avatar">TA</div>
       <div>
-        <div class="u-name">TERAFALK AB</div>
-        <div class="u-role">Logga ut</div>
+        <div class="u-name" id="sb-name">TERAFALK AB</div>
+        <div class="u-role" id="sb-role">Logga ut</div>
       </div>
     </div>
   </div>
@@ -352,7 +356,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
     <!-- ══ DETAIL: DYNAMISK KUNDVY ══ -->
     <div class="view" id="v-customer-detail">
-      <div class="back" onclick="nav('customers')"><i class="ti ti-arrow-left"></i> Alla kunder</div>
+      <div class="back" id="cd-back-btn" onclick="nav('customers')"><i class="ti ti-arrow-left"></i> Alla kunder</div>
       <div class="hero">
         <div class="hero-in">
           <div class="hero-ey" id="cd-eyebrow">Kund</div>
@@ -406,7 +410,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <span id="cd-error-msg"></span>
       </div>
 
-      <div style="display:flex;gap:9px;margin-top:4px">
+      <div style="display:flex;gap:9px;margin-top:4px" id="cd-admin-actions">
         <button class="btn btn-p" id="cd-send-btn" onclick="sendReportForCurrent()"><i class="ti ti-send"></i> Generera rapport</button>
         <button class="btn btn-g" onclick="openEditCustomer()"><i class="ti ti-edit"></i> Redigera</button>
         <button class="btn btn-g" onclick="nav('integrations')"><i class="ti ti-plug"></i> Integrationer</button>
@@ -486,6 +490,48 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       </div>
     </div>
 
+    <!-- ══ USERS ══ -->
+    <div class="view" id="v-users">
+      <div class="ph">
+        <div><div class="ph-title">Användare</div><div class="ph-sub">Admins och kundanvändare med inlogg till portalen</div></div>
+        <button class="btn btn-p btn-sm" onclick="openCreateUser()"><i class="ti ti-plus"></i> Ny användare</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>Namn / E-post</th><th>Roll</th><th>Kund</th><th>Status</th><th></th></tr></thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Laddar...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="create-user-panel" style="display:none;margin-top:20px">
+        <div class="fw">
+          <div class="ph-title" style="font-size:16px;margin-bottom:18px">Ny användare</div>
+          <div id="cu-error" class="alert al-e" style="display:none"><i class="ti ti-alert-circle"></i><span id="cu-error-msg"></span></div>
+          <div class="f2">
+            <div class="fr" style="margin:0"><label class="fl">Namn</label><input class="fi" id="cu-name" placeholder="Förnamn Efternamn"></div>
+            <div class="fr" style="margin:0"><label class="fl">E-postadress</label><input class="fi" id="cu-email" type="email" placeholder="anvandare@foretaget.se"></div>
+          </div>
+          <div class="fr"><label class="fl">Lösenord</label><input class="fi" id="cu-password" type="password" placeholder="Minst 8 tecken"></div>
+          <div class="f2">
+            <div class="fr" style="margin:0"><label class="fl">Roll</label>
+              <select class="fi" id="cu-role" onchange="toggleCuCustomer()">
+                <option value="admin">Admin</option>
+                <option value="customer" selected>Kundanvändare</option>
+              </select>
+            </div>
+            <div class="fr" style="margin:0" id="cu-customer-row"><label class="fl">Kund</label>
+              <select class="fi" id="cu-customer-id"><option value="">Välj kund...</option></select>
+            </div>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:14px">
+            <button class="btn btn-p" id="cu-submit-btn" onclick="submitCreateUser()"><i class="ti ti-check"></i> Skapa användare</button>
+            <button class="btn btn-g" onclick="closeCreateUser()">Avbryt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ SETTINGS ══ -->
     <div class="view" id="v-settings">
       <div class="ph"><div class="ph-title">Inställningar</div></div>
@@ -518,6 +564,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 <script>
 const API = '';
 let authToken = localStorage.getItem('tf_token');
+let currentUser = null;
 let currentCustomerId = null;
 let customersCache = [];
 let _navGen = 0;
@@ -562,7 +609,7 @@ async function doLogin() {
       const d = await r.json();
       authToken = d.access_token;
       localStorage.setItem('tf_token', authToken);
-      showApp();
+      await showApp();
     } else {
       errEl.textContent = 'Fel e-post eller lösenord';
       errEl.style.display = 'block';
@@ -573,15 +620,52 @@ async function doLogin() {
   }
 }
 
-function showApp() {
+async function showApp() {
+  // Hämta inloggad användares roll
+  try {
+    currentUser = await api('/api/auth/me');
+  } catch (e) {
+    currentUser = { role: 'admin', full_name: '', email: '' };
+  }
+  applyRoleUI();
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'flex';
-  loadDashboard();
+  if (currentUser.role === 'customer') {
+    // Kundanvändare: gå direkt till sin dashboard
+    currentCustomerId = currentUser.customer_id;
+    nav('dashboard');
+  } else {
+    loadDashboard();
+  }
+}
+
+function applyRoleUI() {
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  // Dölj admin-only nav-poster för kundanvändare
+  ['nav-users', 'nav-add-customer', 'nav-settings', 'nav-section-config'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isAdmin ? '' : 'none';
+  });
+  // Admin ser hela kundlistan; kund ser bara sin dashboard
+  const navCustomers = document.getElementById('nav-customers');
+  if (navCustomers) navCustomers.style.display = isAdmin ? '' : 'none';
+
+  // Uppdatera sidofältets användarinfo
+  const name = (currentUser && currentUser.full_name) || (currentUser && currentUser.email) || 'Användare';
+  const roleLabel = (currentUser && currentUser.role === 'customer') ? 'Kundanvändare · Logga ut' : 'Admin · Logga ut';
+  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'AN';
+  const sbName = document.getElementById('sb-name');
+  const sbRole = document.getElementById('sb-role');
+  const sbAvatar = document.getElementById('sb-avatar');
+  if (sbName) sbName.textContent = name;
+  if (sbRole) sbRole.textContent = roleLabel;
+  if (sbAvatar) sbAvatar.textContent = initials;
 }
 
 function doLogout() {
   localStorage.removeItem('tf_token');
   authToken = null;
+  currentUser = null;
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-screen').style.display = 'none';
 }
@@ -594,8 +678,8 @@ document.addEventListener('keydown', e => {
 
 // ── Navigation ────────────────────────────────────────────────────────────
 
-const titles = { dashboard: 'Översikt', customers: 'Kunder', 'customer-detail': 'Kund', 'edit-customer': 'Redigera kund', reports: 'Rapporter', 'add-customer': 'Ny kund', settings: 'Inställningar', integrations: 'Integrationer' };
-const parents = { dashboard: 'dashboard', customers: 'customers', 'customer-detail': 'customers', 'edit-customer': 'customers', reports: 'reports', 'add-customer': 'add-customer', settings: 'settings', integrations: 'customers' };
+const titles = { dashboard: 'Översikt', customers: 'Kunder', 'customer-detail': 'Kund', 'edit-customer': 'Redigera kund', reports: 'Rapporter', 'add-customer': 'Ny kund', settings: 'Inställningar', integrations: 'Integrationer', users: 'Användare' };
+const parents = { dashboard: 'dashboard', customers: 'customers', 'customer-detail': 'customers', 'edit-customer': 'customers', reports: 'reports', 'add-customer': 'add-customer', settings: 'settings', integrations: 'customers', users: 'users' };
 
 let _currentView = 'dashboard';
 
@@ -627,6 +711,7 @@ function nav(id) {
   if (id === 'reports') loadReports();
   if (id === 'add-customer') resetAddCustomerForm();
   if (id === 'integrations' && currentCustomerId) loadIntegrationsView(currentCustomerId);
+  if (id === 'users') loadUsers();
 }
 
 function openCustomer(customerId) {
@@ -666,9 +751,38 @@ function errToast(prefix, e) {
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
 
+function dashboardSkeletons() {
+  const isAdmin = !currentUser || currentUser.role === 'admin';
+  const count = isAdmin ? 4 : 1;
+  document.getElementById('dashboard-cards').innerHTML = Array.from({ length: count }, () => `
+    <div class="skel-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div class="skel-box" style="width:10px;height:10px;border-radius:50%;flex-shrink:0"></div>
+        <div class="skel-box" style="width:55%;height:14px"></div>
+        <div class="skel-box" style="width:20%;height:18px;margin-left:auto"></div>
+      </div>
+      <div style="display:flex;gap:5px;margin-bottom:12px">
+        ${Array.from({length:4},()=>`<div class="skel-box" style="flex:1;height:22px"></div>`).join('')}
+      </div>
+      <div class="skel-box" style="width:60%;height:12px;margin-top:6px"></div>
+    </div>`).join('');
+}
+
 async function loadDashboard() {
   const gen = _navGen;
   document.getElementById('dash-updated').textContent = 'Laddar...';
+  // Visa skeleton direkt
+  dashboardSkeletons();
+
+  // Kundanvändare: visa bara sin egen kund direkt i customer-detail istället
+  if (currentUser && currentUser.role === 'customer' && currentUser.customer_id) {
+    currentCustomerId = currentUser.customer_id;
+    // Ladda kunddetaljvy men rendera i dashboard-kortets plats
+    nav('customer-detail');
+    loadCustomerDetail(currentUser.customer_id);
+    return;
+  }
+
   try {
     const customers = await api('/api/customers');
     if (_navGen !== gen) return;
@@ -914,13 +1028,18 @@ async function loadCustomerDetail(customerId) {
       </div>`).join('');
 
     const verifiedKeys = customer.integrations.filter(i => i.verified).map(i => i.key);
+    const isCustomerRole = currentUser && currentUser.role === 'customer';
+    const adminActions = document.getElementById('cd-admin-actions');
+    if (adminActions) adminActions.style.display = isCustomerRole ? 'none' : 'flex';
+    const backBtn = document.getElementById('cd-back-btn');
+    if (backBtn) backBtn.style.display = isCustomerRole ? 'none' : '';
 
     if (!verifiedKeys.length) {
       document.getElementById('cd-no-data').style.display = 'flex';
-      document.getElementById('cd-send-btn').disabled = true;
+      if (!isCustomerRole) document.getElementById('cd-send-btn').disabled = true;
       return;
     }
-    document.getElementById('cd-send-btn').disabled = false;
+    if (!isCustomerRole) document.getElementById('cd-send-btn').disabled = false;
 
     if (verifiedKeys.includes('unifi')) {
       await loadUnifiSection(customerId, gen);
@@ -1257,6 +1376,125 @@ async function runAllReports() {
     t('Rapporter för alla kunder genereras i bakgrunden — se Rapporter om en stund');
   } catch (e) {
     errToast('Kunde inte starta rapportkörning', e);
+  }
+}
+
+// ── Användarhantering ─────────────────────────────────────────────────────
+
+async function loadUsers() {
+  const gen = _navGen;
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Laddar...</td></tr>`;
+  try {
+    const [users, customers] = await Promise.all([api('/api/users'), api('/api/customers')]);
+    if (_navGen !== gen) return;
+    const customerNameById = {};
+    customers.forEach(c => customerNameById[c.id] = c.name);
+    if (!users.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Inga användare</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = users.map(u => {
+      const roleBadge = u.role === 'admin'
+        ? `<span class="b b-info">Admin</span>`
+        : `<span class="b b-muted">Kund</span>`;
+      const customerName = u.customer_id ? (customerNameById[u.customer_id] || u.customer_id) : '—';
+      const statusBadge = u.is_active ? `<span class="b b-ok">Aktiv</span>` : `<span class="b b-err">Inaktiv</span>`;
+      const isSelf = currentUser && currentUser.id === u.id;
+      return `
+        <tr>
+          <td><div class="dn">${escapeHtml(u.full_name || '—')}</div><div class="ds">${escapeHtml(u.email)}</div></td>
+          <td>${roleBadge}</td>
+          <td style="color:var(--sub);font-size:12px">${escapeHtml(customerName)}</td>
+          <td>${statusBadge}</td>
+          <td style="text-align:right">${isSelf ? '' : `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}','${escapeHtml(u.email)}')"><i class="ti ti-trash"></i> Ta bort</button>`}</td>
+        </tr>`;
+    }).join('');
+  } catch (e) {
+    if (_navGen !== gen) return;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="alert al-e" style="margin:10px"><i class="ti ti-alert-circle"></i><span>${e.message}</span></div></td></tr>`;
+  }
+}
+
+async function openCreateUser() {
+  const panel = document.getElementById('create-user-panel');
+  panel.style.display = 'block';
+  document.getElementById('cu-name').value = '';
+  document.getElementById('cu-email').value = '';
+  document.getElementById('cu-password').value = '';
+  document.getElementById('cu-role').value = 'customer';
+  document.getElementById('cu-error').style.display = 'none';
+  toggleCuCustomer();
+  // Fyll kundlistan
+  const sel = document.getElementById('cu-customer-id');
+  sel.innerHTML = '<option value="">Välj kund...</option>';
+  try {
+    const customers = await api('/api/customers');
+    customers.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+  } catch (e) { /* kunder laddades inte */ }
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeCreateUser() {
+  document.getElementById('create-user-panel').style.display = 'none';
+}
+
+function toggleCuCustomer() {
+  const role = document.getElementById('cu-role').value;
+  document.getElementById('cu-customer-row').style.display = role === 'customer' ? '' : 'none';
+}
+
+async function submitCreateUser() {
+  const full_name = document.getElementById('cu-name').value.trim();
+  const email = document.getElementById('cu-email').value.trim();
+  const password = document.getElementById('cu-password').value;
+  const role = document.getElementById('cu-role').value;
+  const customer_id = document.getElementById('cu-customer-id').value || null;
+  const errEl = document.getElementById('cu-error');
+  const errMsg = document.getElementById('cu-error-msg');
+  errEl.style.display = 'none';
+
+  if (!email || !password) {
+    errMsg.textContent = 'E-post och lösenord krävs.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (role === 'customer' && !customer_id) {
+    errMsg.textContent = 'Välj en kund för kundanvändaren.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('cu-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Skapar...';
+  try {
+    await api('/api/users', { method: 'POST', body: JSON.stringify({ email, password, full_name, role, customer_id }) });
+    t(`Användare ${email} skapad`);
+    closeCreateUser();
+    loadUsers();
+  } catch (e) {
+    errMsg.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-check"></i> Skapa användare';
+  }
+}
+
+async function deleteUser(userId, email) {
+  if (!confirm(`Ta bort användaren ${email}? Detta kan inte ångras.`)) return;
+  try {
+    await api(`/api/users/${userId}`, { method: 'DELETE' });
+    t(`${email} borttagen`);
+    loadUsers();
+  } catch (e) {
+    errToast('Kunde inte ta bort användare', e);
   }
 }
 

@@ -18,6 +18,8 @@ async def seed_first_admin() -> None:
         admin = User(
             email=settings.FIRST_ADMIN_EMAIL,
             hashed_password=hash_password(settings.FIRST_ADMIN_PASSWORD),
+            role="admin",
+            full_name="Admin",
         )
         db.add(admin)
         await db.commit()

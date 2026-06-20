@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.database import init_db
 from app.db.seed import seed_first_admin
-from app.api import auth, customers, reports, integrations, scheduler as scheduler_router
+from app.api import auth, customers, reports, integrations, scheduler as scheduler_router, users
 from app.core.scheduler import start_scheduler
 
 
@@ -44,6 +44,7 @@ app.include_router(customers.router,    prefix="/api/customers",    tags=["Custo
 app.include_router(reports.router,      prefix="/api/reports",      tags=["Reports"])
 app.include_router(integrations.router, prefix="/api/integrations", tags=["Integrations"])
 app.include_router(scheduler_router.router, prefix="/api/scheduler", tags=["Scheduler"])
+app.include_router(users.router,            prefix="/api/users",     tags=["Users"])
 
 
 @app.get("/api/health")

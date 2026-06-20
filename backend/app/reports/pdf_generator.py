@@ -286,11 +286,11 @@ UNIFI_SECTION_TEMPLATE = """
   </thead>
   <tbody>
     {% for grp in host.device_groups %}
-    <tr class="grp-row">
+    <tr class="grp-row" style="page-break-after:avoid;break-after:avoid">
       <td colspan="4">{{ grp.label }} &mdash; {{ grp.devices|length }} st</td>
     </tr>
     {% for d in grp.devices %}
-    <tr>
+    <tr style="page-break-inside:avoid;break-inside:avoid">
       <td><span class="dev-name">{{ d.name }}</span></td>
       <td style="color:#5C616B">{{ d.model or '&mdash;' }}</td>
       <td>
@@ -351,7 +351,7 @@ ACRONIS_SECTION_TEMPLATE = """
   </thead>
   <tbody>
     {% for job in jobs %}
-    <tr>
+    <tr style="page-break-inside:avoid;break-inside:avoid">
       <td><span class="dev-name">{{ job.device_name }}</span></td>
       <td style="color:#5C616B">{{ job.last_run or '&mdash;' }}</td>
       <td>
@@ -379,7 +379,7 @@ CLOUDFACTORY_SECTION_TEMPLATE = """
   </thead>
   <tbody>
     {% for lic in licenses %}
-    <tr>
+    <tr style="page-break-inside:avoid;break-inside:avoid">
       <td><span class="dev-name">{{ lic.product_name }}</span></td>
       <td>{{ lic.quantity }}</td>
       <td>{{ lic.active }}</td>
