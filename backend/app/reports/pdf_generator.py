@@ -221,17 +221,6 @@ tr { page-break-inside: avoid; break-inside: avoid }
   display: inline-block;
 }
 
-/* ── Footer ── */
-.footer {
-  margin-top: 30px;
-  padding: 14px 48px;
-  background: #1A1C1F;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.footer-l { font-size: 9.5px; color: rgba(255,255,255,0.45); line-height: 1.7 }
-.footer-r { font-size: 9.5px; color: rgba(255,255,255,0.3); text-align: right; line-height: 1.7 }
 """
 
 UNIFI_SECTION_TEMPLATE = """
@@ -424,16 +413,6 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
     {{ rendered_sections | safe }}
   </div>
 
-  <div class="footer">
-    <div class="footer-l">
-      Insight &mdash; Managed Network Portal<br>
-      support@terafalk.com
-    </div>
-    <div class="footer-r">
-      {{ sender }}<br>
-      {{ generated_date }}
-    </div>
-  </div>
 
 </body>
 </html>"""
