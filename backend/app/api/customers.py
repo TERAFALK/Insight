@@ -73,6 +73,15 @@ async def create_customer(
     return {"id": customer.id, "name": customer.name}
 
 
+@router.get("/integrations/available")
+async def list_available_integrations(_: User = Depends(current_user)):
+    """Vilka integrationstyper som finns i systemet, oavsett kund."""
+    return [
+        {"key": k, "display_name": m.display_name, "icon": m.icon, "description": m.description}
+        for k, m in INTEGRATIONS.items()
+    ]
+
+
 @router.get("/{customer_id}")
 async def get_customer(
     customer_id: str,
@@ -128,15 +137,6 @@ async def delete_customer(
 
 
 # ── Generiska integrations-endpoints (funkar för unifi/microsoft/acronis/cloudfactory) ──
-
-@router.get("/integrations/available")
-async def list_available_integrations(_: User = Depends(current_user)):
-    """Vilka integrationstyper som finns i systemet, oavsett kund."""
-    return [
-        {"key": k, "display_name": m.display_name, "icon": m.icon, "description": m.description}
-        for k, m in INTEGRATIONS.items()
-    ]
-
 
 @router.put("/{customer_id}/credentials/{integration_type}")
 async def upsert_credential(

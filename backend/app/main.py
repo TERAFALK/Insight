@@ -33,8 +33,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Begränsa till din domän i produktion
-    allow_credentials=True,
+    allow_origins=["*"],  # Begränsa till din domän i produktion, t.ex. ["https://portal.terafalk.com"]
+    allow_credentials=False,  # Vi använder Bearer-token i header, inte cookies — credentials behövs inte
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -27,7 +27,7 @@ docker compose up -d
 - Backend (API) körs på port `8000`
 - Frontend (portalen) körs på port `8080`
 
-Sätt din egen reverse proxy (nginx, Caddy, Traefik) att peka mot serverns IP på dessa portar. En referenskonfiguration för nginx finns i `nginx/nginx.conf` om du vill utgå från den — den startas inte automatiskt av docker-compose.
+Sätt din egen reverse proxy (nginx, Caddy, Traefik) att peka mot serverns IP på dessa portar: `/` mot port `8080` (frontend) och `/api/` mot port `8000` (backend).
 
 Portalen är tillgänglig på `http://din-server-ip:8080` (eller via din egen reverse proxy/domän).
 
@@ -102,14 +102,11 @@ Manuell körning via portalen: **Rapporter → Kör alla nu**, eller per kund vi
 │   │   ├── core/         # Config, säkerhet, scheduler
 │   │   ├── db/           # Modeller och databas
 │   │   ├── graph/        # Microsoft Graph-utskick
-│   │   ├── integrations/ # Microsoft, Acronis, Cloudfactory (stubs)
-│   │   ├── reports/      # PDF-generering och rapport-runner
-│   │   └── unifi/        # UniFi Site Manager API-klient
+│   │   ├── integrations/ # UniFi, Microsoft, Acronis, Cloudfactory (jämbördiga)
+│   │   └── reports/      # PDF-generering och rapport-runner
 │   └── requirements.txt
 ├── frontend/
 │   └── index.html        # Single-page portal
-├── nginx/
-│   └── nginx.conf
 ├── docker-compose.yml
 └── .env.example
 ```

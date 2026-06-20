@@ -72,7 +72,7 @@ class IntegrationCredential(Base):
       tenant_id     — Microsoft 365 Tenant ID
       client_id     — Microsoft app client ID
       client_secret — Microsoft app client secret
-      extra         — JSON-sträng för framtida fält utan schemaändring
+      extra_data    — JSON-sträng för framtida fält utan schemaändring
     """
 
     __tablename__ = "integration_credentials"
@@ -88,7 +88,7 @@ class IntegrationCredential(Base):
     tenant_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     client_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     client_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
-    extra: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
+    extra_data: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
 
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     last_verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

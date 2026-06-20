@@ -1,6 +1,14 @@
 """
 UniFi-adapter — kopplar UnifiClient till det gemensamma integrationsgränssnittet.
+
+UnifiClient använder httpx.Client (synkront) internt, inte AsyncClient.
+fetch_report_data körs därför via asyncio.to_thread så det blockerande
+nätverksanropet inte fryser event-loopen för andra samtidiga requests
+mot backend — annars skulle EN kunds UniFi-anrop blockera ALLA andra
+användare av API:t under tiden det pågår.
 """
+
+import asyncio
 
 import httpx
 
@@ -28,15 +36,14 @@ class UnifiIntegration:
             return False, str(e)
 
     async def fetch_report_data(self, credential: IntegrationCredential) -> dict:
-        """
-        Hämtar UniFi-data redo för rapporten.
-        Körs synkront internt (UnifiClient är sync/httpx), vilket är fine
-        eftersom det körs i en bakgrundsuppgift, inte i request-cykeln.
-        """
+        """Hämtar UniFi-data redo för rapporten (körs i en bakgrundstråd)."""
         if not credential.api_key:
             raise ValueError("Ingen UniFi API-nyckel konfigurerad")
-
         api_key = decrypt(credential.api_key)
+        return await asyncio.to_thread(self._fetch_sync, api_key)
+
+    @staticmethod
+    def _fetch_sync(api_key: str) -> dict:
         with UnifiClient(api_key) as client:
             sites = client.list_sites()
             devices = client.list_devices()
