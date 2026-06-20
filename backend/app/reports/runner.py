@@ -133,14 +133,15 @@ def _email_body(customer_name: str, month: str, year: str, included_integrations
     return f"""
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#141414">
       <div style="background:#fff;padding:24px 28px;border:1px solid #e0e9f5;border-radius:8px 8px 0 0">
-        <span style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;color:#0047A3;letter-spacing:-0.02em">Insight</span>
+        <span style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:#141414;letter-spacing:-0.02em">TERAFALK</span>
+        <span style="font-family:Arial,sans-serif;font-size:11px;font-weight:600;color:#9499A2;letter-spacing:0.06em;text-transform:uppercase;margin-left:10px">Insight</span>
       </div>
       <div style="background:#fff;padding:28px;border:1px solid #e0e9f5;border-top:none;border-radius:0 0 8px 8px">
         <p style="margin:0 0 16px">Hej {customer_name},</p>
-        <p style="margin:0 0 16px">Bifogat finns er rapport för <strong>{month} {year}</strong> från Insight.</p>
+        <p style="margin:0 0 16px">Bifogat finns er rapport för <strong>{month} {year}</strong> från TERAFALK.</p>
         <p style="margin:0 0 16px">Rapporten omfattar: <strong>{included_integrations}</strong></p>
-        <p style="margin:0 0 24px">Har ni frågor är ni välkomna att kontakta oss.</p>
-        <p style="margin:0;font-size:12px;color:#666">Insight · Managed Network Portal<br>Detta är ett automatiskt utskick — svara inte på detta e-postmeddelande.</p>
+        <p style="margin:0 0 24px">Har ni frågor är ni välkomna att kontakta oss på support@terafalk.com.</p>
+        <p style="margin:0;font-size:12px;color:#666">TERAFALK AB<br>Detta är ett automatiskt utskick — svara inte på detta e-postmeddelande.</p>
       </div>
     </div>
     """
