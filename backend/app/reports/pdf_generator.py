@@ -18,7 +18,7 @@ BASE_STYLE = """
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap');
 @page { size: A4; margin: 0 }
 * { box-sizing: border-box; margin: 0; padding: 0 }
-html, body { width: 100%; height: 100% }
+html, body { width: 100% }
 body {
   font-family: 'Exo 2', Arial, sans-serif;
   color: #1A1C1F;
@@ -29,14 +29,9 @@ body {
   print-color-adjust: exact;
 }
 
-/* ── Sidlayout: flex-kolumn med min-höjd = A4, footer trycks till botten ── */
-.page {
-  width: 100%;
-  min-height: 297mm;
-  display: flex;
-  flex-direction: column;
-}
-.content { flex: 1; padding: 28px 44px 20px }
+/* ── Sidlayout ── */
+.page { width: 100% }
+.content { padding: 28px 44px 20px }
 
 /* ── Header ── */
 .header {
@@ -326,7 +321,7 @@ tr { page-break-inside: avoid; break-inside: avoid }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: auto;
+  margin-top: 20px;
 }
 .footer-left { font-size: 9.5px; color: rgba(255,255,255,0.5); line-height: 1.6 }
 .footer-right { font-size: 9.5px; color: rgba(255,255,255,0.3); text-align: right; line-height: 1.6 }
