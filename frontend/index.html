@@ -408,19 +408,6 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <span id="cd-error-msg"></span>
       </div>
 
-      <div id="cd-reports-card" class="card" style="display:none;margin-top:14px">
-        <div class="ch">
-          <i class="ti ti-file-description" style="color:var(--blue);font-size:16px"></i>
-          <span class="cht" style="margin-left:8px;flex:1">Rapporthistorik</span>
-        </div>
-        <div class="cb0">
-          <table class="tbl">
-            <thead><tr><th>Period</th><th>Status</th><th>Skickad</th><th></th></tr></thead>
-            <tbody id="cd-reports-tbody"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">Inga rapporter</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-
       <div id="cd-users-card" class="card" style="display:none;margin-top:14px">
         <div class="ch">
           <i class="ti ti-users" style="color:var(--blue);font-size:16px"></i>
@@ -1122,9 +1109,6 @@ async function loadCustomerDetail(customerId) {
     if (adminActions) adminActions.style.display = isCustomerRole ? 'none' : 'flex';
     const backBtn = document.getElementById('cd-back-btn');
     if (backBtn) backBtn.style.display = isCustomerRole ? 'none' : '';
-    // Rapporthistorik
-    renderCustomerReports(customer.recent_reports || [], customer.name, isCustomerRole);
-
     // Visa användare kopplade till kunden (admin only)
     const usersCard = document.getElementById('cd-users-card');
     if (usersCard) usersCard.style.display = 'none';
@@ -1695,25 +1679,6 @@ async function submitEditUser() {
   }
 }
 
-function renderCustomerReports(reports, customerName, isCustomerRole) {
-  const card = document.getElementById('cd-reports-card');
-  const tbody = document.getElementById('cd-reports-tbody');
-  if (!card) return;
-  if (!reports.length) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
-  const statusBadge = { sent: '<span class="b b-ok">Levererad</span>', pending: '<span class="b b-muted">Väntar</span>', error: '<span class="b b-err">Fel</span>', bounced: '<span class="b b-err">Bounce</span>' };
-  tbody.innerHTML = reports.map(r => {
-    const badge = statusBadge[r.send_status] || `<span class="b b-muted">${r.send_status}</span>`;
-    const sent = r.sent_at ? new Date(r.sent_at).toLocaleDateString('sv-SE') : '—';
-    const dlBtn = r.has_pdf
-      ? `<button class="btn btn-g btn-ico" title="Ladda ner PDF" onclick="downloadReportPdf('${r.id}','${escapeHtml(customerName)}','${r.period}')"><i class="ti ti-download" style="font-size:13px"></i></button>`
-      : '';
-    const previewBtn = !isCustomerRole
-      ? `<button class="btn btn-g btn-sm" onclick="previewReport('${currentCustomerId}')"><i class="ti ti-eye"></i></button>`
-      : '';
-    return `<tr><td style="font-weight:600">${r.period}</td><td>${badge}</td><td style="color:var(--sub);font-size:12px">${sent}</td><td style="text-align:right;display:flex;gap:6px;justify-content:flex-end">${previewBtn}${dlBtn}</td></tr>`;
-  }).join('');
-}
 
 async function loadCustomerUsers(customerId) {
   const card = document.getElementById('cd-users-card');
