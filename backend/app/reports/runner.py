@@ -10,7 +10,7 @@ får ingen rapport alls (loggas, skickas inte).
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -119,7 +119,7 @@ async def run_report_for_customer(customer_id: str) -> None:
                 pdf_filename=f"terafalk-rapport-{period}-{customer.name.lower().replace(' ', '-')}.pdf",
             )
             report.send_status = "sent"
-            report.sent_at = datetime.now(timezone.utc)
+            report.sent_at = datetime.utcnow()
         except Exception as e:
             logger.error("Graph-utskick misslyckades för %s: %s", customer.name, e)
             report.send_status = "error"

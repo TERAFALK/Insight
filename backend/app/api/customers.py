@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -221,7 +221,7 @@ async def verify_credential(
 
     if ok:
         cred.is_verified = True
-        cred.last_verified_at = datetime.now(timezone.utc)
+        cred.last_verified_at = datetime.utcnow()
         await db.commit()
 
     return {"status": "ok" if ok else "error", "detail": message}
