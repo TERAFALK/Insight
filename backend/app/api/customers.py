@@ -124,8 +124,14 @@ async def get_customer(
         "city": c.city,
         "integrations": integrations_status,
         "recent_reports": [
-            {"id": r.id, "period": r.period, "status": r.send_status, "sent_at": r.sent_at}
-            for r in sorted(c.reports, key=lambda r: r.created_at, reverse=True)[:5]
+            {
+                "id": r.id,
+                "period": r.period,
+                "status": r.send_status,
+                "sent_at": r.sent_at,
+                "has_pdf": bool(r.pdf_path),
+            }
+            for r in sorted(c.reports, key=lambda r: r.created_at, reverse=True)[:12]
         ],
     }
 

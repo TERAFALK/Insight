@@ -47,6 +47,11 @@ async def list_users(
     ]
 
 
+def _validate_password(password: str) -> None:
+    if len(password) < 8:
+        raise HTTPException(400, "Lösenordet måste vara minst 8 tecken")
+
+
 @router.post("", status_code=201)
 async def create_user(
     body: UserCreate,
@@ -57,6 +62,7 @@ async def create_user(
         raise HTTPException(400, "Ogiltig roll — 'admin' eller 'customer'")
     if body.role == "customer" and not body.customer_id:
         raise HTTPException(400, "customer_id krävs för kundanvändare")
+    _validate_password(body.password)
     existing = await db.scalar(select(User).where(User.email == body.email))
     if existing:
         raise HTTPException(400, "E-postadressen används redan")
@@ -85,6 +91,7 @@ async def update_user(
         raise HTTPException(404, "Användare hittades inte")
     for field, value in body.model_dump(exclude_none=True).items():
         if field == "password":
+            _validate_password(value)
             user.hashed_password = hash_password(value)
         else:
             setattr(user, field, value)

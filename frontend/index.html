@@ -408,7 +408,20 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <span id="cd-error-msg"></span>
       </div>
 
-      <div id="cd-users-card" class="card" style="display:none;margin-top:4px">
+      <div id="cd-reports-card" class="card" style="display:none;margin-top:14px">
+        <div class="ch">
+          <i class="ti ti-file-description" style="color:var(--blue);font-size:16px"></i>
+          <span class="cht" style="margin-left:8px;flex:1">Rapporthistorik</span>
+        </div>
+        <div class="cb0">
+          <table class="tbl">
+            <thead><tr><th>Period</th><th>Status</th><th>Skickad</th><th></th></tr></thead>
+            <tbody id="cd-reports-tbody"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">Inga rapporter</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="cd-users-card" class="card" style="display:none;margin-top:14px">
         <div class="ch">
           <i class="ti ti-users" style="color:var(--blue);font-size:16px"></i>
           <span class="cht" style="margin-left:8px;flex:1">Användare med tillgång</span>
@@ -575,24 +588,33 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
     <!-- ══ SETTINGS ══ -->
     <div class="view" id="v-settings">
       <div class="ph"><div class="ph-title">Inställningar</div></div>
+      <div id="settings-error" class="alert al-e" style="display:none;max-width:560px;margin-bottom:14px"><i class="ti ti-alert-circle"></i><span id="settings-error-msg"></span></div>
       <div class="fw" style="max-width:560px">
-        <div class="fsec">Microsoft Graph</div>
-        <div class="fr"><label class="fl">Avsändaradress</label><input class="fi" value="noreply@terafalk.com" readonly></div>
-        <div class="f2">
-          <div class="fr" style="margin:0"><label class="fl">Tenant ID</label><input class="fi" type="password" placeholder="Azure Entra ID Tenant ID"></div>
-          <div class="fr" style="margin:0"><label class="fl">Client ID</label><input class="fi" type="password" placeholder="App Registration Client ID"></div>
-        </div>
-        <div class="fr"><label class="fl">Client Secret</label><input class="fi" type="password" placeholder="Certificates & secrets"><div class="fh">Azure Entra ID → App registrations → din app → Certificates &amp; secrets</div></div>
+        <div class="fsec">Microsoft Graph — E-postutskick</div>
+        <div class="fr"><label class="fl">Avsändaradress</label><input class="fi" id="s-sender" readonly></div>
+        <div class="fh" style="margin-bottom:16px">Graph-credentials (Tenant ID, Client ID, Secret) konfigureras via miljövariabler i <code>.env</code>.</div>
         <hr class="fdiv">
         <div class="fsec">Rapportschema</div>
+        <div class="alert al-info" style="margin-bottom:16px"><i class="ti ti-info-circle"></i><span id="s-next-run">Laddar nästa körning...</span></div>
         <div class="f2">
-          <div class="fr" style="margin:0"><label class="fl">Skicktillfälle</label><select class="fi"><option>1:a varje månad, 08:00</option><option>Sista dagen i månaden</option><option>Manuellt</option></select></div>
-          <div class="fr" style="margin:0"><label class="fl">Tidszon</label><select class="fi"><option>Europe/Stockholm</option><option>UTC</option></select></div>
+          <div class="fr" style="margin:0">
+            <label class="fl">Dag i månaden <span style="font-weight:400;color:var(--muted)">(1–28)</span></label>
+            <input class="fi" id="s-day" type="number" min="1" max="28" value="1">
+          </div>
+          <div class="fr" style="margin:0">
+            <label class="fl">Klockslag</label>
+            <div style="display:flex;gap:8px">
+              <input class="fi" id="s-hour" type="number" min="0" max="23" value="8" style="width:80px" placeholder="Timme">
+              <input class="fi" id="s-minute" type="number" min="0" max="59" value="0" style="width:80px" placeholder="Minut">
+            </div>
+          </div>
         </div>
+        <div class="fh">Tidszon: Europe/Stockholm. Ändringar gäller direkt utan omstart.</div>
         <hr class="fdiv">
         <div class="fsec">Säkerhet</div>
-        <div class="fr"><label class="fl">Krypteringsnyckel</label><input class="fi" type="password" placeholder="Sätts via ENCRYPTION_KEY i .env"><div class="fh">Ändra aldrig efter att kunder lagts in — befintliga nycklar kan inte dekrypteras.</div></div>
-        <button class="btn btn-p" onclick="saveSettings()"><i class="ti ti-check"></i> Spara</button>
+        <div class="fr"><label class="fl">Krypteringsnyckel</label><input class="fi" type="password" value="••••••••••••••••••••••••••••••••" readonly><div class="fh">Sätts via <code>ENCRYPTION_KEY</code> i .env — ändra aldrig efter att kunder lagts in.</div></div>
+        <div class="fr"><label class="fl">JWT-tokens giltighetstid</label><input class="fi" type="text" id="s-token-expire" readonly><div class="fh">Sätts via <code>ACCESS_TOKEN_EXPIRE_MINUTES</code> i .env.</div></div>
+        <button class="btn btn-p" id="s-save-btn" onclick="saveSchedule()"><i class="ti ti-check"></i> Spara schema</button>
       </div>
     </div>
 
@@ -755,6 +777,7 @@ function nav(id) {
   if (id === 'add-customer') resetAddCustomerForm();
   if (id === 'integrations' && currentCustomerId) loadIntegrationsView(currentCustomerId);
   if (id === 'users') loadUsers();
+  if (id === 'settings') loadSettings();
 }
 
 function openCustomer(customerId) {
@@ -1099,6 +1122,9 @@ async function loadCustomerDetail(customerId) {
     if (adminActions) adminActions.style.display = isCustomerRole ? 'none' : 'flex';
     const backBtn = document.getElementById('cd-back-btn');
     if (backBtn) backBtn.style.display = isCustomerRole ? 'none' : '';
+    // Rapporthistorik
+    renderCustomerReports(customer.recent_reports || [], customer.name, isCustomerRole);
+
     // Visa användare kopplade till kunden (admin only)
     const usersCard = document.getElementById('cd-users-card');
     if (usersCard) usersCard.style.display = 'none';
@@ -1336,6 +1362,15 @@ async function removeIntegration(customerId, key) {
 
 // ── Rapporter ─────────────────────────────────────────────────────────────
 
+let _reportsRefreshTimer = null;
+
+function _scheduleReportsRefresh(hasPending) {
+  clearTimeout(_reportsRefreshTimer);
+  if (hasPending && _currentView === 'reports') {
+    _reportsRefreshTimer = setTimeout(() => { if (_currentView === 'reports') loadReports(); }, 8000);
+  }
+}
+
 async function loadReports() {
   const gen = _navGen;
   const el = document.getElementById('reports-list');
@@ -1375,6 +1410,9 @@ async function loadReports() {
     }
     const customerNameById = {};
     customersCache.forEach(c => customerNameById[c.id] = c.name);
+
+    const hasPending = reports.some(r => r.send_status === 'pending');
+    _scheduleReportsRefresh(hasPending);
 
     el.innerHTML = reports.map(r => {
       const name = customerNameById[r.customer_id] || '';
@@ -1548,6 +1586,11 @@ async function submitCreateUser() {
     errEl.style.display = 'block';
     return;
   }
+  if (password.length < 8) {
+    errMsg.textContent = 'Lösenordet måste vara minst 8 tecken.';
+    errEl.style.display = 'block';
+    return;
+  }
   if (role === 'customer' && !customer_id) {
     errMsg.textContent = 'Välj en kund för kundanvändaren.';
     errEl.style.display = 'block';
@@ -1629,6 +1672,7 @@ async function submitEditUser() {
   errEl.style.display = 'none';
 
   if (!email) { errMsg.textContent = 'E-postadress krävs.'; errEl.style.display = 'block'; return; }
+  if (password && password.length < 8) { errMsg.textContent = 'Lösenordet måste vara minst 8 tecken.'; errEl.style.display = 'block'; return; }
   if (role === 'customer' && !customer_id) { errMsg.textContent = 'Välj en kund för kundanvändaren.'; errEl.style.display = 'block'; return; }
 
   const body = { full_name, email, role, customer_id };
@@ -1649,6 +1693,26 @@ async function submitEditUser() {
     btn.disabled = false;
     btn.innerHTML = '<i class="ti ti-check"></i> Spara ändringar';
   }
+}
+
+function renderCustomerReports(reports, customerName, isCustomerRole) {
+  const card = document.getElementById('cd-reports-card');
+  const tbody = document.getElementById('cd-reports-tbody');
+  if (!card) return;
+  if (!reports.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const statusBadge = { sent: '<span class="b b-ok">Levererad</span>', pending: '<span class="b b-muted">Väntar</span>', error: '<span class="b b-err">Fel</span>', bounced: '<span class="b b-err">Bounce</span>' };
+  tbody.innerHTML = reports.map(r => {
+    const badge = statusBadge[r.send_status] || `<span class="b b-muted">${r.send_status}</span>`;
+    const sent = r.sent_at ? new Date(r.sent_at).toLocaleDateString('sv-SE') : '—';
+    const dlBtn = r.has_pdf
+      ? `<button class="btn btn-g btn-ico" title="Ladda ner PDF" onclick="downloadReportPdf('${r.id}','${escapeHtml(customerName)}','${r.period}')"><i class="ti ti-download" style="font-size:13px"></i></button>`
+      : '';
+    const previewBtn = !isCustomerRole
+      ? `<button class="btn btn-g btn-sm" onclick="previewReport('${currentCustomerId}')"><i class="ti ti-eye"></i></button>`
+      : '';
+    return `<tr><td style="font-weight:600">${r.period}</td><td>${badge}</td><td style="color:var(--sub);font-size:12px">${sent}</td><td style="text-align:right;display:flex;gap:6px;justify-content:flex-end">${previewBtn}${dlBtn}</td></tr>`;
+  }).join('');
 }
 
 async function loadCustomerUsers(customerId) {
@@ -1686,8 +1750,56 @@ async function deleteUser(userId, email) {
 
 // ── Inställningar ─────────────────────────────────────────────────────────
 
-function saveSettings() {
-  t('Inställningar sparas via .env på servern — kontakta admin för ändringar av Graph-credentials');
+async function loadSettings() {
+  try {
+    const s = await api('/api/scheduler/status');
+    const dayEl = document.getElementById('s-day');
+    const hourEl = document.getElementById('s-hour');
+    const minEl = document.getElementById('s-minute');
+    const senderEl = document.getElementById('s-sender');
+    const tokenEl = document.getElementById('s-token-expire');
+    if (dayEl) dayEl.value = s.day ?? 1;
+    if (hourEl) hourEl.value = s.hour ?? 8;
+    if (minEl) minEl.value = s.minute ?? 0;
+    if (senderEl) senderEl.value = s.sender || '';
+    if (tokenEl) tokenEl.value = '8 timmar (480 minuter)';
+    const nextEl = document.getElementById('s-next-run');
+    if (nextEl && s.next_run) {
+      nextEl.textContent = 'Nästa körning: ' + new Date(s.next_run).toLocaleString('sv-SE', { dateStyle: 'long', timeStyle: 'short' });
+    } else if (nextEl) {
+      nextEl.textContent = `Schema: dag ${s.day} varje månad kl ${String(s.hour).padStart(2,'0')}:${String(s.minute).padStart(2,'0')}`;
+    }
+  } catch (e) {
+    errToast('Kunde inte ladda inställningar', e);
+  }
+}
+
+async function saveSchedule() {
+  const day = parseInt(document.getElementById('s-day').value);
+  const hour = parseInt(document.getElementById('s-hour').value);
+  const minute = parseInt(document.getElementById('s-minute').value);
+  const errEl = document.getElementById('settings-error');
+  const errMsg = document.getElementById('settings-error-msg');
+  errEl.style.display = 'none';
+
+  if (!day || day < 1 || day > 28) { errMsg.textContent = 'Dag måste vara 1–28.'; errEl.style.display = 'flex'; return; }
+  if (isNaN(hour) || hour < 0 || hour > 23) { errMsg.textContent = 'Timme måste vara 0–23.'; errEl.style.display = 'flex'; return; }
+  if (isNaN(minute) || minute < 0 || minute > 59) { errMsg.textContent = 'Minut måste vara 0–59.'; errEl.style.display = 'flex'; return; }
+
+  const btn = document.getElementById('s-save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar...';
+  try {
+    await api('/api/scheduler/schedule', { method: 'PUT', body: JSON.stringify({ day, hour, minute }) });
+    t(`Schema uppdaterat — dag ${day} varje månad kl ${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`);
+    loadSettings();
+  } catch (e) {
+    errMsg.textContent = e.message;
+    errEl.style.display = 'flex';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-check"></i> Spara schema';
+  }
 }
 
 // ── Hjälpfunktioner ───────────────────────────────────────────────────────

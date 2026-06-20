@@ -8,9 +8,12 @@ med bara Acronis får en ren backup-rapport. En kund med UniFi + Microsoft
 får ingen rapport alls (loggas, skickas inte).
 """
 
+import asyncio
 import json
 import logging
 from datetime import datetime
+
+_report_semaphore = asyncio.Semaphore(3)  # max 3 rapporter parallellt
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -42,6 +45,11 @@ async def run_all_reports() -> None:
 
 
 async def run_report_for_customer(customer_id: str) -> None:
+    async with _report_semaphore:
+        await _generate_report(customer_id)
+
+
+async def _generate_report(customer_id: str) -> None:
     async with AsyncSessionLocal() as db:
         customer = await db.scalar(
             select(Customer)
