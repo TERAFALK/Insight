@@ -222,6 +222,8 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 .toast{position:fixed;bottom:20px;right:20px;background:var(--dark);color:#fff;padding:10px 16px;border-radius:var(--rl);font-size:13px;font-weight:500;z-index:9999;display:flex;align-items:center;gap:8px;transform:translateY(60px);opacity:0;transition:all 0.25s ease;pointer-events:none;max-width:380px}
 .toast.show{transform:translateY(0);opacity:1}
 .toast i{color:var(--blue-l);font-size:15px;flex-shrink:0}
+.toast.err{background:#7f1d1d}
+.toast.err i{color:#FCA5A5}
 
 .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
 .tag-b{background:var(--tint2);color:var(--blue)}
@@ -323,7 +325,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
     <!-- ══ CUSTOMERS ══ -->
     <div class="view" id="v-customers">
-      <div class="ph"><div><div class="ph-title">Kunder</div><div class="ph-sub">8 aktiva avtal</div></div><button class="btn btn-p btn-sm" onclick="nav('add-customer')"><i class="ti ti-plus"></i> Ny kund</button></div>
+      <div class="ph"><div><div class="ph-title">Kunder</div><div class="ph-sub" id="customers-sub">Laddar...</div></div><button class="btn btn-p btn-sm" onclick="nav('add-customer')"><i class="ti ti-plus"></i> Ny kund</button></div>
       <div class="card">
         <table class="tbl hov">
           <thead><tr><th>Kund</th><th>Ort</th><th>E-post</th><th>Integrationer</th><th>Status</th><th></th></tr></thead>
@@ -426,7 +428,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         </div>
         <hr class="fdiv">
         <div class="fr"><label class="fl">E-postadress (rapportmottagare)</label><input class="fi" id="ac-email" type="email" placeholder="kontakt@foretaget.se"></div>
-        <div class="fr"><label class="fl">UniFi API-nyckel (valfritt — kan läggas till senare under Integrationer)</label><input class="fi" id="ac-unifi-key" type="password" placeholder="Från kundens Fabric → Settings → API Keys"><div class="fh">Lagras krypterat med AES-256. Övriga integrationer (Microsoft 365, Acronis, Cloudfactory) läggs till efter att kunden skapats.</div></div>
+        <div class="fh" style="margin-bottom:14px">Integrationer (UniFi, Microsoft 365, Acronis, Cloudfactory) läggs till efter att kunden skapats under <strong>Integrationer</strong>.</div>
         <div style="display:flex;gap:9px;margin-top:14px">
           <button class="btn btn-p" id="ac-submit-btn" onclick="submitNewCustomer()"><i class="ti ti-check"></i> Spara</button>
           <button class="btn btn-g" onclick="nav('customers')">Avbryt</button>
@@ -461,6 +463,8 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
   </div>
 </div>
 </div>
+<div id="toast" class="toast"><i class="ti ti-info-circle" id="toast-icon"></i><span id="tmsg"></span></div>
+
 <script>
 const API = '';
 let authToken = localStorage.getItem('tf_token');
@@ -573,16 +577,24 @@ function openIntegrations(customerId) {
 // ── Toast ─────────────────────────────────────────────────────────────────
 
 let _tt;
-function t(msg) {
+function t(msg, type) {
   const el = document.getElementById('toast');
+  const icon = document.getElementById('toast-icon');
   document.getElementById('tmsg').textContent = msg;
+  el.classList.remove('err');
+  if (type === 'err') {
+    el.classList.add('err');
+    icon.className = 'ti ti-alert-circle';
+  } else {
+    icon.className = 'ti ti-check';
+  }
   el.classList.add('show');
   clearTimeout(_tt);
-  _tt = setTimeout(() => el.classList.remove('show'), 3800);
+  _tt = setTimeout(() => el.classList.remove('show'), 4000);
 }
 
 function errToast(prefix, e) {
-  t(prefix + ': ' + e.message);
+  t(prefix + ': ' + e.message, 'err');
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
@@ -662,6 +674,9 @@ async function loadCustomersList() {
   try {
     const customers = await api('/api/customers');
     customersCache = customers;
+    document.getElementById('customers-sub').textContent = customers.length
+      ? `${customers.length} kund${customers.length !== 1 ? 'er' : ''}`
+      : 'Inga kunder';
     if (!customers.length) {
       tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Inga kunder än — klicka "Ny kund" för att lägga till en.</td></tr>`;
       return;
@@ -693,7 +708,7 @@ async function loadCustomersList() {
 // ── Ny kund ───────────────────────────────────────────────────────────────
 
 function resetAddCustomerForm() {
-  ['ac-name', 'ac-contact', 'ac-city', 'ac-email', 'ac-unifi-key'].forEach(id => {
+  ['ac-name', 'ac-contact', 'ac-city', 'ac-email'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -705,7 +720,6 @@ async function submitNewCustomer() {
   const contact_name = document.getElementById('ac-contact').value.trim();
   const city = document.getElementById('ac-city').value.trim();
   const contact_email = document.getElementById('ac-email').value.trim();
-  const unifiKey = document.getElementById('ac-unifi-key').value.trim();
   const errEl = document.getElementById('ac-error');
   const errMsg = document.getElementById('ac-error-msg');
   errEl.style.display = 'none';
@@ -725,27 +739,9 @@ async function submitNewCustomer() {
       method: 'POST',
       body: JSON.stringify({ name, contact_name, city, contact_email })
     });
-
-    if (unifiKey) {
-      try {
-        await api(`/api/customers/${created.id}/credentials/unifi`, {
-          method: 'PUT',
-          body: JSON.stringify({ api_key: unifiKey })
-        });
-        const verifyResult = await api(`/api/customers/${created.id}/credentials/unifi/verify`, { method: 'POST' });
-        if (verifyResult.status === 'ok') {
-          t(`${name} skapad och UniFi-nyckeln verifierad ✓`);
-        } else {
-          t(`${name} skapad, men UniFi-nyckeln kunde inte verifieras: ${verifyResult.detail}`);
-        }
-      } catch (e) {
-        t(`${name} skapad, men UniFi-koppling misslyckades: ${e.message}`);
-      }
-    } else {
-      t(`${name} skapad. Lägg till integrationer från kundens sida.`);
-    }
-
-    nav('customers');
+    t(`${name} skapad — lägg till integrationer under kundens sida`);
+    currentCustomerId = created.id;
+    nav('integrations');
   } catch (e) {
     errMsg.textContent = e.message;
     errEl.style.display = 'block';
