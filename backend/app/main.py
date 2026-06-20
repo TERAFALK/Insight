@@ -1,6 +1,6 @@
 """
-TERAFALK Managed Network Portal — Backend
-==========================================
+Insight — Backend
+=================
 FastAPI-applikation. Strukturerad för att enkelt lägga till
 Microsoft 365-, Acronis- och Cloudfactory-integrationer senare.
 """
@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="TERAFALK Managed Network Portal",
+    title="Insight",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -48,4 +48,4 @@ app.include_router(scheduler_router.router, prefix="/api/scheduler", tags=["Sche
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "terafalk-portal"}
+    return {"status": "ok", "service": "insight"}

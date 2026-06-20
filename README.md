@@ -1,142 +1,138 @@
-# TERAFALK Customer Portal
+# Insight
 
-Managed Network-portal för TERAFALK AB. Hanterar kunder, UniFi-nät, automatiska månadsrapporter och kommande integrationer mot Microsoft 365, Acronis och Cloudfactory.
+**Managed Network Portal** — ett internt verktyg för att hantera kunder, övervaka nätverksintegrationer och automatiskt generera och skicka månadsrapporter.
 
-## Snabbstart
+---
+
+## Funktioner
+
+- **Kundhantering** — Lägg till, redigera och ta bort kunder med kontaktuppgifter
+- **Integrationer** — Koppla och verifiera UniFi, Microsoft 365, Acronis och Cloudfactory per kund
+- **Live-data** — Realtidsöverblick av WAN-status, ISP-mått och enheter per kund
+- **Rapporter** — Automatiska PDF-månadsrapporter via Microsoft Graph, manuell generering per kund
+- **Schemaläggning** — Konfigurerbar cron-trigger (standard: 1:a varje månad, 08:00)
+
+---
+
+## Stack
+
+| Lager | Teknik |
+|---|---|
+| Frontend | Vanilla JS · Nginx Alpine |
+| Backend | Python 3.12 · FastAPI · SQLAlchemy 2 (async) |
+| Databas | PostgreSQL 16 |
+| PDF | WeasyPrint · Jinja2 |
+| E-post | Microsoft Graph API (OAuth2) |
+| Auth | JWT (Bearer token) · bcrypt |
+| Kryptering | Fernet AES-256 (API-nycklar i vila) |
+| Deploy | Docker Compose |
+
+---
+
+## Kom igång
 
 ### 1. Klona och konfigurera
+
 ```bash
-git clone https://github.com/TERAFALK/Customer-Portal.git
-cd Customer-Portal
+git clone https://github.com/terafalk/insight.git
+cd insight
 cp .env.example .env
 ```
 
-Öppna `.env` och fyll i:
-- `POSTGRES_PASSWORD` — välj ett starkt lösenord
-- `SECRET_KEY` — generera med `python3 -c "import secrets; print(secrets.token_hex(32))"`
-- `ENCRYPTION_KEY` — generera på samma sätt (annan nyckel!)
-- `FIRST_ADMIN_PASSWORD` — ditt första inloggningslösenord
+Fyll i `.env`:
 
-Graph-fälten (`GRAPH_TENANT_ID` etc.) kan lämnas tomma till att börja med — rapporter genereras men skickas inte.
+```env
+POSTGRES_PASSWORD=välj-ett-starkt-lösenord
+SECRET_KEY=slumpmässig-jwt-nyckel-minst-32-tecken
+ENCRYPTION_KEY=fernet-nyckel-genereras-med-python-nedan
+
+# Microsoft Graph (krävs för e-postutskick)
+GRAPH_TENANT_ID=...
+GRAPH_CLIENT_ID=...
+GRAPH_CLIENT_SECRET=...
+GRAPH_SENDER=noreply@ditt-domain.se
+
+# Första admin-användaren
+FIRST_ADMIN_EMAIL=admin@ditt-domain.se
+FIRST_ADMIN_PASSWORD=byt-detta
+```
+
+Generera en Fernet-nyckel:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
 
 ### 2. Starta
+
 ```bash
 docker compose up -d
 ```
 
-- Backend (API) körs på port `8000`
-- Frontend (portalen) körs på port `8080`
-
-Sätt din egen reverse proxy (nginx, Caddy, Traefik) att peka mot serverns IP på dessa portar: `/` mot port `8080` (frontend) och `/api/` mot port `8000` (backend).
-
-Portalen är tillgänglig på `http://din-server-ip:8080` (eller via din egen reverse proxy/domän).
+Appen är sedan tillgänglig på `http://localhost:8080`.
 
 ### 3. Logga in
-- E-post: värdet du satte i `FIRST_ADMIN_EMAIL` (standard: `admin@terafalk.com`)
-- Lösenord: värdet du satte i `FIRST_ADMIN_PASSWORD`
 
-**Byt lösenord direkt efter första inloggning.**
+Använd de uppgifter du satte i `FIRST_ADMIN_EMAIL` och `FIRST_ADMIN_PASSWORD`.
 
 ---
 
-## Microsoft Graph — e-postutskick
+## Konfiguration av rapportschema
 
-För att aktivera automatiska rapportutskick via `noreply@terafalk.com`:
+Schemaläggningen styrs via miljövariabler i `.env`:
 
-1. Gå till [portal.azure.com](https://portal.azure.com) → **Entra ID → App registrations → New registration**
-2. Namn: `TERAFALK Portal`, Account type: *Single tenant*
-3. **API permissions → Add → Microsoft Graph → Application permissions → Mail.Send → Grant admin consent**
-4. **Certificates & secrets → New client secret** → kopiera värdet
-5. **Overview** → kopiera *Application (client) ID* och *Directory (tenant) ID*
-6. Lägg in värdena i `.env` och kör `docker compose restart backend`
+```env
+REPORT_SCHEDULE_DAY=1        # Dag i månaden (1 = första)
+REPORT_SCHEDULE_HOUR=8       # Timme (24h, Europe/Stockholm)
+REPORT_SCHEDULE_MINUTE=0     # Minut
+```
 
----
-
-## Lägga till en kund
-
-1. Logga in i portalen
-2. **Lägg till kund** i sidomenyn
-3. Fyll i namn, e-post och ort
-4. Gå till kundens Fabric på [unifi.ui.com](https://unifi.ui.com) → Settings → API Keys → skapa en nyckel
-5. Klistra in nyckeln i formuläret → spara
-
-Nyckeln krypteras med AES-256 innan den lagras i databasen.
+Rapporter kan också genereras manuellt per kund via **Kunder → välj kund → Generera rapport**.
 
 ---
 
 ## Integrationer
 
-Alla integrationer — inklusive UniFi — är jämbördiga och valfria per kund. En kund kan ha vilken kombination som helst (bara UniFi, bara Acronis, alla fyra, eller inga alls). Rapporten byggs dynamiskt utifrån vilka integrationer som är **konfigurerade och verifierade** för just den kunden — en integration som inte är verifierad visas aldrig med platshållardata i rapporten.
-
-| Integration | Status | Vad det ger rapporten |
+| Integration | Status | Krävs |
 |---|---|---|
-| UniFi | ✅ Aktivt | Enheter, firmware, WAN-uptime, ISP-mått, IPS |
-| Microsoft 365 | 🔜 Snart | Licensöversikt, säkerhetspoäng, MFA-status |
-| Acronis | 🔜 Snart | Säkerhetskopiestatus per enhet |
-| Cloudfactory | 🔜 Snart | Licensdata och tjänststatus |
+| UniFi (Fabric) | ✅ Implementerad | API-nyckel från kundens Fabric |
+| Microsoft 365 | 🔜 Planerad | Tenant ID, Client ID, Client Secret |
+| Acronis Backup | 🔜 Planerad | API-nyckel |
+| Cloudfactory | 🔜 Planerad | API-nyckel |
 
-Lägg till eller ta bort en integration för en kund under **Kund → Integrationer**. Samma flöde (API-nyckel/credentials → Spara & verifiera) gäller oavsett integrationstyp.
+Alla API-nycklar krypteras med AES-256 (Fernet) i databasen och dekrypteras enbart i minnet vid anrop.
 
 ---
 
-## Rapportschema
+## Microsoft Graph — förutsättningar
 
-Rapporter skickas automatiskt den 1:a varje månad kl 08:00 (Europe/Stockholm). Ändras i `.env`:
+För att e-postutskick ska fungera krävs en App Registration i Azure Entra ID med:
 
-```env
-REPORT_SCHEDULE_DAY=1
-REPORT_SCHEDULE_HOUR=8
-REPORT_SCHEDULE_MINUTE=0
-```
-
-Manuell körning via portalen: **Rapporter → Kör alla nu**, eller per kund via kundvyn.
+- Permission: `Mail.Send` (Application)
+- Godkänd av en Global Admin (admin consent)
 
 ---
 
 ## Projektstruktur
 
 ```
+insight/
 ├── backend/
-│   ├── app/
-│   │   ├── api/          # FastAPI-endpoints
-│   │   ├── core/         # Config, säkerhet, scheduler
-│   │   ├── db/           # Modeller och databas
-│   │   ├── graph/        # Microsoft Graph-utskick
-│   │   ├── integrations/ # UniFi, Microsoft, Acronis, Cloudfactory (jämbördiga)
-│   │   └── reports/      # PDF-generering och rapport-runner
-│   └── requirements.txt
+│   └── app/
+│       ├── api/           # REST-endpoints
+│       ├── core/          # Config, säkerhet, scheduler
+│       ├── db/            # SQLAlchemy-modeller, migrering, seed
+│       ├── integrations/  # Adaptrar per tjänst
+│       ├── reports/       # PDF-generering och rapport-runner
+│       └── graph/         # Microsoft Graph e-post
 ├── frontend/
-│   └── index.html        # Single-page portal
-├── docker-compose.yml
-└── .env.example
+│   ├── index.html         # Single-page app (Vanilla JS)
+│   └── nginx.conf
+└── docker-compose.yml
 ```
 
 ---
 
-## Säkerhet
+## Licens
 
-- Alla API-nycklar krypteras med AES-256 (Fernet) i databasen
-- JWT-tokens med 8h utgångstid
-- Lösenord hashas med bcrypt (automatiskt trunkerade vid >72 bytes — bcrypts hårda gräns)
-- `.env` och certifikat är i `.gitignore` — hamnar aldrig i Git
-
----
-
-## Felsökning
-
-**`exec: "uvicorn": executable file not found in $PATH`**
-Imagen byggdes med en gammal `requirements.txt` innan uvicorn lades till, eller bygg-cachen är stale. Kör:
-```bash
-docker compose build --no-cache backend
-docker compose up -d
-```
-
-**`(trapped) error reading bcrypt version` / `bcrypt has no attribute '__about__'`**
-`passlib==1.7.4` försöker läsa ett internt bcrypt-attribut som togs bort i bcrypt 4.1+. Redan löst i `requirements.txt` genom att låsa `bcrypt==4.0.1`. Om felet ändå dyker upp, bygg om utan cache enligt ovan.
-
-**`ValueError: password cannot be longer than 72 bytes`**
-bcrypt har en hård gräns på 72 bytes per lösenord. Koden trunkerar nu automatiskt (`app/core/security.py`), så detta ska inte längre kunna inträffa — men håll ändå `FIRST_ADMIN_PASSWORD` under ca 50 tecken för enkelhetens skull.
-
-**Kund går inte att skapa / knappar gör inget**
-Tidigare versioner av frontend var en ren visuell demo utan koppling till backend. Från och med denna version är alla vyer databundna mot `/api/...`. Om ett anrop misslyckas visas felmeddelandet i en toast eller som en röd ruta i vyn — öppna webbläsarens devtools-konsol (F12) för fullständig felinformation om något fortfarande inte fungerar.
-
+Intern mjukvara — © TERAFALK AB. Ej för distribution.

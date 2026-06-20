@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # Databas
-    DATABASE_URL: str = "postgresql+asyncpg://terafalk:terafalk@db:5432/terafalk"
+    DATABASE_URL: str = "postgresql+asyncpg://insight:insight@db:5432/insight"
 
     # App-säkerhet
     SECRET_KEY: str = "dev-secret-byt-i-produktion"

@@ -5,13 +5,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-terafalk}
-      POSTGRES_USER: ${POSTGRES_USER:-terafalk}
+      POSTGRES_DB: ${POSTGRES_DB:-insight}
+      POSTGRES_USER: ${POSTGRES_USER:-insight}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-terafalk}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-insight}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,7 +23,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-terafalk}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-terafalk}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-insight}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-insight}
       SECRET_KEY: ${SECRET_KEY}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       GRAPH_TENANT_ID: ${GRAPH_TENANT_ID:-}

@@ -24,6 +24,13 @@ class CustomerCreate(BaseModel):
     city: str = ""
 
 
+class CustomerUpdate(BaseModel):
+    name: str | None = None
+    contact_name: str | None = None
+    contact_email: str | None = None
+    city: str | None = None
+
+
 class CredentialUpsert(BaseModel):
     api_key: str | None = None
     tenant_id: str | None = None
@@ -121,6 +128,23 @@ async def get_customer(
             for r in sorted(c.reports, key=lambda r: r.created_at, reverse=True)[:5]
         ],
     }
+
+
+@router.put("/{customer_id}")
+async def update_customer(
+    customer_id: str,
+    body: CustomerUpdate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(current_user),
+):
+    c = await db.get(Customer, customer_id)
+    if not c:
+        raise HTTPException(404, "Kund hittades inte")
+    for field, value in body.model_dump(exclude_none=True).items():
+        setattr(c, field, value)
+    await db.commit()
+    await db.refresh(c)
+    return {"id": c.id, "name": c.name}
 
 
 @router.delete("/{customer_id}", status_code=204)

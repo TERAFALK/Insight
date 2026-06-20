@@ -116,7 +116,7 @@ async def run_report_for_customer(customer_id: str) -> None:
                 subject=f"Nätverksrapport {month_sv} {year} — {customer.name}",
                 body_html=_email_body(customer.name, month_sv, year, included),
                 pdf_path=pdf_path,
-                pdf_filename=f"terafalk-rapport-{period}-{customer.name.lower().replace(' ', '-')}.pdf",
+                pdf_filename=f"insight-rapport-{period}-{customer.name.lower().replace(' ', '-')}.pdf",
             )
             report.send_status = "sent"
             report.sent_at = datetime.utcnow()
@@ -133,23 +133,14 @@ def _email_body(customer_name: str, month: str, year: str, included_integrations
     return f"""
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#141414">
       <div style="background:#fff;padding:24px 28px;border:1px solid #e0e9f5;border-radius:8px 8px 0 0">
-        <svg viewBox="0 0 695.39 84.24" width="160" height="19" xmlns="http://www.w3.org/2000/svg">
-          <path fill="#141414" d="M236.18,455.57v15H201.74v69h-15v-69H152.3v-15Z" transform="translate(-152.3 -455.45)"/>
-          <path fill="#141414" d="M263.3,478.13v7.8h54v15h-54v15.84a7.74,7.74,0,0,0,7.68,7.68H332.3v15H271a22.63,22.63,0,0,1-22.56-22.67V478.13A22.64,22.64,0,0,1,271,455.45H332.3v15H271A7.73,7.73,0,0,0,263.3,478.13Z" transform="translate(-152.3 -455.45)"/>
-          <path fill="#141414" d="M412.1,524.69l7.68,15H403l-7.68-15-8-15.72-.36-.72a14.87,14.87,0,0,0-12.72-7.2h-15v38.63h-15v-84h53a22.53,22.53,0,0,1,22.56,22.56,22.75,22.75,0,0,1-13.2,20.64,20,20,0,0,1-6.48,1.8Zm-14.88-38.64a7,7,0,0,0,3.12-.72,7.62,7.62,0,0,0,4.56-7,7.92,7.92,0,0,0-2.28-5.52,7.56,7.56,0,0,0-5.4-2.16h-38v15.48Z" transform="translate(-152.3 -455.45)"/>
-          <path fill="#141414" d="M512.78,539.44H496l-7.68-15-18.36-36-18.36,36-7.68,15H427.1l7.68-15,35.16-69,35.16,69Z" transform="translate(-152.3 -455.45)"/>
-          <path fill="#141414" d="M604.1,455.45v15H542.78a7.73,7.73,0,0,0-7.68,7.68v7.8h54v15H535v38.51H520.1V478.13a22.64,22.64,0,0,1,22.56-22.68Z" transform="translate(-152.3 -455.45)"/>
-          <path fill="#141414" d="M678.38,539.44h-16.8l-7.68-15-18.36-36-18.36,36-7.68,15H592.7l7.68-15,35.16-69,35.16,69Z" transform="translate(-152.3 -455.45)"/>
-          <path fill="#141414" d="M751.7,524.57v15H709.1a26.09,26.09,0,0,1-11.76-2.76,26.59,26.59,0,0,1-12.12-12.23,26.12,26.12,0,0,1-2.76-11.76V455.57h15v58.68a12,12,0,0,0,10.2,10.2Z" transform="translate(-152.3 -455.45)"/>
-          <path fill="#141414" d="M811,489.17l36.35,50.27H828.85l-29-40.07-21.24,19.32v20.75h-15v-84h15v43l12.36-11.28,11.16-10.2,23.39-21.48h22.2Z" transform="translate(-152.3 -455.45)"/>
-        </svg>
+        <span style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;color:#0047A3;letter-spacing:-0.02em">Insight</span>
       </div>
       <div style="background:#fff;padding:28px;border:1px solid #e0e9f5;border-top:none;border-radius:0 0 8px 8px">
         <p style="margin:0 0 16px">Hej {customer_name},</p>
-        <p style="margin:0 0 16px">Bifogat finns er rapport för <strong>{month} {year}</strong> från TERAFALK.</p>
+        <p style="margin:0 0 16px">Bifogat finns er rapport för <strong>{month} {year}</strong> från Insight.</p>
         <p style="margin:0 0 16px">Rapporten omfattar: <strong>{included_integrations}</strong></p>
         <p style="margin:0 0 24px">Har ni frågor är ni välkomna att kontakta oss.</p>
-        <p style="margin:0;font-size:12px;color:#666">TERAFALK AB · admin@terafalk.com<br>Detta är ett automatiskt utskick — svara inte på detta e-postmeddelande.</p>
+        <p style="margin:0;font-size:12px;color:#666">Insight · Managed Network Portal<br>Detta är ett automatiskt utskick — svara inte på detta e-postmeddelande.</p>
       </div>
     </div>
     """

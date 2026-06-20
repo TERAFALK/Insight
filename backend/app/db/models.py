@@ -1,5 +1,5 @@
 """
-Databasmodeller för TERAFALK-portalen.
+Databasmodeller för Insight.
 
 Designade brett för att stödja kommande integrationer:
 - Microsoft 365 (tenant-koppling per kund)
