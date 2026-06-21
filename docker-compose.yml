@@ -10,6 +10,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pg_data:/var/lib/postgresql/data
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-insight}"]
       interval: 10s
@@ -34,16 +36,28 @@ services:
       FIRST_ADMIN_PASSWORD: ${FIRST_ADMIN_PASSWORD:-changeme}
     volumes:
       - report_output:/app/reports_output
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
+    networks:
+      - internal
+      - npm_proxy
 
   frontend:
     build: ./frontend
     restart: unless-stopped
     depends_on:
       - backend
-    ports:
-      - "8080:80"
+    expose:
+      - "80"
+    networks:
+      - internal
+      - npm_proxy
+
+networks:
+  internal:
+    driver: bridge
+  npm_proxy:
+    external: true
 
 volumes:
   pg_data:
