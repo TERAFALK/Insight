@@ -1590,7 +1590,7 @@ function renderMicrosoftData(data) {
         return `<tr>
           <td data-label="Namn" style="font-weight:500">${escapeHtml(u.name)}</td>
           <td data-label="E-post" style="color:var(--sub);font-size:13px">${escapeHtml(u.email)}</td>
-          <td data-label="Licenser" style="font-size:12px;max-width:220px">${lics || '<span style="color:var(--muted)">—</span>'}</td>
+          <td data-label="Licenser" style="font-size:12px"><div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px">${lics || '<span style="color:var(--muted)">—</span>'}</div></td>
           <td data-label="Status" style="text-align:center"><span class="b ${u.enabled ? 'b-ok' : 'b-muted'}">${u.enabled ? 'Aktiv' : 'Inaktiv'}</span></td>
           <td data-label="MFA" style="text-align:center">${mfaBadge}</td>
         </tr>`;
