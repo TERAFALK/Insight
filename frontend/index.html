@@ -373,20 +373,14 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
   #cd-ms-users .mv { font-size:17px }
   #cd-ms-users .ml { font-size:10px }
 
-  /* Licenser i licenskortet → stapla namn + bar vertikalt */
-  .ms-lic-row { flex-direction:column;align-items:flex-start;gap:6px;padding:12px 0 }
-  .ms-lic-row > div:last-child { width:100%;min-width:unset!important }
+  /* Licenser i licenskortet → behåll rad-layout, ta bort min-width på baren */
+  .ms-lic-row > div[style*="min-width"] { min-width:100px!important }
 
-  /* Licenschips i användarraden → eget block under etiketten */
+  /* Licenschips i användarraden → wrap till höger, konsekvent med övriga värden */
   #cd-ms-users-tbody td[data-label="Licenser"],
   #cd-ms-inactive-tbody td[data-label="Licenser"] {
-    flex-direction:column;
-    align-items:flex-start;
-    gap:4px;
-  }
-  #cd-ms-users-tbody td[data-label="Licenser"]:before,
-  #cd-ms-inactive-tbody td[data-label="Licenser"]:before {
-    margin-bottom:2px;
+    flex-wrap:wrap;
+    row-gap:4px;
   }
 
   /* Stats */
