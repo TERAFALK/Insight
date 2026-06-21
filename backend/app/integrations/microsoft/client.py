@@ -158,7 +158,7 @@ class GraphClient:
         except Exception:
             pass
 
-        # Försök 2: beta-API (kräver Reports.Read.All — lägre behörighetskrav)
+        # Försök 2: beta-API (kräver Reports.Read.All)
         try:
             token = await self._get_token(client)
             r = await client.get(
@@ -169,18 +169,18 @@ class GraphClient:
             r.raise_for_status()
             data = r.json()
             logger.info("MFA (beta) svarade med %d poster", len(data.get("value") or []))
-            # beta-fälten skiljer sig något — normalisera
-            normalized = []
-            for u in (data.get("value") or []):
-                normalized.append({
+            normalized = [
+                {
                     "userPrincipalName": u.get("userPrincipalName", ""),
                     "isMfaRegistered": u.get("isMfaRegistered", False),
                     "isMfaCapable": u.get("isMfaRegistered", False),
-                })
+                }
+                for u in (data.get("value") or [])
+            ]
             return {"value": normalized}
         except Exception as e:
             logger.warning("MFA-data ej tillgänglig (prövade v1.0 + beta): %s", e)
-            return {"value": []}
+            return {"value": [], "_error": str(e)}
 
     async def _fetch_secure_score(self, client):
         try:

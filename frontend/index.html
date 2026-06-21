@@ -1209,7 +1209,7 @@ async function showMsDebug() {
     </tr>`).join('');
     const mfaHtml = d.mfa.status === 'ok'
       ? `<span style="color:var(--ok)">✓ Fungerar — ${d.mfa.count} poster hämtade</span>${d.mfa.sample ? '<pre style="font-size:11px;margin-top:8px;overflow:auto;max-height:150px;background:var(--tint);padding:8px;border-radius:6px">' + JSON.stringify(d.mfa.sample, null, 2) + '</pre>' : ''}`
-      : `<span style="color:var(--err)">✗ Fel: ${d.mfa.error}</span>`;
+      : `<span style="color:var(--err)">✗ Fel: ${d.mfa.error}</span>${d.mfa.graph_error ? '<pre style="font-size:11px;margin-top:8px;background:var(--tint);padding:8px;border-radius:6px;overflow:auto">' + JSON.stringify(d.mfa.graph_error, null, 2) + '</pre>' : ''}`;
     document.getElementById('ms-debug-content').innerHTML = `
       <div style="margin-bottom:16px"><strong>Tenant:</strong> <code style="font-size:12px">${d.tenant_id}</code></div>
       <div style="margin-bottom:8px;font-weight:600">SKU-koder från Microsoft</div>

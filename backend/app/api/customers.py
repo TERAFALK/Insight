@@ -318,6 +318,10 @@ async def microsoft_debug_skus(
         except Exception as e:
             mfa_result["status"] = "error"
             mfa_result["error"] = str(e)
+            try:
+                mfa_result["graph_error"] = mfa_r.json()
+            except Exception:
+                pass
 
     return {"tenant_id": tenant_id, "skus": raw_skus, "mfa": mfa_result}
 
