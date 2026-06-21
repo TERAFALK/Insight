@@ -370,29 +370,6 @@ ACRONIS_SECTION_TEMPLATE = """
 </table>
 """
 
-CLOUDFACTORY_SECTION_TEMPLATE = """
-<div class="section-title">Cloudfactory</div>
-<table>
-  <thead>
-    <tr>
-      <th>Produkt</th>
-      <th>Antal</th>
-      <th>Aktiva</th>
-      <th style="text-align:right">Förnyas</th>
-    </tr>
-  </thead>
-  {% for lic in licenses %}
-  <tbody style="page-break-inside:avoid;break-inside:avoid">
-    <tr>
-      <td><span class="dev-name">{{ lic.product_name }}</span></td>
-      <td>{{ lic.quantity }}</td>
-      <td>{{ lic.active }}</td>
-      <td style="text-align:right;color:#5C616B">{{ lic.expires_at or '&mdash;' }}</td>
-    </tr>
-  </tbody>
-  {% endfor %}
-</table>
-"""
 
 PAGE_TEMPLATE = """<!DOCTYPE html>
 <html lang="sv">
@@ -488,27 +465,28 @@ def _render_unifi(data: dict, env: Environment) -> str:
 
 
 def _render_microsoft(data: dict, env: Environment) -> str:
-    return env.from_string(MICROSOFT_SECTION_TEMPLATE).render(**data)
+    return env.from_string(MICROSOFT_SECTION_TEMPLATE).render(
+        total_licenses=len(data.get("licenses") or []),
+        active_users=data.get("enabled_users") or data.get("total_users") or 0,
+        mfa_enabled_count=data.get("mfa_registered") or 0,
+        secure_score=data.get("secure_score"),
+        secure_score_max=data.get("secure_score_max"),
+    )
 
 
 def _render_acronis(data: dict, env: Environment) -> str:
     return env.from_string(ACRONIS_SECTION_TEMPLATE).render(**data)
 
 
-def _render_cloudfactory(data: dict, env: Environment) -> str:
-    return env.from_string(CLOUDFACTORY_SECTION_TEMPLATE).render(**data)
-
-
 _RENDERERS = {
     "unifi": _render_unifi,
     "microsoft": _render_microsoft,
     "acronis": _render_acronis,
-    "cloudfactory": _render_cloudfactory,
 }
 
 
 def _render_all(sections: dict, env: Environment) -> str:
-    order = ["unifi", "microsoft", "acronis", "cloudfactory"]
+    order = ["unifi", "microsoft", "acronis"]
     keys = [k for k in order if k in sections] + [k for k in sections if k not in order]
     parts = []
     for key in keys:

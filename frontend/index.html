@@ -223,6 +223,19 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 .int-pn{font-size:13px;font-weight:700;color:var(--text)}
 .int-ps{font-size:11px;color:var(--muted);margin-top:1px}
 .int-p.on .int-ps{color:var(--ok)}
+.int-p{cursor:pointer}
+.int-p.active{border-color:var(--blue);background:var(--tint2);box-shadow:0 0 0 3px rgba(0,71,163,0.08)}
+.int-p.active i{color:var(--blue)}
+.int-p.active .int-pn{color:var(--blue)}
+/* Microsoft-sektion */
+.ms-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+.ms-lic-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.ms-lic-row:last-child{border-bottom:none}
+.ms-lic-name{font-weight:500;color:var(--text)}
+.ms-lic-count{font-size:12px;color:var(--muted)}
+.ms-score-ring{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.ms-score-val{font-size:28px;font-weight:700;color:var(--text)}
+.ms-score-max{font-size:12px;color:var(--muted)}
 
 /* ── Toast ── */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 18px;border-radius:var(--rl);font-size:13px;font-weight:500;z-index:9999;display:flex;align-items:center;gap:9px;transform:translateY(60px);opacity:0;transition:all 0.25s cubic-bezier(.4,0,.2,1);pointer-events:none;max-width:400px;box-shadow:0 8px 28px rgba(16,24,40,0.2)}
@@ -370,6 +383,36 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <!-- fylls av JS: en int-p per integration, "on" om verifierad -->
       </div>
 
+      <div id="cd-microsoft-section" style="display:none">
+        <div class="ms-grid">
+          <div class="card">
+            <div class="ch"><span class="cht">Användare</span></div>
+            <div class="cb">
+              <div class="mx" id="cd-ms-users">
+                <div class="mbox"><div class="mv" id="cd-ms-total-users">—</div><div class="ml">Totalt</div></div>
+                <div class="mbox"><div class="mv" id="cd-ms-enabled-users">—</div><div class="ml">Aktiva</div></div>
+                <div class="mbox"><div class="mv" id="cd-ms-mfa">—</div><div class="ml">MFA aktivt</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><span class="cht">Secure Score</span></div>
+            <div class="cb" style="display:flex;align-items:center;justify-content:center;min-height:80px">
+              <div class="ms-score-ring" id="cd-ms-score">
+                <div class="ms-score-val">—</div>
+                <div class="ms-score-max"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="cht">Licenser</span></div>
+          <div class="cb" id="cd-ms-licenses">
+            <div style="color:var(--muted);font-size:13px">Laddar...</div>
+          </div>
+        </div>
+      </div>
+
       <div id="cd-unifi-section" style="display:none">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">
           <div class="card">
@@ -459,7 +502,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         </div>
         <hr class="fdiv">
         <div class="fr"><label class="fl">E-postadress (rapportmottagare)</label><input class="fi" id="ac-email" type="email" placeholder="kontakt@foretaget.se"></div>
-        <div class="fh" style="margin-bottom:14px">Integrationer (UniFi, Microsoft 365, Acronis, Cloudfactory) läggs till efter att kunden skapats under <strong>Integrationer</strong>.</div>
+        <div class="fh" style="margin-bottom:14px">Integrationer (UniFi, Microsoft 365, Acronis) läggs till efter att kunden skapats under <strong>Integrationer</strong>.</div>
         <div style="display:flex;gap:9px;margin-top:14px">
           <button class="btn btn-p" id="ac-submit-btn" onclick="submitNewCustomer()"><i class="ti ti-check"></i> Spara</button>
           <button class="btn btn-g" onclick="nav('customers')">Avbryt</button>
@@ -594,7 +637,8 @@ let currentUser = null;
 let currentCustomerId = null;
 let customersCache = [];
 let _navGen = 0;
-const _unifiCache = new Map();  // customerId → {data, ts} — cachas 5 min
+const _unifiCache = new Map();       // customerId → {data, ts}
+const _microsoftCache = new Map();   // customerId → {data, ts}
 
 // ── API-hjälpare ──────────────────────────────────────────────────────────
 
@@ -714,6 +758,7 @@ let _currentView = 'dashboard';
 
 function refreshCurrent() {
   _unifiCache.clear();
+  _microsoftCache.clear();
   if (_currentView === 'customer-detail' && currentCustomerId) {
     _navGen++;
     loadCustomerDetail(currentCustomerId);
@@ -861,10 +906,10 @@ function renderDashboardCards(customers) {
   el.innerHTML = customers.map(c => {
     const verified = c.integrations_verified || [];
     const configured = c.integrations_configured || [];
-    const allKnown = ['unifi', 'microsoft', 'acronis', 'cloudfactory'];
+    const allKnown = ['unifi', 'microsoft', 'acronis'];
     const chips = allKnown.map(k => {
-      const icon = { unifi: 'ti-router', microsoft: 'ti-brand-windows', acronis: 'ti-shield', cloudfactory: 'ti-package' }[k];
-      const label = { unifi: 'UniFi', microsoft: 'M365', acronis: 'Acronis', cloudfactory: 'Cloudfactory' }[k];
+      const icon = { unifi: 'ti-router', microsoft: 'ti-brand-windows', acronis: 'ti-shield' }[k];
+      const label = { unifi: 'UniFi', microsoft: 'M365', acronis: 'Acronis' }[k];
       const on = verified.includes(k);
       return `<span class="chip ${on ? 'ch-on' : 'ch-off'}"><i class="ti ${icon}"></i> ${label}</span>`;
     }).join('');
@@ -900,10 +945,10 @@ async function loadCustomersList() {
     }
     tbody.innerHTML = customers.map(c => {
       const verified = c.integrations_verified || [];
-      const allKnown = ['unifi', 'microsoft', 'acronis', 'cloudfactory'];
+      const allKnown = ['unifi', 'microsoft', 'acronis'];
       const chips = allKnown.filter(k => verified.includes(k)).map(k => {
-        const icon = { unifi: 'ti-router', microsoft: 'ti-brand-windows', acronis: 'ti-shield', cloudfactory: 'ti-package' }[k];
-        const label = { unifi: 'UniFi', microsoft: 'M365', acronis: 'Acronis', cloudfactory: 'Cloudfactory' }[k];
+        const icon = { unifi: 'ti-router', microsoft: 'ti-brand-windows', acronis: 'ti-shield' }[k];
+        const label = { unifi: 'UniFi', microsoft: 'M365', acronis: 'Acronis' }[k];
         return `<span class="chip ch-on" style="font-size:10px"><i class="ti ${icon}"></i> ${label}</span>`;
       }).join(' ') || `<span class="b b-muted">Ingen</span>`;
       const statusBadge = verified.length > 0 ? `<span class="b b-ok">Aktiv</span>` : `<span class="b b-warn">Ej kopplad</span>`;
@@ -1047,18 +1092,8 @@ async function loadCustomerDetail(customerId) {
   document.getElementById('cd-int-row').innerHTML = [1,2,3,4].map(() =>
     `<div class="int-p"><div style="display:flex;flex-direction:column;gap:6px"><div class="skel-box" style="width:80px;height:13px"></div><div class="skel-box" style="width:60px;height:11px"></div></div></div>`
   ).join('');
-  document.getElementById('cd-unifi-section').style.display = 'block';
-  const skelRow = '<div class="skel-box" style="height:18px;margin-bottom:10px;border-radius:4px"></div>';
-  document.getElementById('cd-wan-rows').innerHTML = skelRow + skelRow;
-  document.getElementById('cd-wan-status-badge').textContent = '—';
-  document.getElementById('cd-wan-status-badge').className = 'b';
-  document.getElementById('cd-isp-metrics').innerHTML = [1,2,3].map(() =>
-    `<div class="mbox"><div class="skel-box" style="height:28px;margin-bottom:6px"></div><div class="skel-box" style="height:12px;width:70%"></div></div>`
-  ).join('');
-  document.getElementById('cd-devices-tag').textContent = '';
-  document.getElementById('cd-devices-tbody').innerHTML = [1,2,3,4,5].map(() =>
-    `<tr><td colspan="4"><div class="skel-box" style="height:14px;border-radius:4px"></div></td></tr>`
-  ).join('');
+  document.getElementById('cd-unifi-section').style.display = 'none';
+  document.getElementById('cd-microsoft-section').style.display = 'none';
   document.getElementById('cd-no-data').style.display = 'none';
   document.getElementById('cd-error').style.display = 'none';
 
@@ -1069,10 +1104,12 @@ async function loadCustomerDetail(customerId) {
     document.getElementById('cd-eyebrow').textContent = `Kund · ${customer.city || '—'}`;
     document.getElementById('cd-sub').textContent = customer.contact_email + (customer.contact_name ? ' · ' + customer.contact_name : '');
 
-    // Integrationspillar — jämbördiga för alla typer
+    // Integrationspillar — klickbara tabs för verifierade integrationer
+    const verifiedKeys = customer.integrations.filter(i => i.verified).map(i => i.key);
     const intRow = document.getElementById('cd-int-row');
     intRow.innerHTML = customer.integrations.map(i => `
-      <div class="int-p ${i.verified ? 'on' : ''}">
+      <div class="int-p ${i.verified ? 'on' : ''}" id="tab-pill-${i.key}"
+           ${i.verified ? `onclick="switchIntegrationTab('${i.key}')"` : ''}>
         <i class="ti ${i.icon}"></i>
         <div>
           <div class="int-pn">${escapeHtml(i.display_name)}</div>
@@ -1080,13 +1117,11 @@ async function loadCustomerDetail(customerId) {
         </div>
       </div>`).join('');
 
-    const verifiedKeys = customer.integrations.filter(i => i.verified).map(i => i.key);
     const isCustomerRole = currentUser && currentUser.role === 'customer';
     const adminActions = document.getElementById('cd-admin-actions');
     if (adminActions) adminActions.style.display = isCustomerRole ? 'none' : 'flex';
     const backBtn = document.getElementById('cd-back-btn');
     if (backBtn) backBtn.style.display = isCustomerRole ? 'none' : '';
-    // Visa användare kopplade till kunden (admin only)
     const usersCard = document.getElementById('cd-users-card');
     if (usersCard) usersCard.style.display = 'none';
     if (!isCustomerRole) loadCustomerUsers(customerId);
@@ -1098,14 +1133,97 @@ async function loadCustomerDetail(customerId) {
     }
     if (!isCustomerRole) document.getElementById('cd-send-btn').disabled = false;
 
-    if (verifiedKeys.includes('unifi')) {
-      await loadUnifiSection(customerId, gen);
-    }
+    // Öppna första verifierade tab automatiskt
+    await switchIntegrationTab(verifiedKeys[0], customerId, gen);
   } catch (e) {
     if (_navGen !== gen) return;
     document.getElementById('cd-error-msg').textContent = e.message;
     document.getElementById('cd-error').style.display = 'flex';
   }
+}
+
+async function switchIntegrationTab(key, customerId, gen) {
+  customerId = customerId || currentCustomerId;
+  gen = gen !== undefined ? gen : _navGen;
+
+  // Uppdatera active-style på pills
+  document.querySelectorAll('[id^="tab-pill-"]').forEach(el => el.classList.remove('active'));
+  const pill = document.getElementById('tab-pill-' + key);
+  if (pill) pill.classList.add('active');
+
+  // Dölj alla sektioner
+  document.getElementById('cd-unifi-section').style.display = 'none';
+  document.getElementById('cd-microsoft-section').style.display = 'none';
+
+  if (key === 'unifi') {
+    await loadUnifiSection(customerId, gen);
+  } else if (key === 'microsoft') {
+    await loadMicrosoftSection(customerId, gen);
+  }
+}
+
+async function loadMicrosoftSection(customerId, gen) {
+  const CACHE_TTL = 5 * 60 * 1000;
+  const cached = _microsoftCache.get(customerId);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    renderMicrosoftData(cached.data);
+    return;
+  }
+  document.getElementById('cd-microsoft-section').style.display = 'block';
+  document.getElementById('cd-ms-licenses').innerHTML = '<div class="skel" style="padding:20px"><div class="skel-box" style="height:14px;margin-bottom:8px"></div><div class="skel-box" style="height:14px;width:80%;margin-bottom:8px"></div><div class="skel-box" style="height:14px;width:65%"></div></div>';
+  try {
+    const data = await api(`/api/customers/${customerId}/integrations/microsoft/live`);
+    if (_navGen !== gen) return;
+    _microsoftCache.set(customerId, { data, ts: Date.now() });
+    renderMicrosoftData(data);
+  } catch (e) {
+    if (_navGen !== gen) return;
+    document.getElementById('cd-ms-licenses').innerHTML = `<div class="alert al-e"><i class="ti ti-alert-circle"></i><span>Kunde inte hämta Microsoft 365-data: ${e.message}</span></div>`;
+  }
+}
+
+function renderMicrosoftData(data) {
+  document.getElementById('cd-microsoft-section').style.display = 'block';
+
+  document.getElementById('cd-ms-total-users').textContent = data.total_users ?? '—';
+  document.getElementById('cd-ms-enabled-users').textContent = data.enabled_users ?? '—';
+  const mfaPct = data.mfa_total > 0 ? Math.round((data.mfa_registered / data.mfa_total) * 100) : null;
+  document.getElementById('cd-ms-mfa').textContent = mfaPct !== null ? `${mfaPct}%` : '—';
+
+  const scoreEl = document.getElementById('cd-ms-score');
+  if (data.secure_score != null) {
+    scoreEl.innerHTML = `<div class="ms-score-val">${Math.round(data.secure_score)}</div><div class="ms-score-max">av ${Math.round(data.secure_score_max ?? 0)}</div>`;
+  } else {
+    scoreEl.innerHTML = `<div style="color:var(--muted);font-size:13px">Ej tillgänglig</div>`;
+  }
+
+  const licEl = document.getElementById('cd-ms-licenses');
+  const licenses = data.licenses || [];
+  if (!licenses.length) {
+    licEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:4px 0">Inga licenser hittades</div>';
+  } else {
+    licEl.innerHTML = licenses.map(l => `
+      <div class="ms-lic-row">
+        <div>
+          <div class="ms-lic-name">${escapeHtml(l.name)}</div>
+          <div class="ms-lic-count">${l.assigned} av ${l.total} tilldelade</div>
+        </div>
+        <div style="min-width:120px">
+          <div class="prg">
+            <div class="prg-bg"><div class="prg-f" style="width:${l.total > 0 ? Math.round(l.assigned/l.total*100) : 0}%;background:var(--blue)"></div></div>
+            <span style="font-size:12px;font-weight:600;color:var(--sub);min-width:32px;text-align:right">${l.total > 0 ? Math.round(l.assigned/l.total*100) : 0}%</span>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  // Hero-stats för Microsoft
+  document.getElementById('cd-hero-stats').innerHTML = `
+    <div><div class="hs-v">${data.total_users ?? '—'}</div><div class="hs-l">Användare</div></div>
+    ${mfaPct !== null ? `<div><div class="hs-v">${mfaPct}%</div><div class="hs-l">MFA-täckning</div></div>` : ''}
+    ${data.secure_score != null ? `<div><div class="hs-v">${Math.round(data.secure_score)}/${Math.round(data.secure_score_max ?? 0)}</div><div class="hs-l">Secure Score</div></div>` : ''}
+    <div><div class="hs-v">${(data.licenses || []).length}</div><div class="hs-l">Licenstyper</div></div>
+  `;
 }
 
 async function loadUnifiSection(customerId, gen) {
@@ -1115,6 +1233,15 @@ async function loadUnifiSection(customerId, gen) {
     renderUnifiData(cached.data);
     return;
   }
+  document.getElementById('cd-unifi-section').style.display = 'block';
+  const skelRow = '<div class="skel-box" style="height:18px;margin-bottom:10px;border-radius:4px"></div>';
+  document.getElementById('cd-wan-rows').innerHTML = skelRow + skelRow;
+  document.getElementById('cd-isp-metrics').innerHTML = [1,2,3].map(() =>
+    `<div class="mbox"><div class="skel-box" style="height:28px;margin-bottom:6px"></div><div class="skel-box" style="height:12px;width:70%"></div></div>`
+  ).join('');
+  document.getElementById('cd-devices-tbody').innerHTML = [1,2,3,4,5].map(() =>
+    `<tr><td colspan="4"><div class="skel-box" style="height:14px;border-radius:4px"></div></td></tr>`
+  ).join('');
   try {
     const data = await api(`/api/customers/${customerId}/integrations/unifi/live`);
     if (_navGen !== gen) return;
@@ -1122,7 +1249,6 @@ async function loadUnifiSection(customerId, gen) {
     renderUnifiData(data);
   } catch (e) {
     if (_navGen !== gen) return;
-    document.getElementById('cd-unifi-section').style.display = 'block';
     document.getElementById('cd-unifi-section').innerHTML = `<div class="alert al-e"><i class="ti ti-alert-circle"></i><span>Kunde inte hämta UniFi-data: ${e.message}</span></div>`;
   }
 }
@@ -1243,7 +1369,6 @@ const INTEGRATION_DEFS = [
       { id: 'client_secret', label: 'Client Secret', type: 'password', placeholder: 'Client secret' },
   ]},
   { key: 'acronis', name: 'Acronis Backup', icon: 'ti-shield', fields: [{ id: 'api_key', label: 'API-nyckel', type: 'password', placeholder: 'Acronis API-nyckel' }] },
-  { key: 'cloudfactory', name: 'Cloudfactory', icon: 'ti-package', fields: [{ id: 'api_key', label: 'API-nyckel', type: 'password', placeholder: 'Cloudfactory API-nyckel' }] },
 ];
 
 async function loadIntegrationsView(customerId) {

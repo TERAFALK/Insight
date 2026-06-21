@@ -1,14 +1,4 @@
-"""
-Databasmodeller för Insight.
-
-Designade brett för att stödja kommande integrationer:
-- Microsoft 365 (tenant-koppling per kund)
-- Acronis (backup-status per kund)
-- Cloudfactory (licenser per kund)
-- UniFi (en API-nyckel per kund/fabric)
-
-Varje kund (Customer) kan ha flera integration_credentials, en per typ.
-"""
+"""Databasmodeller för Insight."""
 
 import uuid
 from datetime import datetime
@@ -39,11 +29,7 @@ class User(Base):
 
 
 class Customer(Base):
-    """
-    En kund med Managed Network-avtal.
-    Varje kund har sin egen UniFi Fabric och potentiellt
-    kopplingar till Microsoft 365, Acronis och Cloudfactory.
-    """
+    """En kund med Managed Network-avtal."""
 
     __tablename__ = "customers"
 
@@ -65,18 +51,7 @@ class Customer(Base):
 
 
 class IntegrationCredential(Base):
-    """
-    Krypterade credentials för en integration per kund.
-
-    integration_type: "unifi" | "microsoft" | "acronis" | "cloudfactory"
-
-    Fält:
-      api_key       — UniFi API-nyckel, Acronis API-nyckel, Cloudfactory-nyckel
-      tenant_id     — Microsoft 365 Tenant ID
-      client_id     — Microsoft app client ID
-      client_secret — Microsoft app client secret
-      extra_data    — JSON-sträng för framtida fält utan schemaändring
-    """
+    """Krypterade credentials för en integration per kund."""
 
     __tablename__ = "integration_credentials"
 

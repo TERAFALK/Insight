@@ -169,7 +169,7 @@ async def delete_customer(
     await db.commit()
 
 
-# ── Generiska integrations-endpoints (funkar för unifi/microsoft/acronis/cloudfactory) ──
+# ── Integrations-endpoints ──────────────────────────────────────────────────
 
 @router.put("/{customer_id}/credentials/{integration_type}")
 async def upsert_credential(
