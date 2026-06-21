@@ -440,6 +440,11 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
   #users-tbody td{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border:none;font-size:13px}
   #users-tbody td:before{content:attr(data-label);font-size:11px;font-weight:600;color:var(--muted);flex-shrink:0;margin-right:8px}
   table:has(#users-tbody) thead{display:none}
+
+  /* Dashboard aggregatpaneler → stapla */
+  #dash-agg-panels{grid-template-columns:1fr}
+  #dash-unifi-body,#dash-ms-body{grid-template-columns:repeat(2,1fr)}
+  .cc-metrics{grid-template-columns:repeat(2,1fr)}
 }
 
 /* ── Integration pills ── */
@@ -610,10 +615,10 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       </div>
 
       <!-- Topp-statistik -->
-      <div class="stats" id="dash-stats" style="grid-template-columns:repeat(4,1fr)">
-        <div class="stat accent"><div class="sl">Kunder</div><div class="sv" id="stat-customers"><span class="skel-box" style="display:inline-block;width:32px;height:28px;vertical-align:middle;filter:brightness(1.3)"></span></div><div class="sh">Managed Network</div></div>
-        <div class="stat"><div class="sl">UniFi-enheter</div><div class="sv" id="stat-devices"><span class="skel-box" style="display:inline-block;width:48px;height:28px;vertical-align:middle"></span></div><div class="sh">Totalt över alla kunder</div></div>
-        <div class="stat"><div class="sl">Microsoft-användare</div><div class="sv" id="stat-ms-users"><span class="skel-box" style="display:inline-block;width:48px;height:28px;vertical-align:middle"></span></div><div class="sh">Totalt över alla tenants</div></div>
+      <div class="stats" id="dash-stats">
+        <div class="stat accent"><div class="sl">Kunder</div><div class="sv" id="stat-customers"><span class="skel-box" style="display:inline-block;width:32px;height:28px;vertical-align:middle;filter:brightness(1.3)"></span></div><div class="sh">Aktiva</div></div>
+        <div class="stat"><div class="sl">UniFi-enheter</div><div class="sv" id="stat-devices"><span class="skel-box" style="display:inline-block;width:48px;height:28px;vertical-align:middle"></span></div><div class="sh">Totalt antal enheter</div></div>
+        <div class="stat"><div class="sl">Microsoft-användare</div><div class="sv" id="stat-ms-users"><span class="skel-box" style="display:inline-block;width:48px;height:28px;vertical-align:middle"></span></div><div class="sh">Totalt antal användare</div></div>
         <div class="stat"><div class="sl">Rapporter</div><div class="sv" id="stat-reports"><span class="skel-box" style="display:inline-block;width:32px;height:28px;vertical-align:middle"></span></div><div class="sh">Senaste 30 dagarna</div></div>
       </div>
 
@@ -621,16 +626,22 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div id="dash-agg-panels" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
         <!-- UniFi panel -->
         <div class="card" id="dash-unifi-panel">
-          <div class="ch"><span class="cht"><i class="ti ti-router" style="margin-right:6px;opacity:0.7"></i>UniFi — Nätverkshälsa</span><span id="dash-unifi-badge"></span></div>
+          <div class="ch"><span class="cht"><i class="ti ti-router" style="margin-right:6px;opacity:0.7"></i>UniFi Överblick</span><span id="dash-unifi-badge"></span></div>
           <div class="cb" id="dash-unifi-body" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-            ${['','','',''].map(()=>`<div class="skel-box" style="height:56px;border-radius:8px"></div>`).join('')}
+            <div class="skel-box" style="height:56px;border-radius:8px"></div>
+            <div class="skel-box" style="height:56px;border-radius:8px"></div>
+            <div class="skel-box" style="height:56px;border-radius:8px"></div>
+            <div class="skel-box" style="height:56px;border-radius:8px"></div>
           </div>
         </div>
         <!-- Microsoft panel -->
         <div class="card" id="dash-ms-panel">
-          <div class="ch"><span class="cht"><i class="ti ti-brand-windows" style="margin-right:6px;opacity:0.7"></i>Microsoft 365 — Säkerhet</span><span id="dash-ms-badge"></span></div>
+          <div class="ch"><span class="cht"><i class="ti ti-brand-windows" style="margin-right:6px;opacity:0.7"></i>Microsoft 365 Överblick</span><span id="dash-ms-badge"></span></div>
           <div class="cb" id="dash-ms-body" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-            ${['','','',''].map(()=>`<div class="skel-box" style="height:56px;border-radius:8px"></div>`).join('')}
+            <div class="skel-box" style="height:56px;border-radius:8px"></div>
+            <div class="skel-box" style="height:56px;border-radius:8px"></div>
+            <div class="skel-box" style="height:56px;border-radius:8px"></div>
+            <div class="skel-box" style="height:56px;border-radius:8px"></div>
           </div>
         </div>
       </div>
@@ -1259,7 +1270,7 @@ async function loadDashboard() {
         ? `<span class="b b-ok">Allt online</span>`
         : `<span class="b b-err">${uOffline + uWanDown} problem</span>`;
     document.getElementById('dash-unifi-body').innerHTML = [
-      _aggMetric(u.total_devices ?? '—', 'Totalt enheter', 'ti-router', 'var(--text)'),
+      _aggMetric(u.total_devices ?? '—', 'Totalt antal enheter', 'ti-router', 'var(--text)'),
       _aggMetric(uOffline, 'Offline enheter', 'ti-wifi-off', uOffline > 0 ? 'var(--err)' : 'var(--ok)'),
       _aggMetric(uUpdate, 'Behöver uppdatering', 'ti-refresh-alert', uUpdate > 0 ? 'var(--warn)' : 'var(--ok)'),
       _aggMetric(
@@ -1279,7 +1290,7 @@ async function loadDashboard() {
         ? `<span class="b b-ok">God säkerhet</span>`
         : `<span class="b b-warn">Åtgärder rekommenderas</span>`;
     document.getElementById('dash-ms-body').innerHTML = [
-      _aggMetric(m.total_users ?? '—', 'Totalt användare', 'ti-users', 'var(--text)'),
+      _aggMetric(m.total_users ?? '—', 'Totalt antal användare', 'ti-users', 'var(--text)'),
       _aggMetric(mfaPct !== null ? `${mfaPct}%` : '—', 'MFA-täckning', 'ti-shield-check', mfaPct !== null && mfaPct < 80 ? 'var(--err)' : mfaPct !== null && mfaPct < 95 ? 'var(--warn)' : 'var(--ok)'),
       _aggMetric(inactive, 'Inaktiva licenser', 'ti-user-off', inactive > 0 ? 'var(--warn)' : 'var(--ok)'),
       _aggMetric(m.secure_score_pct !== null && m.secure_score_pct !== undefined ? `${m.secure_score_pct}%` : '—', 'Secure Score', 'ti-lock', m.secure_score_pct !== null && m.secure_score_pct !== undefined ? (m.secure_score_pct < 50 ? 'var(--err)' : m.secure_score_pct < 75 ? 'var(--warn)' : 'var(--ok)') : 'var(--muted)'),
@@ -1308,8 +1319,7 @@ function renderDashboardCards(customers) {
     const ms = c.microsoft;
 
     // Status-dot: rött om problem, grönt om allt ok, gult om ingen integration
-    const hasIssue = (unifi && (unifi.offline_devices > 0 || unifi.wan_down > 0)) ||
-                     (ms && ms.inactive_licensed > 0);
+    const hasIssue = (unifi && (unifi.offline_devices > 0 || unifi.wan_down > 0));
     const statusClass = !verified.length ? 'warn' : hasIssue ? 'err' : 'ok';
 
     // Integration-chips
@@ -1334,11 +1344,6 @@ function renderDashboardCards(customers) {
       if (ms.inactive_licensed > 0) metrics.push(`<div class="cm"><div class="cmv" style="color:var(--warn)">${ms.inactive_licensed}</div><div class="cml">Inaktiva lic.</div></div>`);
     }
 
-    // WAN-punkter
-    const wanDots = unifi && unifi.wan_count > 0
-      ? `<div class="wans">${Array.from({length: unifi.wan_count}, (_,i) => `<div class="wd ${i < (unifi.wan_count - unifi.wan_down) ? 'wd-up' : 'wd-dn'}" title="WAN ${i+1}"></div>`).join('')}</div>`
-      : '';
-
     const statusBadge = !verified.length
       ? `<span class="b b-warn">Ingen integration</span>`
       : hasIssue
@@ -1350,7 +1355,7 @@ function renderDashboardCards(customers) {
         <div class="cc-row"><div><div class="cc-name"><span class="cc-dot ${statusClass}"></span>${escapeHtml(c.name)}</div><div class="cc-meta">${escapeHtml(c.city || '—')}</div></div>${statusBadge}</div>
         <div class="chips" style="margin-bottom:${metrics.length ? '0' : '0'}">${chips}</div>
         ${metrics.length ? `<div class="cc-metrics" style="grid-template-columns:repeat(${Math.min(metrics.length,3)},1fr)">${metrics.join('')}</div>` : ''}
-        <div class="cc-foot">${wanDots}<div class="isp-lbl"><i class="ti ti-mail" style="font-size:13px"></i>${escapeHtml(c.contact_email || '')}</div></div>
+        <div class="cc-foot"><div class="isp-lbl"><i class="ti ti-mail" style="font-size:13px"></i>${escapeHtml(c.contact_email || '')}</div></div>
       </div>`;
   }).join('');
 }
