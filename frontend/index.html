@@ -415,7 +415,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <div class="ch"><span class="cht">Användarlista</span><span class="tag tag-m" id="cd-ms-users-tag"></span></div>
           <div class="cb0">
             <table class="tbl">
-              <thead><tr><th>Namn</th><th>E-post</th><th>Titel</th><th style="text-align:center">Status</th><th style="text-align:center">MFA</th></tr></thead>
+              <thead><tr><th>Namn</th><th>E-post</th><th>Licenser</th><th style="text-align:center">Status</th><th style="text-align:center">MFA</th></tr></thead>
               <tbody id="cd-ms-users-tbody"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:14px">Laddar...</td></tr></tbody>
             </table>
           </div>
@@ -1260,8 +1260,8 @@ function renderMicrosoftData(data) {
       return `
       <div class="ms-lic-row">
         <div style="flex:1">
-          <div class="ms-lic-name">${escapeHtml(l.name)}</div>
-          <div class="ms-lic-count">${countText}</div>
+          <div class="ms-lic-name" title="${escapeHtml(l.sku)}">${escapeHtml(l.name)}</div>
+          <div class="ms-lic-count">${countText} <span style="color:var(--muted);font-size:11px">(${escapeHtml(l.sku)})</span></div>
         </div>
         ${showBar ? `<div style="min-width:140px">
           <div class="prg">
@@ -1285,13 +1285,21 @@ function renderMicrosoftData(data) {
   } else {
     tbody.innerHTML = users
       .sort((a, b) => a.name.localeCompare(b.name, 'sv'))
-      .map(u => `<tr>
-        <td style="font-weight:500">${escapeHtml(u.name)}</td>
-        <td style="color:var(--sub);font-size:13px">${escapeHtml(u.email)}</td>
-        <td style="color:var(--sub);font-size:13px">${escapeHtml(u.title)}</td>
-        <td style="text-align:center"><span class="b ${u.enabled ? 'b-ok' : 'b-muted'}">${u.enabled ? 'Aktiv' : 'Inaktiv'}</span></td>
-        <td style="text-align:center;color:var(--muted);font-size:12px">—</td>
-      </tr>`).join('');
+      .map(u => {
+        const lics = (u.licenses || []).map(l => `<span style="display:inline-block;background:var(--tint2);color:var(--blue);font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin:1px">${escapeHtml(l)}</span>`).join('');
+        const mfaBadge = u.mfa === true
+          ? '<span class="b b-ok" style="font-size:10px"><i class="ti ti-shield-check" style="font-size:11px"></i> Ja</span>'
+          : u.mfa === false
+            ? '<span class="b b-err" style="font-size:10px"><i class="ti ti-shield-x" style="font-size:11px"></i> Nej</span>'
+            : '<span style="color:var(--muted);font-size:12px">—</span>';
+        return `<tr>
+          <td style="font-weight:500">${escapeHtml(u.name)}</td>
+          <td style="color:var(--sub);font-size:13px">${escapeHtml(u.email)}</td>
+          <td style="font-size:12px;max-width:220px">${lics || '<span style="color:var(--muted)">—</span>'}</td>
+          <td style="text-align:center"><span class="b ${u.enabled ? 'b-ok' : 'b-muted'}">${u.enabled ? 'Aktiv' : 'Inaktiv'}</span></td>
+          <td style="text-align:center">${mfaBadge}</td>
+        </tr>`;
+      }).join('');
   }
 
   // Hero-stats

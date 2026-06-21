@@ -53,24 +53,30 @@ class GraphClient:
                 self._fetch_secure_score(client),
             )
 
-        # Licenser
+        # Licenser — bygg skuId→{name,sku} karta för användarmappning
         sku_ignore = {
             "FLOW_FREE", "POWER_BI_STANDARD", "TEAMS_EXPLORATORY",
             "WINDOWS_STORE", "DEVELOPERPACK_E5",
         }
-        licenses = [
-            {
-                "name": _friendly_sku(s.get("skuPartNumber", "")),
-                "sku": s.get("skuPartNumber", ""),
+        sku_id_map: dict[str, str] = {}  # skuId (guid) → friendly name
+        licenses = []
+        for s in (licenses_raw.get("value") or []):
+            part = s.get("skuPartNumber", "")
+            sku_id = s.get("skuId", "")
+            friendly = _friendly_sku(part)
+            if sku_id:
+                sku_id_map[sku_id] = friendly
+            if part in sku_ignore or s.get("capabilityStatus") != "Enabled":
+                continue
+            licenses.append({
+                "name": friendly,
+                "sku": part,
+                "sku_id": sku_id,
                 "total": s.get("prepaidUnits", {}).get("enabled", 0),
                 "assigned": s.get("consumedUnits", 0),
-            }
-            for s in (licenses_raw.get("value") or [])
-            if s.get("skuPartNumber") not in sku_ignore
-            and s.get("capabilityStatus") == "Enabled"
-        ]
+            })
 
-        # Användare
+        # Användare — inkl. tilldelade licenser
         users = users_raw.get("value") or []
         total_users = users_raw.get("@odata.count") or len(users)
         enabled_users = sum(1 for u in users if u.get("accountEnabled"))
@@ -80,14 +86,31 @@ class GraphClient:
                 "email": u.get("mail") or u.get("userPrincipalName", ""),
                 "title": u.get("jobTitle") or "",
                 "enabled": u.get("accountEnabled", False),
+                "licenses": [
+                    sku_id_map.get(lic.get("skuId", ""), lic.get("skuId", ""))
+                    for lic in (u.get("assignedLicenses") or [])
+                    if lic.get("skuId") in sku_id_map
+                ],
             }
             for u in users
         ]
 
-        # MFA
+        # MFA — authenticationMethods kräver UserAuthenticationMethod.Read.All
+        # Alternativ: räkna via strongAuthenticationRequirements i users (äldre API)
         mfa_regs = mfa_raw.get("value") or []
-        mfa_capable = sum(1 for u in mfa_regs if u.get("isMfaCapable") or u.get("isMfaRegistered"))
         mfa_registered = sum(1 for u in mfa_regs if u.get("isMfaRegistered"))
+        mfa_total = len(mfa_regs)
+
+        # Bygg UPN→isMfaRegistered karta för användartabellen
+        mfa_by_upn: dict[str, bool] = {
+            u.get("userPrincipalName", "").lower(): u.get("isMfaRegistered", False)
+            for u in mfa_regs
+        }
+        if mfa_by_upn:
+            for u in user_list:
+                upn = u["email"].lower()
+                if upn in mfa_by_upn:
+                    u["mfa"] = mfa_by_upn[upn]
 
         # Secure Score
         scores = score_raw.get("value") or []
@@ -105,9 +128,9 @@ class GraphClient:
             "enabled_users": enabled_users,
             "users": user_list,
             "licenses": licenses,
-            "mfa_capable": mfa_capable,
             "mfa_registered": mfa_registered,
-            "mfa_total": len(mfa_regs),
+            "mfa_total": mfa_total,
+            "mfa_available": mfa_total > 0,
             "secure_score": secure_score,
             "secure_score_max": secure_score_max,
         }
@@ -118,7 +141,7 @@ class GraphClient:
     async def _fetch_users(self, client):
         return await self._get(client, "/users", params={
             "$count": "true",
-            "$select": "id,displayName,userPrincipalName,mail,jobTitle,accountEnabled,createdDateTime",
+            "$select": "id,displayName,userPrincipalName,mail,jobTitle,accountEnabled,assignedLicenses",
             "$top": "999",
         })
 
