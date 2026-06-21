@@ -5,7 +5,6 @@ via cryptography-biblioteket innan de lagras i databasen.
 """
 
 from datetime import datetime, timedelta, timezone
-
 from cryptography.fernet import Fernet
 from fastapi import HTTPException, status
 from jose import jwt
@@ -20,13 +19,26 @@ _BCRYPT_MAX_BYTES = 72
 
 def _fernet() -> Fernet:
     """
-    Läser ENCRYPTION_KEY rakt av — den måste vara en giltig Fernet-nyckel
-    (base64url, 32 bytes). Generera med:
-      python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    Stöder två nyckelformat:
+    - Ny stil: en giltig Fernet-nyckel (44 tecken URL-safe base64, t.ex. från Fernet.generate_key()).
+      Generera med: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    - Gammal stil (bakåtkompatibilitet): valfri sträng — konverteras till 32-byte nyckel
+      på samma sätt som originalkoden för att befintliga krypterade värden ska kunna läsas.
     """
-    if not settings.ENCRYPTION_KEY:
+    import base64 as _b64
+    key = settings.ENCRYPTION_KEY
+    if not key:
         raise RuntimeError("ENCRYPTION_KEY saknas i miljövariablerna")
-    return Fernet(settings.ENCRYPTION_KEY.encode())
+    key_bytes = key.encode()
+    # Fernet-nycklar är alltid 44 tecken (32 bytes base64url-kodade)
+    if len(key_bytes) == 44:
+        try:
+            return Fernet(key_bytes)
+        except Exception:
+            pass
+    # Bakåtkompatibel härledning för befintliga installationer
+    derived = _b64.urlsafe_b64encode(key_bytes[:32].ljust(32, b"0"))
+    return Fernet(derived)
 
 
 def encrypt(plaintext: str) -> str:
