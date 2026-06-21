@@ -606,13 +606,37 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
     <div class="view active" id="v-dashboard">
       <div class="ph">
         <div><div class="ph-title">Översikt</div><div class="ph-sub" id="dash-updated">Laddar...</div></div>
+        <button class="btn btn-sm" id="dash-refresh-btn" onclick="loadDashboard()" style="display:none"><i class="ti ti-refresh"></i> Uppdatera</button>
       </div>
-      <div class="stats" id="dash-stats">
+
+      <!-- Topp-statistik -->
+      <div class="stats" id="dash-stats" style="grid-template-columns:repeat(4,1fr)">
         <div class="stat accent"><div class="sl">Kunder</div><div class="sv" id="stat-customers"><span class="skel-box" style="display:inline-block;width:32px;height:28px;vertical-align:middle;filter:brightness(1.3)"></span></div><div class="sh">Managed Network</div></div>
-        <div class="stat"><div class="sl">Verifierade integrationer</div><div class="sv" id="stat-integrations"><span class="skel-box" style="display:inline-block;width:32px;height:28px;vertical-align:middle"></span></div><div class="sh">Aktiva kopplingar</div></div>
-        <div class="stat"><div class="sl">UniFi-enheter</div><div class="sv" id="stat-devices"><span class="skel-box" style="display:inline-block;width:48px;height:28px;vertical-align:middle"></span></div><div class="sh">Över alla kunder</div></div>
+        <div class="stat"><div class="sl">UniFi-enheter</div><div class="sv" id="stat-devices"><span class="skel-box" style="display:inline-block;width:48px;height:28px;vertical-align:middle"></span></div><div class="sh">Totalt över alla kunder</div></div>
+        <div class="stat"><div class="sl">Microsoft-användare</div><div class="sv" id="stat-ms-users"><span class="skel-box" style="display:inline-block;width:48px;height:28px;vertical-align:middle"></span></div><div class="sh">Totalt över alla tenants</div></div>
         <div class="stat"><div class="sl">Rapporter</div><div class="sv" id="stat-reports"><span class="skel-box" style="display:inline-block;width:32px;height:28px;vertical-align:middle"></span></div><div class="sh">Senaste 30 dagarna</div></div>
       </div>
+
+      <!-- Tvåkolumns-panel: UniFi + Microsoft aggregat -->
+      <div id="dash-agg-panels" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <!-- UniFi panel -->
+        <div class="card" id="dash-unifi-panel">
+          <div class="ch"><span class="cht"><i class="ti ti-router" style="margin-right:6px;opacity:0.7"></i>UniFi — Nätverkshälsa</span><span id="dash-unifi-badge"></span></div>
+          <div class="cb" id="dash-unifi-body" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            ${['','','',''].map(()=>`<div class="skel-box" style="height:56px;border-radius:8px"></div>`).join('')}
+          </div>
+        </div>
+        <!-- Microsoft panel -->
+        <div class="card" id="dash-ms-panel">
+          <div class="ch"><span class="cht"><i class="ti ti-brand-windows" style="margin-right:6px;opacity:0.7"></i>Microsoft 365 — Säkerhet</span><span id="dash-ms-badge"></span></div>
+          <div class="cb" id="dash-ms-body" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            ${['','','',''].map(()=>`<div class="skel-box" style="height:56px;border-radius:8px"></div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Kundkort -->
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.07em">Kunder</div>
       <div class="cg" id="dashboard-cards"></div>
     </div>
 
@@ -1164,17 +1188,15 @@ function errToast(prefix, e) {
 // ── Dashboard ─────────────────────────────────────────────────────────────
 
 function dashboardSkeletons() {
-  const isAdmin = !currentUser || currentUser.role === 'admin';
-  const count = isAdmin ? 4 : 1;
-  document.getElementById('dashboard-cards').innerHTML = Array.from({ length: count }, () => `
+  document.getElementById('dashboard-cards').innerHTML = Array.from({ length: 4 }, () => `
     <div class="skel-card">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <div class="skel-box" style="width:10px;height:10px;border-radius:50%;flex-shrink:0"></div>
         <div class="skel-box" style="width:55%;height:14px"></div>
         <div class="skel-box" style="width:20%;height:18px;margin-left:auto"></div>
       </div>
-      <div style="display:flex;gap:5px;margin-bottom:12px">
-        ${Array.from({length:4},()=>`<div class="skel-box" style="flex:1;height:22px"></div>`).join('')}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
+        ${Array.from({length:3},()=>`<div class="skel-box" style="height:52px;border-radius:8px"></div>`).join('')}
       </div>
       <div class="skel-box" style="width:60%;height:12px;margin-top:6px"></div>
     </div>`).join('');
@@ -1184,47 +1206,87 @@ function statSkel(id) {
   document.getElementById(id).innerHTML = '<span class="skel-box" style="display:inline-block;width:36px;height:26px;vertical-align:middle"></span>';
 }
 
+function _aggMetric(value, label, icon, colorClass) {
+  return `<div style="background:var(--tint);border-radius:8px;padding:10px 12px">
+    <div style="font-size:10px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:5px"><i class="ti ${icon}" style="font-size:11px"></i>${label}</div>
+    <div style="font-size:20px;font-weight:700;color:${colorClass || 'var(--text)'};letter-spacing:-0.02em">${value}</div>
+  </div>`;
+}
+
 async function loadDashboard() {
   const gen = _navGen;
   document.getElementById('dash-updated').textContent = 'Laddar...';
-  // Visa skeleton omedelbart varje gång dashboard laddas
+  document.getElementById('dash-refresh-btn').style.display = 'none';
   dashboardSkeletons();
-  statSkel('stat-customers'); statSkel('stat-integrations'); statSkel('stat-devices'); statSkel('stat-reports');
+  statSkel('stat-customers'); statSkel('stat-devices'); statSkel('stat-ms-users'); statSkel('stat-reports');
 
-  // Kundanvändare: visa bara sin egen kund direkt i customer-detail istället
+  // Kundanvändare: visa sin egen kund direkt
   if (currentUser && currentUser.role === 'customer' && currentUser.customer_id) {
     currentCustomerId = currentUser.customer_id;
-    // Ladda kunddetaljvy men rendera i dashboard-kortets plats
     nav('customer-detail');
     loadCustomerDetail(currentUser.customer_id);
     return;
   }
 
   try {
-    const customers = await api('/api/customers');
+    // Hämta summary (inkl. integration-data) och rapporter parallellt
+    const [summary, reports] = await Promise.all([
+      api('/api/dashboard/summary'),
+      api('/api/reports').catch(() => []),
+    ]);
     if (_navGen !== gen) return;
-    customersCache = customers;
+
+    const customers = summary.customers || [];
+    customersCache = customers.map(c => ({
+      id: c.id, name: c.name, city: c.city, contact_email: c.contact_email,
+      integrations_verified: c.integrations_verified,
+      integrations_configured: c.integrations_verified,
+    }));
+
+    // Toppsiffror
     document.getElementById('stat-customers').textContent = customers.length;
+    document.getElementById('stat-devices').textContent = summary.unifi?.total_devices ?? '—';
+    document.getElementById('stat-ms-users').textContent = summary.microsoft?.total_users ?? '—';
+    document.getElementById('stat-reports').textContent = reports.length;
 
-    let verifiedCount = 0;
-    let unifiCount = 0;
-    customers.forEach(c => {
-      const v = c.integrations_verified || [];
-      verifiedCount += v.length;
-      if (v.includes('unifi')) unifiCount++;
-    });
+    // UniFi aggregat-panel
+    const u = summary.unifi || {};
+    const uOffline = u.offline_devices || 0;
+    const uUpdate = u.needs_update || 0;
+    const uWanDown = u.wan_down || 0;
+    document.getElementById('dash-unifi-badge').innerHTML =
+      (uOffline + uWanDown) === 0
+        ? `<span class="b b-ok">Allt online</span>`
+        : `<span class="b b-err">${uOffline + uWanDown} problem</span>`;
+    document.getElementById('dash-unifi-body').innerHTML = [
+      _aggMetric(u.total_devices ?? '—', 'Totalt enheter', 'ti-router', 'var(--text)'),
+      _aggMetric(uOffline, 'Offline enheter', 'ti-wifi-off', uOffline > 0 ? 'var(--err)' : 'var(--ok)'),
+      _aggMetric(uUpdate, 'Behöver uppdatering', 'ti-refresh-alert', uUpdate > 0 ? 'var(--warn)' : 'var(--ok)'),
+      _aggMetric(
+        u.wan_total ? `${(u.wan_total - uWanDown)}/${u.wan_total}` : '—',
+        'WAN online',
+        'ti-world',
+        uWanDown > 0 ? 'var(--err)' : 'var(--ok)'
+      ),
+    ].join('');
 
-    document.getElementById('stat-integrations').textContent = verifiedCount;
-    document.getElementById('stat-devices').textContent = unifiCount > 0 ? `${unifiCount} site${unifiCount !== 1 ? 'r' : ''}` : '0';
+    // Microsoft aggregat-panel
+    const m = summary.microsoft || {};
+    const mfaPct = m.mfa_total > 0 ? Math.round(m.mfa_registered / m.mfa_total * 100) : null;
+    const inactive = m.inactive_licensed || 0;
+    document.getElementById('dash-ms-badge').innerHTML =
+      (inactive === 0 && (mfaPct === null || mfaPct >= 95))
+        ? `<span class="b b-ok">God säkerhet</span>`
+        : `<span class="b b-warn">Åtgärder rekommenderas</span>`;
+    document.getElementById('dash-ms-body').innerHTML = [
+      _aggMetric(m.total_users ?? '—', 'Totalt användare', 'ti-users', 'var(--text)'),
+      _aggMetric(mfaPct !== null ? `${mfaPct}%` : '—', 'MFA-täckning', 'ti-shield-check', mfaPct !== null && mfaPct < 80 ? 'var(--err)' : mfaPct !== null && mfaPct < 95 ? 'var(--warn)' : 'var(--ok)'),
+      _aggMetric(inactive, 'Inaktiva licenser', 'ti-user-off', inactive > 0 ? 'var(--warn)' : 'var(--ok)'),
+      _aggMetric(m.secure_score_pct !== null && m.secure_score_pct !== undefined ? `${m.secure_score_pct}%` : '—', 'Secure Score', 'ti-lock', m.secure_score_pct !== null && m.secure_score_pct !== undefined ? (m.secure_score_pct < 50 ? 'var(--err)' : m.secure_score_pct < 75 ? 'var(--warn)' : 'var(--ok)') : 'var(--muted)'),
+    ].join('');
+
     document.getElementById('dash-updated').textContent = 'Senast uppdaterat ' + new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-
-    let reportsCount = '—';
-    try {
-      const reports = await api('/api/reports');
-      if (_navGen !== gen) return;
-      reportsCount = reports.length;
-    } catch (e) { /* rapport-listning är inte kritiskt för dashboard */ }
-    document.getElementById('stat-reports').textContent = reportsCount;
+    document.getElementById('dash-refresh-btn').style.display = '';
 
     renderDashboardCards(customers);
   } catch (e) {
@@ -1242,23 +1304,53 @@ function renderDashboardCards(customers) {
   }
   el.innerHTML = customers.map(c => {
     const verified = c.integrations_verified || [];
-    const configured = c.integrations_configured || [];
-    const allKnown = ['unifi', 'microsoft'];
-    const chips = allKnown.map(k => {
+    const unifi = c.unifi;
+    const ms = c.microsoft;
+
+    // Status-dot: rött om problem, grönt om allt ok, gult om ingen integration
+    const hasIssue = (unifi && (unifi.offline_devices > 0 || unifi.wan_down > 0)) ||
+                     (ms && ms.inactive_licensed > 0);
+    const statusClass = !verified.length ? 'warn' : hasIssue ? 'err' : 'ok';
+
+    // Integration-chips
+    const chips = ['unifi', 'microsoft'].map(k => {
       const icon = { unifi: 'ti-router', microsoft: 'ti-brand-windows' }[k];
       const label = { unifi: 'UniFi', microsoft: 'M365' }[k];
       const on = verified.includes(k);
       return `<span class="chip ${on ? 'ch-on' : 'ch-off'}"><i class="ti ${icon}"></i> ${label}</span>`;
     }).join('');
-    const statusClass = verified.length > 0 ? 'ok' : 'warn';
-    const statusBadge = verified.length > 0
-      ? `<span class="b b-ok">${verified.length} aktiv${verified.length > 1 ? 'a' : ''}</span>`
-      : `<span class="b b-warn">Ingen integration</span>`;
+
+    // Mätvärdes-rutnät
+    const metrics = [];
+    if (unifi) {
+      metrics.push(`<div class="cm"><div class="cmv" style="color:${unifi.offline_devices > 0 ? 'var(--err)' : 'var(--text)'}">${unifi.total_devices}</div><div class="cml">Enheter</div></div>`);
+      metrics.push(`<div class="cm"><div class="cmv" style="color:${unifi.offline_devices > 0 ? 'var(--err)' : 'var(--ok)'}">${unifi.offline_devices}</div><div class="cml">Offline</div></div>`);
+      metrics.push(`<div class="cm"><div class="cmv" style="color:${unifi.needs_update > 0 ? 'var(--warn)' : 'var(--ok)'}">${unifi.needs_update}</div><div class="cml">Uppdatering</div></div>`);
+    }
+    if (ms) {
+      const mfaPct = ms.mfa_total > 0 ? Math.round(ms.mfa_registered / ms.mfa_total * 100) : null;
+      metrics.push(`<div class="cm"><div class="cmv">${ms.total_users}</div><div class="cml">M365-användare</div></div>`);
+      if (mfaPct !== null) metrics.push(`<div class="cm"><div class="cmv" style="color:${mfaPct < 80 ? 'var(--err)' : mfaPct < 95 ? 'var(--warn)' : 'var(--ok)'}">${mfaPct}%</div><div class="cml">MFA</div></div>`);
+      if (ms.inactive_licensed > 0) metrics.push(`<div class="cm"><div class="cmv" style="color:var(--warn)">${ms.inactive_licensed}</div><div class="cml">Inaktiva lic.</div></div>`);
+    }
+
+    // WAN-punkter
+    const wanDots = unifi && unifi.wan_count > 0
+      ? `<div class="wans">${Array.from({length: unifi.wan_count}, (_,i) => `<div class="wd ${i < (unifi.wan_count - unifi.wan_down) ? 'wd-up' : 'wd-dn'}" title="WAN ${i+1}"></div>`).join('')}</div>`
+      : '';
+
+    const statusBadge = !verified.length
+      ? `<span class="b b-warn">Ingen integration</span>`
+      : hasIssue
+        ? `<span class="b b-err">Åtgärd krävs</span>`
+        : `<span class="b b-ok">${verified.length} aktiv${verified.length > 1 ? 'a' : ''}</span>`;
+
     return `
       <div class="cc" onclick="openCustomer('${c.id}')">
         <div class="cc-row"><div><div class="cc-name"><span class="cc-dot ${statusClass}"></span>${escapeHtml(c.name)}</div><div class="cc-meta">${escapeHtml(c.city || '—')}</div></div>${statusBadge}</div>
-        <div class="chips">${chips}</div>
-        <div class="cc-foot"><div class="isp-lbl"><i class="ti ti-mail" style="font-size:13px"></i>${escapeHtml(c.contact_email || '')}</div></div>
+        <div class="chips" style="margin-bottom:${metrics.length ? '0' : '0'}">${chips}</div>
+        ${metrics.length ? `<div class="cc-metrics" style="grid-template-columns:repeat(${Math.min(metrics.length,3)},1fr)">${metrics.join('')}</div>` : ''}
+        <div class="cc-foot">${wanDots}<div class="isp-lbl"><i class="ti ti-mail" style="font-size:13px"></i>${escapeHtml(c.contact_email || '')}</div></div>
       </div>`;
   }).join('');
 }
