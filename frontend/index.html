@@ -528,7 +528,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 .gantt-row:last-child{border-bottom:none}
 .gantt-row:hover{background:rgba(0,71,163,0.02)}
 .gantt-row-name{width:200px;flex-shrink:0;font-size:13px;font-weight:500;color:var(--text);padding:8px 14px;display:flex;align-items:center;gap:7px;border-right:1px solid var(--border)}
-.gantt-row-bars{flex:1;position:relative;min-height:44px;display:flex}
+.gantt-row-bars{flex:1;position:relative;min-height:44px;display:flex;overflow:hidden}
 .gantt-grid-col{border-left:1px solid var(--border);box-sizing:border-box;height:100%}
 .gantt-bar-layer{position:absolute;inset:0;pointer-events:none}
 .gantt-bar{position:absolute;top:10px;height:24px;border-radius:5px;background:var(--blue);opacity:0.85;cursor:pointer;transition:opacity 0.1s;display:flex;align-items:center;padding:0 8px;min-width:6px;overflow:hidden;pointer-events:all;box-shadow:0 1px 3px rgba(0,71,163,0.2)}
@@ -1133,7 +1133,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="cd-tabs" id="od-tabs">
         <div class="cd-tab active" data-tab="od-info" onclick="switchOdTab('od-info')"><i class="ti ti-info-circle"></i> Info</div>
         <div class="cd-tab" data-tab="od-documents" onclick="switchOdTab('od-documents')"><i class="ti ti-file"></i> Dokument</div>
-        <div class="cd-tab od-project-only" data-tab="od-gantt" onclick="switchOdTab('od-gantt')" style="display:none"><i class="ti ti-chart-gantt"></i> Planering</div>
+        <div class="cd-tab od-project-only" data-tab="od-gantt" onclick="switchOdTab('od-gantt')" style="display:none"><i class="ti ti-calendar-stats"></i> Planering</div>
         <div class="cd-tab od-project-only" data-tab="od-time" onclick="switchOdTab('od-time')" style="display:none"><i class="ti ti-clock"></i> Arbetad tid</div>
       </div>
 
@@ -1141,7 +1141,11 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="cd-tab-pane active" id="od-pane-od-info">
         <div class="card">
           <div class="ch"><span class="cht">Beskrivning</span>
-            <button class="btn btn-g btn-sm" id="od-edit-btn" onclick="openEditOrderModal()"><i class="ti ti-edit"></i> Redigera</button>
+            <div style="display:flex;gap:8px" id="od-admin-info-btns">
+              <button class="btn btn-g btn-sm" id="od-edit-btn" onclick="openEditOrderModal()"><i class="ti ti-edit"></i> Redigera</button>
+              <button class="btn btn-g btn-sm" id="od-cancel-btn" onclick="cancelCurrentOrder()"><i class="ti ti-ban"></i> Makulera</button>
+              <button class="btn btn-danger btn-sm" id="od-delete-btn" onclick="deleteCurrentOrder()"><i class="ti ti-trash"></i> Ta bort</button>
+            </div>
           </div>
           <div class="cb"><p id="od-description" style="font-size:13px;color:var(--sub);line-height:1.6">—</p></div>
         </div>
@@ -2940,8 +2944,12 @@ async function loadOrderDetail(orderId) {
     // Admin-kontroller
     const isAdmin = currentUser && currentUser.role === 'admin';
     document.getElementById('od-phase-btns').style.display = isAdmin ? '' : 'none';
-    document.getElementById('od-edit-btn').style.display = isAdmin ? '' : 'none';
+    document.getElementById('od-admin-info-btns').style.display = isAdmin ? '' : 'none';
     document.getElementById('od-upload-btn').style.display = isAdmin ? '' : 'none';
+    if (isAdmin) {
+      // Dölj Makulera om redan makulerad, visa annars
+      document.getElementById('od-cancel-btn').style.display = order.status === 'cancelled' ? 'none' : '';
+    }
     document.getElementById('od-time-form-card').style.display = isAdmin ? '' : 'none';
     // Kund ser bara debiterbar tid (inte faktisk tid)
     const actualWrap = document.getElementById('ts-actual-wrap');
@@ -3141,7 +3149,8 @@ async function renderPlanering(orderId) {
       const start = new Date(task.start_date);
       const end = new Date(task.end_date);
       const leftPct = Math.max(0, (start - snapStart) / 86400000 / gridSpan * 100);
-      const widthPct = Math.max(0.5, ((end - start) / 86400000 + 1) / gridSpan * 100);
+      const rawWidth = ((end - start) / 86400000 + 1) / gridSpan * 100;
+      const widthPct = Math.max(0.5, Math.min(rawWidth, 100 - leftPct));
       const clickAttr = isAdmin ? `onclick="openTaskModal('${task.id}')"` : '';
       return `<div class="gantt-row">
         <div class="gantt-row-name">
@@ -3352,6 +3361,30 @@ async function openNewOrderModal(presetCustomerId) {
 
   const modal = document.getElementById('modal-order');
   modal.style.display = 'flex';
+}
+
+async function cancelCurrentOrder() {
+  if (!_currentOrder) return;
+  if (!confirm('Makulera ordern? Den markeras som avbruten men tas inte bort.')) return;
+  try {
+    await api('/api/orders/' + _currentOrder.id, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'cancelled' })
+    });
+    t('Order makulerad');
+    await loadOrderDetail(_currentOrder.id);
+  } catch(e) { t(e.message, 'err'); }
+}
+
+async function deleteCurrentOrder() {
+  if (!_currentOrder) return;
+  const label = _currentOrder.type === 'project' ? 'projektet' : 'ordern';
+  if (!confirm(`Ta bort ${label} permanent? Detta kan inte ångras.`)) return;
+  try {
+    await api('/api/orders/' + _currentOrder.id, { method: 'DELETE' });
+    t(`${_currentOrder.type === 'project' ? 'Projekt' : 'Order'} borttagen`);
+    nav(_ordersBackView || 'orders');
+  } catch(e) { t(e.message, 'err'); }
 }
 
 async function openEditOrderModal() {
