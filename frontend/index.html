@@ -494,6 +494,51 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 @keyframes shimmer{0%{background-position:-800px 0}100%{background-position:800px 0}}
 .skel-box{background:linear-gradient(90deg,#eceef1 25%,#e0e3e8 50%,#eceef1 75%);background-size:1600px 100%;animation:shimmer 1.4s infinite;border-radius:5px}
 .skel-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px;box-shadow:var(--shadow)}
+
+/* ── Kundvy-flikar ── */
+.cd-tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:20px}
+.cd-tab{padding:10px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.12s;border-radius:var(--r) var(--r) 0 0}
+.cd-tab:hover{color:var(--text);background:var(--tint)}
+.cd-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.cd-tab-pane{display:none}
+.cd-tab-pane.active{display:block;animation:fade 0.18s ease}
+
+/* ── Fasindikator (horisontell timeline) ── */
+.phase-track{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:8px 0 16px;margin-bottom:4px}
+.phase-step{display:flex;flex-direction:column;align-items:center;flex:1;min-width:80px;position:relative}
+.phase-step:not(:last-child)::after{content:'';position:absolute;top:11px;left:calc(50% + 12px);right:calc(-50% + 12px);height:2px;background:var(--border);z-index:0}
+.phase-step.done:not(:last-child)::after{background:var(--ok)}
+.phase-step.active:not(:last-child)::after{background:var(--border)}
+.phase-dot{width:22px;height:22px;border-radius:50%;background:var(--border);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;z-index:1;transition:all 0.2s;flex-shrink:0}
+.phase-step.done .phase-dot{background:var(--ok);border-color:var(--ok)}
+.phase-step.active .phase-dot{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 4px rgba(0,71,163,0.15)}
+.phase-dot i{font-size:12px;color:#fff}
+.phase-label{font-size:11px;font-weight:600;color:var(--muted);margin-top:6px;text-align:center;line-height:1.3;max-width:90px}
+.phase-step.done .phase-label{color:var(--ok)}
+.phase-step.active .phase-label{color:var(--blue)}
+
+/* ── Gantt ── */
+.gantt-wrap{overflow-x:auto;padding-bottom:8px}
+.gantt-header{display:flex;border-bottom:1px solid var(--border);margin-bottom:4px}
+.gantt-task-col{width:180px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--muted);padding:6px 12px}
+.gantt-dates{flex:1;display:flex;gap:0;position:relative}
+.gantt-date-label{font-size:10px;font-weight:600;color:var(--muted);padding:6px 0;text-align:center}
+.gantt-row{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:38px}
+.gantt-row:last-child{border-bottom:none}
+.gantt-row-name{width:180px;flex-shrink:0;font-size:13px;font-weight:500;color:var(--text);padding:6px 12px;display:flex;align-items:center;gap:6px}
+.gantt-row-bar-area{flex:1;position:relative;height:38px;background:var(--tint);border-radius:0}
+.gantt-bar{position:absolute;top:7px;height:24px;border-radius:5px;background:var(--blue);opacity:0.85;cursor:pointer;transition:opacity 0.1s;display:flex;align-items:center;padding:0 8px;min-width:8px;overflow:hidden}
+.gantt-bar:hover{opacity:1}
+.gantt-bar.done{background:var(--ok)}
+.gantt-bar-label{font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Tidsposter ── */
+.time-form{display:grid;grid-template-columns:1fr 2fr 80px 80px auto;gap:10px;align-items:flex-end;margin-bottom:16px}
+@media(max-width:768px){.time-form{grid-template-columns:1fr 1fr;}}
+.time-summary{display:flex;gap:20px;padding:12px 16px;background:var(--tint);border-radius:var(--r);margin-top:8px;font-size:13px}
+.time-sum-item{display:flex;flex-direction:column;gap:2px}
+.time-sum-val{font-size:18px;font-weight:700;color:var(--text)}
+.time-sum-lbl{font-size:11px;color:var(--muted);font-weight:500}
 </style>
 </head>
 <body>
@@ -572,6 +617,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
   <div class="nav active" data-v="dashboard" id="nav-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i> Översikt</div>
   <div class="nav" data-v="customers" id="nav-customers" onclick="nav('customers')"><i class="ti ti-building-store"></i> Kunder</div>
   <div class="nav" data-v="reports" id="nav-reports" onclick="nav('reports')"><i class="ti ti-file-description"></i> Rapporter</div>
+  <div class="nav" data-v="orders" id="nav-orders" onclick="nav('orders')"><i class="ti ti-clipboard-list"></i> Order & Projekt</div>
   <div class="sb-section" id="nav-section-config">Konfiguration</div>
   <div class="nav" data-v="users" id="nav-users" onclick="nav('users')"><i class="ti ti-users"></i> Användare</div>
   <div class="nav" data-v="add-customer" id="nav-add-customer" onclick="nav('add-customer')"><i class="ti ti-plus"></i> Lägg till kund</div>
@@ -668,17 +714,21 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <div class="hero-ey" id="cd-eyebrow">Kund</div>
           <div class="hero-ti" id="cd-name">—</div>
           <div class="hero-su" id="cd-sub">—</div>
-          <div class="hs-row" id="cd-hero-stats">
-            <!-- fylls av JS utifrån vilka integrationer som har data -->
-          </div>
+          <div class="hs-row" id="cd-hero-stats"></div>
         </div>
       </div>
 
-      <div class="int-row" id="cd-int-row">
-        <!-- fylls av JS: en int-p per integration, "on" om verifierad -->
+      <!-- Flikar -->
+      <div class="cd-tabs">
+        <div class="cd-tab active" data-tab="network" onclick="switchCdTab('network')"><i class="ti ti-network"></i> Nätverk</div>
+        <div class="cd-tab" data-tab="orders" onclick="switchCdTab('orders')"><i class="ti ti-clipboard-list"></i> Order & Projekt</div>
+        <div class="cd-tab" data-tab="reports" onclick="switchCdTab('reports')"><i class="ti ti-file-description"></i> Rapporter</div>
       </div>
 
-      <div id="cd-microsoft-section" style="display:none">
+      <!-- Flik: Nätverk -->
+      <div class="cd-tab-pane active" id="cd-pane-network">
+        <div class="int-row" id="cd-int-row"></div>
+        <div id="cd-microsoft-section" style="display:none">
         <div class="ms-grid" style="margin-bottom:13px">
           <div class="card">
             <div class="ch"><span class="cht">Användare</span></div>
@@ -790,14 +840,28 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         </div>
       </div>
 
-      <div id="cd-no-data" class="alert al-info" style="display:none">
-        <i class="ti ti-info-circle"></i>
-        <span>Ingen integration är verifierad för denna kund än. Gå till <strong>Integrationer</strong> för att koppla på UniFi eller andra tjänster.</span>
+        <div id="cd-no-data" class="alert al-info" style="display:none">
+          <i class="ti ti-info-circle"></i>
+          <span>Ingen integration är verifierad för denna kund än. Gå till <strong>Integrationer</strong> för att koppla på UniFi eller andra tjänster.</span>
+        </div>
+        <div id="cd-error" class="alert al-e" style="display:none">
+          <i class="ti ti-alert-circle"></i>
+          <span id="cd-error-msg"></span>
+        </div>
+      </div><!-- /cd-pane-network -->
+
+      <!-- Flik: Order & Projekt -->
+      <div class="cd-tab-pane" id="cd-pane-orders">
+        <div class="ph" style="margin-bottom:16px">
+          <div></div>
+          <button class="btn btn-p btn-sm" id="cd-new-order-btn" onclick="openNewOrderModal(currentCustomerId)"><i class="ti ti-plus"></i> Ny order / projekt</button>
+        </div>
+        <div id="cd-orders-list"><div class="skel" style="padding:32px">Laddar ordrar...</div></div>
       </div>
 
-      <div id="cd-error" class="alert al-e" style="display:none">
-        <i class="ti ti-alert-circle"></i>
-        <span id="cd-error-msg"></span>
+      <!-- Flik: Rapporter -->
+      <div class="cd-tab-pane" id="cd-pane-reports">
+        <div id="cd-reports-list"><div class="skel" style="padding:32px">Laddar rapporter...</div></div>
       </div>
 
       <div style="display:flex;gap:9px;margin-top:14px" id="cd-admin-actions">
@@ -991,11 +1055,213 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <div class="fh">Tidszon: Europe/Stockholm. Ändringar gäller direkt utan omstart.</div>
         <button class="btn btn-p" id="s-save-btn" onclick="saveSchedule()" style="margin-top:16px"><i class="ti ti-check"></i> Spara schema</button>
       </div>
+
+      <!-- Orderfaser -->
+      <div class="fw" style="max-width:560px;margin-top:20px" id="s-phases-wrap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="fsec" style="margin:0">Orderfaser</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-g btn-sm" onclick="setPhaseTab('order')" id="ptab-order" style="font-weight:700;color:var(--blue)">Order</button>
+            <button class="btn btn-g btn-sm" onclick="setPhaseTab('project')" id="ptab-project">Projekt</button>
+          </div>
+        </div>
+        <div id="s-phases-list" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px">
+          <input class="fi" id="s-new-phase-name" placeholder="Ny fas…" style="flex:1">
+          <button class="btn btn-p btn-sm" onclick="addPhaseTemplate()"><i class="ti ti-plus"></i> Lägg till</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ORDER & PROJEKT – LISTA ══ -->
+    <div class="view" id="v-orders">
+      <div class="ph">
+        <div><div class="ph-title">Order & Projekt</div><div class="ph-sub">Alla kunders ordrar och projekt</div></div>
+        <button class="btn btn-p" id="orders-new-btn" onclick="openNewOrderModal(null)"><i class="ti ti-plus"></i> Ny order / projekt</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px" id="orders-filter-btns">
+        <button class="btn btn-g btn-sm active-filter" onclick="setOrdersFilter('all')" data-filter="all">Alla</button>
+        <button class="btn btn-g btn-sm" onclick="setOrdersFilter('order')" data-filter="order">Order</button>
+        <button class="btn btn-g btn-sm" onclick="setOrdersFilter('project')" data-filter="project">Projekt</button>
+      </div>
+      <div class="card">
+        <div class="cb0">
+          <table class="tbl hov">
+            <thead><tr><th>Kund</th><th>Titel</th><th style="width:90px">Typ</th><th>Nuvarande fas</th><th style="width:90px">Status</th><th style="width:110px">Skapad</th></tr></thead>
+            <tbody id="orders-tbody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Laddar...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ORDER / PROJEKT – DETALJ ══ -->
+    <div class="view" id="v-order-detail">
+      <div class="back" onclick="nav(_ordersBackView||'orders')"><i class="ti ti-arrow-left"></i> <span id="od-back-label">Tillbaka</span></div>
+
+      <!-- Hero -->
+      <div class="hero" style="margin-bottom:16px">
+        <div class="hero-in">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <span class="b b-info" id="od-type-badge">Order</span>
+            <span class="b" id="od-status-badge">Aktiv</span>
+          </div>
+          <div class="hero-ti" id="od-title">—</div>
+          <div class="hero-su" id="od-customer">—</div>
+        </div>
+      </div>
+
+      <!-- Fasindikator -->
+      <div class="card" style="margin-bottom:16px" id="od-phase-card">
+        <div class="ch">
+          <span class="cht">Fas</span>
+          <div style="display:flex;gap:8px" id="od-phase-btns">
+            <button class="btn btn-g btn-sm" id="od-prev-phase-btn" onclick="changeOrderPhase(-1)"><i class="ti ti-chevron-left"></i> Föregående</button>
+            <button class="btn btn-p btn-sm" id="od-next-phase-btn" onclick="changeOrderPhase(1)">Nästa <i class="ti ti-chevron-right"></i></button>
+          </div>
+        </div>
+        <div class="cb">
+          <div class="phase-track" id="od-phase-track"></div>
+        </div>
+      </div>
+
+      <!-- Flikar (projekt har fler) -->
+      <div class="cd-tabs" id="od-tabs">
+        <div class="cd-tab active" data-tab="od-info" onclick="switchOdTab('od-info')"><i class="ti ti-info-circle"></i> Info</div>
+        <div class="cd-tab" data-tab="od-documents" onclick="switchOdTab('od-documents')"><i class="ti ti-file"></i> Dokument</div>
+        <div class="cd-tab od-project-only" data-tab="od-gantt" onclick="switchOdTab('od-gantt')" style="display:none"><i class="ti ti-chart-gantt"></i> Gantt</div>
+        <div class="cd-tab od-project-only" data-tab="od-time" onclick="switchOdTab('od-time')" style="display:none"><i class="ti ti-clock"></i> Arbetad tid</div>
+      </div>
+
+      <!-- Flik: Info -->
+      <div class="cd-tab-pane active" id="od-pane-od-info">
+        <div class="card">
+          <div class="ch"><span class="cht">Beskrivning</span>
+            <button class="btn btn-g btn-sm" id="od-edit-btn" onclick="openEditOrderModal()"><i class="ti ti-edit"></i> Redigera</button>
+          </div>
+          <div class="cb"><p id="od-description" style="font-size:13px;color:var(--sub);line-height:1.6">—</p></div>
+        </div>
+      </div>
+
+      <!-- Flik: Dokument -->
+      <div class="cd-tab-pane" id="od-pane-od-documents">
+        <div class="card">
+          <div class="ch"><span class="cht">Dokument</span>
+            <label class="btn btn-p btn-sm" id="od-upload-btn" style="cursor:pointer"><i class="ti ti-upload"></i> Ladda upp<input type="file" id="od-file-input" style="display:none" onchange="uploadOrderDocument()" multiple></label>
+          </div>
+          <div class="cb0" id="od-documents-list"><div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Inga dokument uppladdade.</div></div>
+        </div>
+      </div>
+
+      <!-- Flik: Gantt (projekt) -->
+      <div class="cd-tab-pane" id="od-pane-od-gantt">
+        <div class="card">
+          <div class="ch"><span class="cht">Gantt-schema</span>
+            <button class="btn btn-p btn-sm" id="od-add-task-btn" onclick="openTaskModal(null)"><i class="ti ti-plus"></i> Lägg till uppgift</button>
+          </div>
+          <div class="cb" id="od-gantt-wrap"><div style="color:var(--muted);font-size:13px">Inga uppgifter tillagda.</div></div>
+        </div>
+      </div>
+
+      <!-- Flik: Arbetad tid (projekt) -->
+      <div class="cd-tab-pane" id="od-pane-od-time">
+        <div class="card">
+          <div class="ch"><span class="cht">Registrera tid</span></div>
+          <div class="cb">
+            <div class="time-form">
+              <div><label class="fl">Datum</label><input class="fi" type="date" id="te-date"></div>
+              <div><label class="fl">Beskrivning</label><input class="fi" type="text" id="te-desc" placeholder="Vad utfördes?"></div>
+              <div><label class="fl">Timmar</label><input class="fi" type="number" id="te-hours" min="0" max="23" value="0" oninput="updateBilledPreview()"></div>
+              <div><label class="fl">Minuter</label><input class="fi" type="number" id="te-minutes" min="0" max="59" value="0" oninput="updateBilledPreview()"></div>
+              <div><label class="fl">&nbsp;</label><button class="btn btn-p" onclick="submitTimeEntry()"><i class="ti ti-plus"></i> Lägg till</button></div>
+            </div>
+            <div class="b b-info" id="te-billed-preview" style="margin-bottom:16px">Debiteras: 0 min</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div class="ch"><span class="cht">Tidsposter</span></div>
+          <div class="cb0">
+            <table class="tbl">
+              <thead><tr><th>Datum</th><th>Beskrivning</th><th style="text-align:right">Faktisk tid</th><th style="text-align:right">Debiteras</th><th style="width:50px"></th></tr></thead>
+              <tbody id="od-time-tbody"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Inga tidsposter.</td></tr></tbody>
+            </table>
+            <div class="time-summary" id="od-time-summary" style="display:none">
+              <div class="time-sum-item"><div class="time-sum-val" id="ts-actual">0 h</div><div class="time-sum-lbl">Faktisk tid</div></div>
+              <div class="time-sum-item"><div class="time-sum-val" id="ts-billed">0 h</div><div class="time-sum-lbl">Debiteras</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
 </div>
 </div>
+
+<!-- ══ MODALER ══ -->
+
+<!-- Modal: Ny / redigera order -->
+<div id="modal-order" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700" id="modal-order-title">Ny order</div>
+      <button class="btn btn-g btn-sm btn-ico" onclick="closeOrderModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="fr">
+      <label class="fl">Typ</label>
+      <select class="fi" id="mo-type" onchange="updateOrderModalType()">
+        <option value="order">Order</option>
+        <option value="project">Projekt</option>
+      </select>
+    </div>
+    <div class="fr" id="mo-customer-row">
+      <label class="fl">Kund</label>
+      <select class="fi" id="mo-customer"></select>
+    </div>
+    <div class="fr">
+      <label class="fl">Titel</label>
+      <input class="fi" id="mo-title" type="text" placeholder="Orderrubrik">
+    </div>
+    <div class="fr">
+      <label class="fl">Beskrivning</label>
+      <textarea class="fi" id="mo-description" rows="3" placeholder="Valfri beskrivning" style="resize:vertical"></textarea>
+    </div>
+    <div class="fr">
+      <label class="fl">Startfas</label>
+      <select class="fi" id="mo-phase"></select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-g" onclick="closeOrderModal()">Avbryt</button>
+      <button class="btn btn-p" onclick="submitOrderModal()" id="mo-submit-btn">Skapa</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Gantt-uppgift -->
+<div id="modal-task" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700" id="modal-task-title">Ny uppgift</div>
+      <button class="btn btn-g btn-sm btn-ico" onclick="closeTaskModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="fr"><label class="fl">Titel</label><input class="fi" id="mt-title" type="text" placeholder="Uppgiftsnamn"></div>
+    <div class="f2">
+      <div class="fr"><label class="fl">Startdatum</label><input class="fi" id="mt-start" type="date"></div>
+      <div class="fr"><label class="fl">Slutdatum</label><input class="fi" id="mt-end" type="date"></div>
+    </div>
+    <div class="fr" style="display:flex;align-items:center;gap:10px">
+      <input type="checkbox" id="mt-completed" style="width:16px;height:16px">
+      <label style="font-size:13px;font-weight:500">Avklarad</label>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:space-between;margin-top:20px">
+      <button class="btn btn-danger btn-sm" id="mt-delete-btn" onclick="deleteCurrentTask()" style="display:none"><i class="ti ti-trash"></i> Ta bort</button>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn btn-g" onclick="closeTaskModal()">Avbryt</button>
+        <button class="btn btn-p" onclick="submitTaskModal()">Spara</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"><i class="ti ti-info-circle" id="toast-icon"></i><span id="tmsg"></span></div>
 
 <script>
@@ -1090,6 +1356,11 @@ function applyRoleUI() {
   // Admin ser hela kundlistan; kund ser bara sin dashboard
   const navCustomers = document.getElementById('nav-customers');
   if (navCustomers) navCustomers.style.display = isAdmin ? '' : 'none';
+  // Dölj admin-knappar för skapande av ordrar
+  const ordersNewBtn = document.getElementById('orders-new-btn');
+  if (ordersNewBtn) ordersNewBtn.style.display = isAdmin ? '' : 'none';
+  const cdAdminActions = document.getElementById('cd-admin-actions');
+  if (cdAdminActions) cdAdminActions.style.display = isAdmin ? '' : 'none';
 
   // Uppdatera sidofältets användarinfo
   const name = (currentUser && currentUser.full_name) || (currentUser && currentUser.email) || 'Användare';
@@ -1121,8 +1392,8 @@ document.addEventListener('keydown', e => {
 
 // ── Navigation ────────────────────────────────────────────────────────────
 
-const titles = { dashboard: 'Översikt', customers: 'Kunder', 'customer-detail': 'Kund', 'edit-customer': 'Redigera kund', reports: 'Rapporter', 'add-customer': 'Ny kund', settings: 'Inställningar', integrations: 'Integrationer', users: 'Användare' };
-const parents = { dashboard: 'dashboard', customers: 'customers', 'customer-detail': 'customers', 'edit-customer': 'customers', reports: 'reports', 'add-customer': 'add-customer', settings: 'settings', integrations: 'customers', users: 'users' };
+const titles = { dashboard: 'Översikt', customers: 'Kunder', 'customer-detail': 'Kund', 'edit-customer': 'Redigera kund', reports: 'Rapporter', 'add-customer': 'Ny kund', settings: 'Inställningar', integrations: 'Integrationer', users: 'Användare', orders: 'Order & Projekt', 'order-detail': 'Order' };
+const parents = { dashboard: 'dashboard', customers: 'customers', 'customer-detail': 'customers', 'edit-customer': 'customers', reports: 'reports', 'add-customer': 'add-customer', settings: 'settings', integrations: 'customers', users: 'users', orders: 'orders', 'order-detail': 'orders' };
 
 let _currentView = 'dashboard';
 
@@ -1157,6 +1428,10 @@ function nav(id) {
   if (id === 'integrations' && currentCustomerId) loadIntegrationsView(currentCustomerId);
   if (id === 'users') loadUsers();
   if (id === 'settings') loadSettings();
+  if (id === 'orders') loadOrders();
+  // Sätt standarddatum för tidsregistrering
+  const teDateEl = document.getElementById('te-date');
+  if (teDateEl && !teDateEl.value) teDateEl.value = new Date().toISOString().slice(0,10);
 }
 
 function openCustomer(customerId) {
@@ -1485,6 +1760,7 @@ async function submitEditCustomer() {
 
 async function loadCustomerDetail(customerId) {
   const gen = _navGen;
+  switchCdTab('network');
 
   // Skeleton omedelbart
   document.getElementById('cd-eyebrow').textContent = 'Kund';
@@ -2441,6 +2717,7 @@ async function loadSettings() {
   } catch (e) {
     errToast('Kunde inte ladda inställningar', e);
   }
+  loadPhaseTemplates();
 }
 
 async function saveAppSettings() {
@@ -2503,6 +2780,647 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
+
+// ── Kundvy-flikar ─────────────────────────────────────────────────────────
+
+function switchCdTab(tab) {
+  document.querySelectorAll('#v-customer-detail .cd-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  document.querySelectorAll('#v-customer-detail .cd-tab-pane').forEach(el => {
+    el.classList.toggle('active', el.id === 'cd-pane-' + tab);
+  });
+  if (tab === 'orders' && currentCustomerId) loadCustomerOrders(currentCustomerId);
+  if (tab === 'reports' && currentCustomerId) loadCustomerReports(currentCustomerId);
+}
+
+async function loadCustomerReports(customerId) {
+  const el = document.getElementById('cd-reports-list');
+  el.innerHTML = '<div class="skel" style="padding:32px">Laddar rapporter...</div>';
+  try {
+    const reports = await api('/api/reports?customer_id=' + customerId);
+    if (!reports || reports.length === 0) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-file-off"></i>Inga rapporter ännu.</div>';
+      return;
+    }
+    el.innerHTML = reports.map(r => `
+      <div class="rr">
+        <div class="ri"><i class="ti ti-file-description"></i></div>
+        <div style="flex:1">
+          <div class="rn">${escapeHtml(r.period)}</div>
+          <div class="rm">${r.sent_at ? new Date(r.sent_at).toLocaleDateString('sv-SE') : '—'}</div>
+        </div>
+        <span class="b ${r.send_status==='sent'?'b-ok':r.send_status==='error'?'b-err':'b-muted'}">${r.send_status}</span>
+        ${r.id ? `<a class="btn btn-g btn-sm" href="/api/reports/${r.id}/pdf" target="_blank"><i class="ti ti-download"></i> PDF</a>` : ''}
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="alert al-e"><i class="ti ti-alert-circle"></i>${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function loadCustomerOrders(customerId) {
+  const el = document.getElementById('cd-orders-list');
+  el.innerHTML = '<div class="skel" style="padding:32px">Laddar...</div>';
+  try {
+    const all = await api('/api/orders');
+    const orders = all.filter(o => o.customer_id === customerId);
+    if (orders.length === 0) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-clipboard-off"></i>Inga ordrar eller projekt för denna kund.</div>';
+      return;
+    }
+    el.innerHTML = orders.map(o => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openOrderDetail('${o.id}','customer-detail')">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">${escapeHtml(o.title)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${o.current_phase ? escapeHtml(o.current_phase.name) : '—'}</div>
+        </div>
+        <span class="b ${o.type==='project'?'b-info':'b-muted'}">${o.type==='project'?'Projekt':'Order'}</span>
+        <span class="b ${o.status==='completed'?'b-ok':o.status==='cancelled'?'b-err':'b-muted'}">${statusLabel(o.status)}</span>
+        <i class="ti ti-chevron-right" style="color:var(--muted)"></i>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="alert al-e"><i class="ti ti-alert-circle"></i>${escapeHtml(e.message)}</div>`;
+  }
+}
+
+// ── Orderlista (admin-vy) ─────────────────────────────────────────────────
+
+let _allOrders = [];
+let _ordersFilter = 'all';
+
+async function loadOrders() {
+  const tbody = document.getElementById('orders-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Laddar...</td></tr>';
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  document.getElementById('orders-new-btn').style.display = isAdmin ? '' : 'none';
+  try {
+    _allOrders = await api('/api/orders');
+    renderOrdersTable();
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--err);text-align:center;padding:20px">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function setOrdersFilter(f) {
+  _ordersFilter = f;
+  document.querySelectorAll('#orders-filter-btns [data-filter]').forEach(b => {
+    b.classList.toggle('active-filter', b.dataset.filter === f);
+    b.style.fontWeight = b.dataset.filter === f ? '700' : '';
+    b.style.borderColor = b.dataset.filter === f ? 'var(--blue)' : '';
+    b.style.color = b.dataset.filter === f ? 'var(--blue)' : '';
+  });
+  renderOrdersTable();
+}
+
+function renderOrdersTable() {
+  const tbody = document.getElementById('orders-tbody');
+  const list = _ordersFilter === 'all' ? _allOrders : _allOrders.filter(o => o.type === _ordersFilter);
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:32px">Inga poster hittades.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(o => `
+    <tr onclick="openOrderDetail('${o.id}','orders')" style="cursor:pointer">
+      <td><span class="dn">${escapeHtml(o.customer_name||'—')}</span></td>
+      <td><span class="dn">${escapeHtml(o.title)}</span></td>
+      <td><span class="b ${o.type==='project'?'b-info':'b-muted'}">${o.type==='project'?'Projekt':'Order'}</span></td>
+      <td>${o.current_phase ? escapeHtml(o.current_phase.name) : '<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="b ${o.status==='completed'?'b-ok':o.status==='cancelled'?'b-err':'b-muted'}">${statusLabel(o.status)}</span></td>
+      <td style="color:var(--muted)">${new Date(o.created_at).toLocaleDateString('sv-SE')}</td>
+    </tr>`).join('');
+}
+
+function statusLabel(s) {
+  if (s === 'completed') return 'Avslutad';
+  if (s === 'cancelled') return 'Avbruten';
+  return 'Aktiv';
+}
+
+// ── Orderdetalj ───────────────────────────────────────────────────────────
+
+let _currentOrder = null;
+let _currentOrderPhases = [];
+let _ordersBackView = 'orders';
+
+async function openOrderDetail(orderId, backView) {
+  _ordersBackView = backView || 'orders';
+  document.getElementById('od-back-label').textContent = backView === 'customer-detail' ? 'Kund' : 'Order & Projekt';
+  nav('order-detail');
+  await loadOrderDetail(orderId);
+}
+
+async function loadOrderDetail(orderId) {
+  try {
+    const [order, phases] = await Promise.all([
+      api('/api/orders/' + orderId),
+      api('/api/phase-templates'),
+    ]);
+    _currentOrder = order;
+    _currentOrderPhases = phases.filter(p => p.order_type === order.type);
+
+    document.getElementById('od-title').textContent = order.title;
+    document.getElementById('od-customer').textContent = order.customer_name || '—';
+    document.getElementById('od-type-badge').textContent = order.type === 'project' ? 'Projekt' : 'Order';
+    document.getElementById('od-type-badge').className = 'b ' + (order.type === 'project' ? 'b-info' : 'b-muted');
+    document.getElementById('od-status-badge').textContent = statusLabel(order.status);
+    document.getElementById('od-status-badge').className = 'b ' + (order.status === 'completed' ? 'b-ok' : order.status === 'cancelled' ? 'b-err' : 'b-muted');
+    document.getElementById('od-description').textContent = order.description || 'Ingen beskrivning.';
+
+    // Visa/dölj projekt-flikar
+    const isProject = order.type === 'project';
+    document.querySelectorAll('.od-project-only').forEach(el => el.style.display = isProject ? '' : 'none');
+
+    // Admin-kontroller
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    document.getElementById('od-phase-btns').style.display = isAdmin ? '' : 'none';
+    document.getElementById('od-edit-btn').style.display = isAdmin ? '' : 'none';
+    document.getElementById('od-upload-btn').style.display = isAdmin ? '' : 'none';
+    if (isProject) {
+      document.getElementById('od-add-task-btn').style.display = isAdmin ? '' : 'none';
+    }
+
+    renderPhaseTrack(order, _currentOrderPhases);
+    renderDocuments(order.id);
+    if (isProject) {
+      renderGantt(order.id);
+      renderTimeEntries(order.id);
+    }
+
+    // Sätt standardtab
+    switchOdTab('od-info');
+  } catch(e) {
+    t(e.message, 'err');
+  }
+}
+
+function switchOdTab(tab) {
+  document.querySelectorAll('#od-tabs .cd-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  document.querySelectorAll('#v-order-detail .cd-tab-pane').forEach(el => {
+    el.classList.toggle('active', el.id === 'od-pane-' + tab);
+  });
+}
+
+// ── Fasindikator ──────────────────────────────────────────────────────────
+
+function renderPhaseTrack(order, phases) {
+  const container = document.getElementById('od-phase-track');
+  if (!phases.length) { container.innerHTML = '<span style="color:var(--muted);font-size:13px">Inga faser konfigurerade.</span>'; return; }
+  const currentPos = order.current_phase ? order.current_phase.position : -1;
+  container.innerHTML = phases.map(p => {
+    const done = p.position < currentPos;
+    const active = p.position === currentPos;
+    const cls = done ? 'done' : active ? 'active' : '';
+    return `<div class="phase-step ${cls}">
+      <div class="phase-dot"><i class="ti ${done?'ti-check':active?'ti-circle-dot':'ti-circle'}"></i></div>
+      <div class="phase-label">${escapeHtml(p.name)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function changeOrderPhase(dir) {
+  if (!_currentOrder) return;
+  const phases = _currentOrderPhases;
+  const curIdx = phases.findIndex(p => p.id === (_currentOrder.current_phase && _currentOrder.current_phase.id));
+  const newIdx = curIdx + dir;
+  if (newIdx < 0 || newIdx >= phases.length) return;
+  try {
+    await api('/api/orders/' + _currentOrder.id + '/phase', { method: 'POST', body: JSON.stringify({ phase_id: phases[newIdx].id }) });
+    await loadOrderDetail(_currentOrder.id);
+    t('Fas uppdaterad');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+// ── Dokument ──────────────────────────────────────────────────────────────
+
+async function renderDocuments(orderId) {
+  const el = document.getElementById('od-documents-list');
+  try {
+    const docs = await api('/api/orders/' + orderId + '/documents');
+    if (!docs.length) {
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Inga dokument uppladdade.</div>';
+      return;
+    }
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    el.innerHTML = `<table class="tbl">
+      <thead><tr><th>Filnamn</th><th>Typ</th><th style="width:120px">Uppladdad</th><th style="width:80px"></th></tr></thead>
+      <tbody>` + docs.map(d => `
+        <tr>
+          <td><a href="/api/orders/${orderId}/documents/${d.id}/download" target="_blank" style="color:var(--blue);font-weight:600">${escapeHtml(d.original_name)}</a></td>
+          <td style="color:var(--muted)">${escapeHtml(d.mime_type)}</td>
+          <td style="color:var(--muted)">${new Date(d.uploaded_at).toLocaleDateString('sv-SE')}</td>
+          <td>${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteDocument('${orderId}','${d.id}')"><i class="ti ti-trash"></i></button>` : ''}</td>
+        </tr>`).join('') + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = `<div class="alert al-e" style="margin:12px"><i class="ti ti-alert-circle"></i>${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function uploadOrderDocument() {
+  const input = document.getElementById('od-file-input');
+  if (!input.files.length || !_currentOrder) return;
+  for (const file of input.files) {
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      await fetch(API + '/api/orders/' + _currentOrder.id + '/documents', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + authToken },
+        body: fd
+      });
+    } catch(e) { t(e.message, 'err'); }
+  }
+  input.value = '';
+  renderDocuments(_currentOrder.id);
+  t('Dokument uppladdade');
+}
+
+async function deleteDocument(orderId, docId) {
+  if (!confirm('Ta bort dokumentet?')) return;
+  try {
+    await api('/api/orders/' + orderId + '/documents/' + docId, { method: 'DELETE' });
+    renderDocuments(orderId);
+    t('Dokument borttaget');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+// ── Gantt ─────────────────────────────────────────────────────────────────
+
+let _ganttTasks = [];
+
+async function renderGantt(orderId) {
+  const wrap = document.getElementById('od-gantt-wrap');
+  try {
+    _ganttTasks = await api('/api/orders/' + orderId + '/tasks');
+    if (!_ganttTasks.length) {
+      wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px">Inga uppgifter tillagda ännu.</div>';
+      return;
+    }
+    const allDates = _ganttTasks.flatMap(t => [new Date(t.start_date), new Date(t.end_date)]);
+    const minDate = new Date(Math.min(...allDates));
+    const maxDate = new Date(Math.max(...allDates));
+    // Extend range by a few days on each side
+    minDate.setDate(minDate.getDate() - 2);
+    maxDate.setDate(maxDate.getDate() + 2);
+    const totalDays = Math.ceil((maxDate - minDate) / 86400000) + 1;
+
+    // Build week labels
+    let weekLabels = '';
+    const cur = new Date(minDate);
+    while (cur <= maxDate) {
+      const weekPct = Math.min(7, Math.ceil((maxDate - cur) / 86400000) + 1) / totalDays * 100;
+      weekLabels += `<div class="gantt-date-label" style="width:${weekPct}%;flex-shrink:0">${cur.toLocaleDateString('sv-SE',{month:'short',day:'numeric'})}</div>`;
+      cur.setDate(cur.getDate() + 7);
+    }
+
+    const rows = _ganttTasks.map(task => {
+      const start = new Date(task.start_date);
+      const end = new Date(task.end_date);
+      const leftPct = (start - minDate) / 86400000 / totalDays * 100;
+      const widthPct = Math.max(1, (end - start) / 86400000 + 1) / totalDays * 100;
+      return `<div class="gantt-row">
+        <div class="gantt-row-name">${task.completed?'<i class="ti ti-check" style="color:var(--ok)"></i>':''} ${escapeHtml(task.title)}</div>
+        <div class="gantt-row-bar-area">
+          <div class="gantt-bar ${task.completed?'done':''}" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%" onclick="openTaskModal('${task.id}')">
+            <span class="gantt-bar-label">${escapeHtml(task.title)}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    wrap.innerHTML = `<div class="gantt-wrap">
+      <div class="gantt-header">
+        <div class="gantt-task-col">Uppgift</div>
+        <div class="gantt-dates">${weekLabels}</div>
+      </div>
+      ${rows}
+    </div>`;
+  } catch(e) {
+    wrap.innerHTML = `<div class="alert al-e"><i class="ti ti-alert-circle"></i>${escapeHtml(e.message)}</div>`;
+  }
+}
+
+let _editingTaskId = null;
+
+function openTaskModal(taskId) {
+  _editingTaskId = taskId;
+  const modal = document.getElementById('modal-task');
+  const deleteBtn = document.getElementById('mt-delete-btn');
+  if (taskId) {
+    const task = _ganttTasks.find(t => t.id === taskId);
+    document.getElementById('modal-task-title').textContent = 'Redigera uppgift';
+    document.getElementById('mt-title').value = task ? task.title : '';
+    document.getElementById('mt-start').value = task ? task.start_date : '';
+    document.getElementById('mt-end').value = task ? task.end_date : '';
+    document.getElementById('mt-completed').checked = task ? task.completed : false;
+    deleteBtn.style.display = '';
+  } else {
+    document.getElementById('modal-task-title').textContent = 'Ny uppgift';
+    document.getElementById('mt-title').value = '';
+    document.getElementById('mt-start').value = new Date().toISOString().slice(0,10);
+    document.getElementById('mt-end').value = new Date().toISOString().slice(0,10);
+    document.getElementById('mt-completed').checked = false;
+    deleteBtn.style.display = 'none';
+  }
+  modal.style.display = 'flex';
+}
+
+function closeTaskModal() {
+  document.getElementById('modal-task').style.display = 'none';
+}
+
+async function submitTaskModal() {
+  const body = {
+    title: document.getElementById('mt-title').value.trim(),
+    start_date: document.getElementById('mt-start').value,
+    end_date: document.getElementById('mt-end').value,
+    completed: document.getElementById('mt-completed').checked,
+    position: _editingTaskId ? (_ganttTasks.find(t=>t.id===_editingTaskId)||{}).position||0 : _ganttTasks.length
+  };
+  if (!body.title) { t('Ange en titel', 'err'); return; }
+  try {
+    if (_editingTaskId) {
+      await api('/api/orders/' + _currentOrder.id + '/tasks/' + _editingTaskId, { method: 'PUT', body: JSON.stringify(body) });
+    } else {
+      await api('/api/orders/' + _currentOrder.id + '/tasks', { method: 'POST', body: JSON.stringify(body) });
+    }
+    closeTaskModal();
+    renderGantt(_currentOrder.id);
+    t('Uppgift sparad');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+async function deleteCurrentTask() {
+  if (!_editingTaskId || !confirm('Ta bort uppgiften?')) return;
+  try {
+    await api('/api/orders/' + _currentOrder.id + '/tasks/' + _editingTaskId, { method: 'DELETE' });
+    closeTaskModal();
+    renderGantt(_currentOrder.id);
+    t('Uppgift borttagen');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+// ── Tidsregistrering ──────────────────────────────────────────────────────
+
+function updateBilledPreview() {
+  const h = parseInt(document.getElementById('te-hours').value) || 0;
+  const m = parseInt(document.getElementById('te-minutes').value) || 0;
+  const total = h * 60 + m;
+  const billed = total <= 0 ? 0 : Math.ceil(total / 30) * 30;
+  const billedH = Math.floor(billed / 60);
+  const billedM = billed % 60;
+  document.getElementById('te-billed-preview').textContent = 'Debiteras: ' + (billedM === 0 ? billedH + ' h' : billedH + ' h ' + billedM + ' min');
+}
+
+async function renderTimeEntries(orderId) {
+  const tbody = document.getElementById('od-time-tbody');
+  try {
+    const entries = await api('/api/orders/' + orderId + '/time-entries');
+    if (!entries.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Inga tidsposter.</td></tr>';
+      document.getElementById('od-time-summary').style.display = 'none';
+      return;
+    }
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    tbody.innerHTML = entries.map(e => {
+      const actual = e.hours * 60 + e.minutes;
+      const actualStr = Math.floor(actual/60) + ' h ' + (actual%60) + ' min';
+      const billedStr = Math.floor(e.billed_minutes/60) + ' h ' + (e.billed_minutes%60) + ' min';
+      return `<tr>
+        <td>${e.worked_at}</td>
+        <td>${escapeHtml(e.description||'—')}</td>
+        <td style="text-align:right">${actualStr}</td>
+        <td style="text-align:right;font-weight:600">${billedStr}</td>
+        <td>${isAdmin?`<button class="btn btn-danger btn-sm btn-ico" onclick="deleteTimeEntry('${e.id}')"><i class="ti ti-trash"></i></button>`:''}</td>
+      </tr>`;
+    }).join('');
+    const totalActual = entries.reduce((s,e) => s + e.hours*60 + e.minutes, 0);
+    const totalBilled = entries.reduce((s,e) => s + e.billed_minutes, 0);
+    document.getElementById('ts-actual').textContent = Math.floor(totalActual/60) + ' h ' + (totalActual%60) + ' min';
+    document.getElementById('ts-billed').textContent = Math.floor(totalBilled/60) + ' h ' + (totalBilled%60) + ' min';
+    document.getElementById('od-time-summary').style.display = 'flex';
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--err);padding:16px">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+async function submitTimeEntry() {
+  const h = parseInt(document.getElementById('te-hours').value) || 0;
+  const m = parseInt(document.getElementById('te-minutes').value) || 0;
+  const d = document.getElementById('te-date').value;
+  const desc = document.getElementById('te-desc').value.trim();
+  if (!d) { t('Välj ett datum', 'err'); return; }
+  if (h === 0 && m === 0) { t('Ange minst 1 minut', 'err'); return; }
+  try {
+    await api('/api/orders/' + _currentOrder.id + '/time-entries', {
+      method: 'POST',
+      body: JSON.stringify({ hours: h, minutes: m, worked_at: d, description: desc })
+    });
+    document.getElementById('te-hours').value = 0;
+    document.getElementById('te-minutes').value = 0;
+    document.getElementById('te-desc').value = '';
+    updateBilledPreview();
+    renderTimeEntries(_currentOrder.id);
+    t('Tidspost tillagd');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+async function deleteTimeEntry(entryId) {
+  if (!confirm('Ta bort tidspost?')) return;
+  try {
+    await api('/api/orders/' + _currentOrder.id + '/time-entries/' + entryId, { method: 'DELETE' });
+    renderTimeEntries(_currentOrder.id);
+    t('Tidspost borttagen');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+// ── Modal: Ny / redigera order ────────────────────────────────────────────
+
+let _editingOrderId = null;
+let _phaseTemplates = [];
+
+async function openNewOrderModal(presetCustomerId) {
+  _editingOrderId = null;
+  document.getElementById('modal-order-title').textContent = 'Ny order / projekt';
+  document.getElementById('mo-submit-btn').textContent = 'Skapa';
+  document.getElementById('mo-type').value = 'order';
+  document.getElementById('mo-title').value = '';
+  document.getElementById('mo-description').value = '';
+
+  // Ladda kunder och fasmallar parallellt
+  try {
+    const [customers, phases] = await Promise.all([
+      api('/api/customers'),
+      api('/api/phase-templates')
+    ]);
+    _phaseTemplates = phases;
+    const custSel = document.getElementById('mo-customer');
+    custSel.innerHTML = customers.map(c => `<option value="${c.id}" ${c.id===presetCustomerId?'selected':''}>${escapeHtml(c.name)}</option>`).join('');
+    if (presetCustomerId) {
+      document.getElementById('mo-customer-row').style.display = 'none';
+    } else {
+      document.getElementById('mo-customer-row').style.display = '';
+    }
+    updateOrderModalType();
+  } catch(e) { t(e.message,'err'); return; }
+
+  const modal = document.getElementById('modal-order');
+  modal.style.display = 'flex';
+}
+
+async function openEditOrderModal() {
+  if (!_currentOrder) return;
+  _editingOrderId = _currentOrder.id;
+  document.getElementById('modal-order-title').textContent = 'Redigera order';
+  document.getElementById('mo-submit-btn').textContent = 'Spara';
+  document.getElementById('mo-type').value = _currentOrder.type;
+  document.getElementById('mo-customer-row').style.display = 'none';
+  document.getElementById('mo-title').value = _currentOrder.title;
+  document.getElementById('mo-description').value = _currentOrder.description || '';
+  try {
+    _phaseTemplates = await api('/api/phase-templates');
+    updateOrderModalType();
+    if (_currentOrder.current_phase) {
+      document.getElementById('mo-phase').value = _currentOrder.current_phase.id;
+    }
+  } catch(e) { t(e.message,'err'); return; }
+  document.getElementById('modal-order').style.display = 'flex';
+}
+
+function updateOrderModalType() {
+  const type = document.getElementById('mo-type').value;
+  const phSel = document.getElementById('mo-phase');
+  const phases = _phaseTemplates.filter(p => p.order_type === type);
+  phSel.innerHTML = phases.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+}
+
+function closeOrderModal() {
+  document.getElementById('modal-order').style.display = 'none';
+}
+
+async function submitOrderModal() {
+  const title = document.getElementById('mo-title').value.trim();
+  if (!title) { t('Ange en titel', 'err'); return; }
+  const body = {
+    type: document.getElementById('mo-type').value,
+    customer_id: document.getElementById('mo-customer').value || (currentCustomerId),
+    title,
+    description: document.getElementById('mo-description').value.trim() || null,
+    current_phase_id: document.getElementById('mo-phase').value || null
+  };
+  try {
+    if (_editingOrderId) {
+      await api('/api/orders/' + _editingOrderId, { method: 'PUT', body: JSON.stringify({ title: body.title, description: body.description }) });
+    } else {
+      await api('/api/orders', { method: 'POST', body: JSON.stringify(body) });
+    }
+    closeOrderModal();
+    t(_editingOrderId ? 'Order uppdaterad' : 'Order skapad');
+    if (_editingOrderId) {
+      await loadOrderDetail(_editingOrderId);
+    } else if (_currentView === 'orders') {
+      loadOrders();
+    } else if (_currentView === 'customer-detail') {
+      loadCustomerOrders(currentCustomerId);
+    }
+  } catch(e) { t(e.message, 'err'); }
+}
+
+// Stäng modaler med Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeOrderModal();
+    closeTaskModal();
+  }
+});
+
+// ── Inställningar: Orderfaser ──────────────────────────────────────────────
+
+let _phaseTab = 'order';
+let _settingsPhases = [];
+
+async function loadPhaseTemplates() {
+  try {
+    _settingsPhases = await api('/api/phase-templates');
+    renderPhaseSettings();
+  } catch(e) { /* tyst fel om admin saknas */ }
+}
+
+function setPhaseTab(tab) {
+  _phaseTab = tab;
+  document.getElementById('ptab-order').style.fontWeight = tab === 'order' ? '700' : '';
+  document.getElementById('ptab-order').style.color = tab === 'order' ? 'var(--blue)' : '';
+  document.getElementById('ptab-project').style.fontWeight = tab === 'project' ? '700' : '';
+  document.getElementById('ptab-project').style.color = tab === 'project' ? 'var(--blue)' : '';
+  renderPhaseSettings();
+}
+
+function renderPhaseSettings() {
+  const el = document.getElementById('s-phases-list');
+  if (!el) return;
+  const phases = _settingsPhases.filter(p => p.order_type === _phaseTab).sort((a,b) => a.position - b.position);
+  if (!phases.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">Inga faser konfigurerade.</div>';
+    return;
+  }
+  el.innerHTML = phases.map((p, idx) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="width:24px;height:24px;border-radius:50%;background:var(--tint2);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--blue);flex-shrink:0">${idx+1}</span>
+      <span style="flex:1;font-size:13px;font-weight:500">${escapeHtml(p.name)}</span>
+      <button class="btn btn-g btn-sm btn-ico" onclick="movePhase('${p.id}',-1)" ${idx===0?'disabled':''}><i class="ti ti-arrow-up"></i></button>
+      <button class="btn btn-g btn-sm btn-ico" onclick="movePhase('${p.id}',1)" ${idx===phases.length-1?'disabled':''}><i class="ti ti-arrow-down"></i></button>
+      <button class="btn btn-danger btn-sm btn-ico" onclick="deletePhaseTemplate('${p.id}')"><i class="ti ti-trash"></i></button>
+    </div>`).join('');
+}
+
+async function addPhaseTemplate() {
+  const name = document.getElementById('s-new-phase-name').value.trim();
+  if (!name) return;
+  const phases = _settingsPhases.filter(p => p.order_type === _phaseTab);
+  try {
+    const created = await api('/api/phase-templates', {
+      method: 'POST',
+      body: JSON.stringify({ order_type: _phaseTab, name, position: phases.length })
+    });
+    _settingsPhases.push(created);
+    document.getElementById('s-new-phase-name').value = '';
+    renderPhaseSettings();
+    t('Fas tillagd');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+async function deletePhaseTemplate(id) {
+  if (!confirm('Ta bort fasen?')) return;
+  try {
+    await api('/api/phase-templates/' + id, { method: 'DELETE' });
+    _settingsPhases = _settingsPhases.filter(p => p.id !== id);
+    renderPhaseSettings();
+    t('Fas borttagen');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+async function movePhase(id, dir) {
+  const phases = _settingsPhases.filter(p => p.order_type === _phaseTab).sort((a,b) => a.position - b.position);
+  const idx = phases.findIndex(p => p.id === id);
+  const swapIdx = idx + dir;
+  if (swapIdx < 0 || swapIdx >= phases.length) return;
+  // Swap positions
+  const a = phases[idx], b = phases[swapIdx];
+  const tmpPos = a.position;
+  a.position = b.position;
+  b.position = tmpPos;
+  try {
+    await Promise.all([
+      api('/api/phase-templates/' + a.id, { method: 'PUT', body: JSON.stringify({ order_type: a.order_type, name: a.name, position: a.position }) }),
+      api('/api/phase-templates/' + b.id, { method: 'PUT', body: JSON.stringify({ order_type: b.order_type, name: b.name, position: b.position }) }),
+    ]);
+    renderPhaseSettings();
+  } catch(e) { t(e.message, 'err'); }
+}
+// Stäng modaler vid klick utanför
+document.getElementById('modal-order').addEventListener('click', function(e) { if(e.target===this) closeOrderModal(); });
+document.getElementById('modal-task').addEventListener('click', function(e) { if(e.target===this) closeTaskModal(); });
 </script>
 
 <script>

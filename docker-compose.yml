@@ -39,6 +39,7 @@ services:
       MS_APP_REDIRECT_URI: ${MS_APP_REDIRECT_URI:-}
     volumes:
       - report_output:/app/reports_output
+      - order_documents:/app/order_documents
     expose:
       - "8000"
     networks:
@@ -65,3 +66,4 @@ networks:
 volumes:
   pg_data:
   report_output:
+  order_documents:

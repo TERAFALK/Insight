@@ -28,6 +28,39 @@ async def init_db() -> None:
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS customer_id VARCHAR REFERENCES customers(id)",
         ]:
             await conn.execute(text(stmt))
+    await _seed_phase_templates()
+
+
+async def _seed_phase_templates() -> None:
+    """Skapa standardfaser om tabellen är tom."""
+    from app.db.models import OrderPhaseTemplate
+
+    async with AsyncSessionLocal() as session:
+        from sqlalchemy import select, func as sqlfunc
+
+        count = await session.scalar(
+            select(sqlfunc.count()).select_from(OrderPhaseTemplate)
+        )
+        if count and count > 0:
+            return
+
+        defaults = {
+            "order": ["Bekräftad", "Beställd hos leverantör", "Skickad", "Levererad", "Klar"],
+            "project": ["Planering", "Pågår", "Delleverans", "Avslutat"],
+        }
+        import uuid as _uuid_mod
+        for order_type, names in defaults.items():
+            for pos, name in enumerate(names):
+                session.add(
+                    OrderPhaseTemplate(
+                        id=str(_uuid_mod.uuid4()),
+                        order_type=order_type,
+                        name=name,
+                        position=pos,
+                        is_default=(pos == 0),
+                    )
+                )
+        await session.commit()
 
 
 

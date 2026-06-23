@@ -1,9 +1,9 @@
 """Databasmodeller för Insight."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -104,3 +104,110 @@ class Report(Base):
     data_snapshot: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     customer: Mapped["Customer"] = relationship(back_populates="reports")
+
+
+class OrderPhaseTemplate(Base):
+    """Konfigurerbar fasmall för order- eller projektfaser."""
+
+    __tablename__ = "order_phase_templates"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    order_type: Mapped[str] = mapped_column(String, nullable=False)  # "order" | "project"
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    orders: Mapped[list["Order"]] = relationship(back_populates="current_phase")
+
+
+class Order(Base):
+    """En order eller ett projekt kopplat till en kund."""
+
+    __tablename__ = "orders"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    customer_id: Mapped[str] = mapped_column(
+        String, ForeignKey("customers.id"), nullable=False, index=True
+    )
+    type: Mapped[str] = mapped_column(String, nullable=False)  # "order" | "project"
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    current_phase_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("order_phase_templates.id"), nullable=True
+    )
+    status: Mapped[str] = mapped_column(String, default="active")  # active|completed|cancelled
+    created_by: Mapped[str | None] = mapped_column(String, ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    customer: Mapped["Customer"] = relationship()
+    current_phase: Mapped["OrderPhaseTemplate | None"] = relationship(back_populates="orders")
+    documents: Mapped[list["OrderDocument"]] = relationship(
+        back_populates="order", cascade="all, delete-orphan"
+    )
+    tasks: Mapped[list["ProjectTask"]] = relationship(
+        back_populates="order", cascade="all, delete-orphan"
+    )
+    time_entries: Mapped[list["TimeEntry"]] = relationship(
+        back_populates="order", cascade="all, delete-orphan"
+    )
+
+
+class OrderDocument(Base):
+    """Uppladdade dokument kopplade till en order/projekt."""
+
+    __tablename__ = "order_documents"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    order_id: Mapped[str] = mapped_column(
+        String, ForeignKey("orders.id"), nullable=False, index=True
+    )
+    filename: Mapped[str] = mapped_column(String, nullable=False)  # filnamn på disk
+    original_name: Mapped[str] = mapped_column(String, nullable=False)
+    mime_type: Mapped[str] = mapped_column(String, default="application/octet-stream")
+    file_path: Mapped[str] = mapped_column(String, nullable=False)
+    uploaded_by: Mapped[str | None] = mapped_column(String, ForeignKey("users.id"), nullable=True)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    order: Mapped["Order"] = relationship(back_populates="documents")
+
+
+class ProjectTask(Base):
+    """Gantt-uppgift inom ett projekt."""
+
+    __tablename__ = "project_tasks"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    order_id: Mapped[str] = mapped_column(
+        String, ForeignKey("orders.id"), nullable=False, index=True
+    )
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+
+    order: Mapped["Order"] = relationship(back_populates="tasks")
+
+
+class TimeEntry(Base):
+    """Registrerad arbetstid på ett projekt."""
+
+    __tablename__ = "time_entries"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    order_id: Mapped[str] = mapped_column(
+        String, ForeignKey("orders.id"), nullable=False, index=True
+    )
+    user_id: Mapped[str | None] = mapped_column(String, ForeignKey("users.id"), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    hours: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    billed_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    worked_at: Mapped[date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    order: Mapped["Order"] = relationship(back_populates="time_entries")
