@@ -215,6 +215,18 @@ async def set_phase(
     if phase.order_type != order.type:
         raise HTTPException(status_code=400, detail="Fas tillhör fel ordertyp")
     order.current_phase_id = body.phase_id
+
+    # Sätt status till completed om det är sista fasen för denna ordertyp
+    last_phase = await db.scalar(
+        select(OrderPhaseTemplate)
+        .where(OrderPhaseTemplate.order_type == order.type)
+        .order_by(OrderPhaseTemplate.position.desc())
+    )
+    if last_phase and last_phase.id == body.phase_id:
+        order.status = "completed"
+    elif order.status == "completed":
+        order.status = "active"
+
     await db.commit()
     return await _get_order_or_404(order_id, db)
 

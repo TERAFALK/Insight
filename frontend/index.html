@@ -517,20 +517,25 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 .phase-step.done .phase-label{color:var(--ok)}
 .phase-step.active .phase-label{color:var(--blue)}
 
-/* ── Gantt ── */
-.gantt-wrap{overflow-x:auto;padding-bottom:8px}
-.gantt-header{display:flex;border-bottom:1px solid var(--border);margin-bottom:4px}
-.gantt-task-col{width:180px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--muted);padding:6px 12px}
-.gantt-dates{flex:1;display:flex;gap:0;position:relative}
-.gantt-date-label{font-size:10px;font-weight:600;color:var(--muted);padding:6px 0;text-align:center}
-.gantt-row{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:38px}
+/* ── Planering (Gantt) ── */
+.gantt-wrap{overflow-x:auto;padding-bottom:8px;min-width:0}
+.gantt-inner{min-width:500px}
+.gantt-header{display:flex;border-bottom:2px solid var(--border);background:var(--tint)}
+.gantt-task-col{width:200px;flex-shrink:0;font-size:11px;font-weight:700;color:var(--muted);padding:8px 14px;text-transform:uppercase;letter-spacing:.06em}
+.gantt-timeline{flex:1;position:relative;display:flex}
+.gantt-col-label{font-size:10px;font-weight:700;color:var(--muted);padding:8px 0;text-align:center;border-left:1px solid var(--border);box-sizing:border-box;text-transform:uppercase;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gantt-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border)}
 .gantt-row:last-child{border-bottom:none}
-.gantt-row-name{width:180px;flex-shrink:0;font-size:13px;font-weight:500;color:var(--text);padding:6px 12px;display:flex;align-items:center;gap:6px}
-.gantt-row-bar-area{flex:1;position:relative;height:38px;background:var(--tint);border-radius:0}
-.gantt-bar{position:absolute;top:7px;height:24px;border-radius:5px;background:var(--blue);opacity:0.85;cursor:pointer;transition:opacity 0.1s;display:flex;align-items:center;padding:0 8px;min-width:8px;overflow:hidden}
-.gantt-bar:hover{opacity:1}
-.gantt-bar.done{background:var(--ok)}
+.gantt-row:hover{background:rgba(0,71,163,0.02)}
+.gantt-row-name{width:200px;flex-shrink:0;font-size:13px;font-weight:500;color:var(--text);padding:8px 14px;display:flex;align-items:center;gap:7px;border-right:1px solid var(--border)}
+.gantt-row-bars{flex:1;position:relative;min-height:44px;display:flex}
+.gantt-grid-col{border-left:1px solid var(--border);box-sizing:border-box;height:100%}
+.gantt-bar-layer{position:absolute;inset:0;pointer-events:none}
+.gantt-bar{position:absolute;top:10px;height:24px;border-radius:5px;background:var(--blue);opacity:0.85;cursor:pointer;transition:opacity 0.1s;display:flex;align-items:center;padding:0 8px;min-width:6px;overflow:hidden;pointer-events:all;box-shadow:0 1px 3px rgba(0,71,163,0.2)}
+.gantt-bar:hover{opacity:1;box-shadow:0 2px 8px rgba(0,71,163,0.3)}
+.gantt-bar.done{background:var(--ok);box-shadow:0 1px 3px rgba(22,163,74,0.2)}
 .gantt-bar-label{font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt-today{position:absolute;top:0;bottom:0;width:2px;background:rgba(220,38,38,0.5);pointer-events:none;z-index:2}
 
 /* ── Tidsposter ── */
 .time-form{display:grid;grid-template-columns:1fr 2fr 80px 80px auto;gap:10px;align-items:flex-end;margin-bottom:16px}
@@ -720,7 +725,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
       <!-- Flikar -->
       <div class="cd-tabs">
-        <div class="cd-tab active" data-tab="network" onclick="switchCdTab('network')"><i class="ti ti-network"></i> Nätverk</div>
+        <div class="cd-tab active" data-tab="network" onclick="switchCdTab('network')"><i class="ti ti-activity"></i> Driftstatus</div>
         <div class="cd-tab" data-tab="orders" onclick="switchCdTab('orders')"><i class="ti ti-clipboard-list"></i> Order & Projekt</div>
         <div class="cd-tab" data-tab="reports" onclick="switchCdTab('reports')"><i class="ti ti-file-description"></i> Rapporter</div>
       </div>
@@ -854,7 +859,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="cd-tab-pane" id="cd-pane-orders">
         <div class="ph" style="margin-bottom:16px">
           <div></div>
-          <button class="btn btn-p btn-sm" id="cd-new-order-btn" onclick="openNewOrderModal(currentCustomerId)"><i class="ti ti-plus"></i> Ny order / projekt</button>
+          <button class="btn btn-p btn-sm" id="cd-new-order-btn" style="display:none" onclick="openNewOrderModal(currentCustomerId)"><i class="ti ti-plus"></i> Ny order / projekt</button>
         </div>
         <div id="cd-orders-list"><div class="skel" style="padding:32px">Laddar ordrar...</div></div>
       </div>
@@ -1128,7 +1133,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="cd-tabs" id="od-tabs">
         <div class="cd-tab active" data-tab="od-info" onclick="switchOdTab('od-info')"><i class="ti ti-info-circle"></i> Info</div>
         <div class="cd-tab" data-tab="od-documents" onclick="switchOdTab('od-documents')"><i class="ti ti-file"></i> Dokument</div>
-        <div class="cd-tab od-project-only" data-tab="od-gantt" onclick="switchOdTab('od-gantt')" style="display:none"><i class="ti ti-chart-gantt"></i> Gantt</div>
+        <div class="cd-tab od-project-only" data-tab="od-gantt" onclick="switchOdTab('od-gantt')" style="display:none"><i class="ti ti-chart-gantt"></i> Planering</div>
         <div class="cd-tab od-project-only" data-tab="od-time" onclick="switchOdTab('od-time')" style="display:none"><i class="ti ti-clock"></i> Arbetad tid</div>
       </div>
 
@@ -1152,10 +1157,10 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         </div>
       </div>
 
-      <!-- Flik: Gantt (projekt) -->
+      <!-- Flik: Planering (projekt) -->
       <div class="cd-tab-pane" id="od-pane-od-gantt">
         <div class="card">
-          <div class="ch"><span class="cht">Gantt-schema</span>
+          <div class="ch"><span class="cht">Planeringsschema</span>
             <button class="btn btn-p btn-sm" id="od-add-task-btn" onclick="openTaskModal(null)"><i class="ti ti-plus"></i> Lägg till uppgift</button>
           </div>
           <div class="cb" id="od-gantt-wrap"><div style="color:var(--muted);font-size:13px">Inga uppgifter tillagda.</div></div>
@@ -1164,7 +1169,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
       <!-- Flik: Arbetad tid (projekt) -->
       <div class="cd-tab-pane" id="od-pane-od-time">
-        <div class="card">
+        <div class="card" id="od-time-form-card">
           <div class="ch"><span class="cht">Registrera tid</span></div>
           <div class="cb">
             <div class="time-form">
@@ -1180,13 +1185,13 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <div class="card" style="margin-top:14px">
           <div class="ch"><span class="cht">Tidsposter</span></div>
           <div class="cb0">
-            <table class="tbl">
-              <thead><tr><th>Datum</th><th>Beskrivning</th><th style="text-align:right">Faktisk tid</th><th style="text-align:right">Debiteras</th><th style="width:50px"></th></tr></thead>
+            <table class="tbl" id="od-time-table">
+              <thead id="od-time-thead"><tr><th>Datum</th><th>Beskrivning</th><th style="text-align:right">Faktisk tid</th><th style="text-align:right">Tid</th><th style="width:50px"></th></tr></thead>
               <tbody id="od-time-tbody"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Inga tidsposter.</td></tr></tbody>
             </table>
             <div class="time-summary" id="od-time-summary" style="display:none">
-              <div class="time-sum-item"><div class="time-sum-val" id="ts-actual">0 h</div><div class="time-sum-lbl">Faktisk tid</div></div>
-              <div class="time-sum-item"><div class="time-sum-val" id="ts-billed">0 h</div><div class="time-sum-lbl">Debiteras</div></div>
+              <div class="time-sum-item" id="ts-actual-wrap"><div class="time-sum-val" id="ts-actual">0 h</div><div class="time-sum-lbl">Faktisk tid</div></div>
+              <div class="time-sum-item"><div class="time-sum-val" id="ts-billed">0 h</div><div class="time-sum-lbl">Tid</div></div>
             </div>
           </div>
         </div>
@@ -1236,7 +1241,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
   </div>
 </div>
 
-<!-- Modal: Gantt-uppgift -->
+<!-- Modal: Planering-uppgift -->
 <div id="modal-task" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:12px;padding:28px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -1359,6 +1364,8 @@ function applyRoleUI() {
   // Dölj admin-knappar för skapande av ordrar
   const ordersNewBtn = document.getElementById('orders-new-btn');
   if (ordersNewBtn) ordersNewBtn.style.display = isAdmin ? '' : 'none';
+  const cdNewOrderBtn = document.getElementById('cd-new-order-btn');
+  if (cdNewOrderBtn) cdNewOrderBtn.style.display = isAdmin ? '' : 'none';
   const cdAdminActions = document.getElementById('cd-admin-actions');
   if (cdAdminActions) cdAdminActions.style.display = isAdmin ? '' : 'none';
 
@@ -2092,7 +2099,7 @@ function renderUnifiData(data) {
 
   // ── Hero-statistik (summerat över alla hosts) ──
   const allWans = hosts.flatMap(h => h.wans || []);
-  const onlineWans = allWans.filter(w => (w.uptime_percentage ?? 0) >= 99).length;
+  const onlineWans = allWans.filter(w => (w.uptime_percentage ?? 0) >= 99.9).length;
   const heroEl = document.getElementById('cd-hero-stats');
   heroEl.innerHTML = `
     ${allWans.length ? `<div><div class="hs-v">${onlineWans}/${allWans.length}</div><div class="hs-l">WAN online</div></div>` : ''}
@@ -2935,6 +2942,18 @@ async function loadOrderDetail(orderId) {
     document.getElementById('od-phase-btns').style.display = isAdmin ? '' : 'none';
     document.getElementById('od-edit-btn').style.display = isAdmin ? '' : 'none';
     document.getElementById('od-upload-btn').style.display = isAdmin ? '' : 'none';
+    document.getElementById('od-time-form-card').style.display = isAdmin ? '' : 'none';
+    // Kund ser bara debiterbar tid (inte faktisk tid)
+    const actualWrap = document.getElementById('ts-actual-wrap');
+    if (actualWrap) actualWrap.style.display = isAdmin ? '' : 'none';
+    const thead = document.getElementById('od-time-thead');
+    if (thead) {
+      if (isAdmin) {
+        thead.innerHTML = '<tr><th>Datum</th><th>Beskrivning</th><th style="text-align:right">Faktisk tid</th><th style="text-align:right">Tid</th><th style="width:50px"></th></tr>';
+      } else {
+        thead.innerHTML = '<tr><th>Datum</th><th>Beskrivning</th><th style="text-align:right">Tid</th></tr>';
+      }
+    }
     if (isProject) {
       document.getElementById('od-add-task-btn').style.display = isAdmin ? '' : 'none';
     }
@@ -2942,7 +2961,7 @@ async function loadOrderDetail(orderId) {
     renderPhaseTrack(order, _currentOrderPhases);
     renderDocuments(order.id);
     if (isProject) {
-      renderGantt(order.id);
+      renderPlanering(order.id);
       renderTimeEntries(order.id);
     }
 
@@ -3045,11 +3064,11 @@ async function deleteDocument(orderId, docId) {
   } catch(e) { t(e.message, 'err'); }
 }
 
-// ── Gantt ─────────────────────────────────────────────────────────────────
+// ── Planering ─────────────────────────────────────────────────────────────────
 
 let _ganttTasks = [];
 
-async function renderGantt(orderId) {
+async function renderPlanering(orderId) {
   const wrap = document.getElementById('od-gantt-wrap');
   try {
     _ganttTasks = await api('/api/orders/' + orderId + '/tasks');
@@ -3057,45 +3076,97 @@ async function renderGantt(orderId) {
       wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px">Inga uppgifter tillagda ännu.</div>';
       return;
     }
+
     const allDates = _ganttTasks.flatMap(t => [new Date(t.start_date), new Date(t.end_date)]);
     const minDate = new Date(Math.min(...allDates));
     const maxDate = new Date(Math.max(...allDates));
-    // Extend range by a few days on each side
-    minDate.setDate(minDate.getDate() - 2);
-    maxDate.setDate(maxDate.getDate() + 2);
     const totalDays = Math.ceil((maxDate - minDate) / 86400000) + 1;
 
-    // Build week labels
-    let weekLabels = '';
-    const cur = new Date(minDate);
-    while (cur <= maxDate) {
-      const weekPct = Math.min(7, Math.ceil((maxDate - cur) / 86400000) + 1) / totalDays * 100;
-      weekLabels += `<div class="gantt-date-label" style="width:${weekPct}%;flex-shrink:0">${cur.toLocaleDateString('sv-SE',{month:'short',day:'numeric'})}</div>`;
-      cur.setDate(cur.getDate() + 7);
+    // Välj kolumnstorlek baserat på projektlängd
+    let colDays, labelFmt;
+    if (totalDays <= 30) {
+      colDays = 1;
+      labelFmt = { weekday: 'short', day: 'numeric' };
+    } else if (totalDays <= 120) {
+      colDays = 7;
+      labelFmt = { month: 'short', day: 'numeric' };
+    } else {
+      colDays = 30;
+      labelFmt = { month: 'short', year: '2-digit' };
     }
 
+    // Snäpp startdatum till kolumnstart (måndag för vecka, 1:a för månad)
+    const snapStart = new Date(minDate);
+    if (colDays === 7) {
+      const day = snapStart.getDay() || 7;
+      snapStart.setDate(snapStart.getDate() - (day - 1));
+    } else if (colDays === 30) {
+      snapStart.setDate(1);
+    }
+
+    // Bygg kolumner
+    const cols = [];
+    const cur = new Date(snapStart);
+    while (cur <= maxDate) {
+      cols.push(new Date(cur));
+      cur.setDate(cur.getDate() + colDays);
+    }
+    // Säkerställ att sista uppgiftens slutdatum ryms
+    if (cols.length === 0 || new Date(cols[cols.length-1]) <= maxDate) {
+      cols.push(new Date(cur));
+    }
+    const gridEnd = new Date(cur);
+    const gridSpan = Math.max(1, (gridEnd - snapStart) / 86400000);
+    const colWidthPct = 100 / cols.length;
+
+    // Header-etiketter
+    const headerCols = cols.map(d =>
+      `<div class="gantt-col-label" style="width:${colWidthPct.toFixed(3)}%">${d.toLocaleDateString('sv-SE', labelFmt)}</div>`
+    ).join('');
+
+    // Grid-kolumner (bakgrund)
+    const gridColsHtml = cols.map((d, i) =>
+      `<div class="gantt-grid-col" style="width:${colWidthPct.toFixed(3)}%;flex-shrink:0;background:${i%2===0?'transparent':'rgba(0,0,0,0.018)'}"></div>`
+    ).join('');
+
+    // "Idag"-linje
+    const today = new Date(); today.setHours(0,0,0,0);
+    const todayPct = (today - snapStart) / 86400000 / gridSpan * 100;
+    const todayLine = (todayPct >= 0 && todayPct <= 100)
+      ? `<div class="gantt-today" style="left:${todayPct.toFixed(2)}%" title="Idag"></div>`
+      : '';
+
+    const isAdmin = currentUser && currentUser.role === 'admin';
     const rows = _ganttTasks.map(task => {
       const start = new Date(task.start_date);
       const end = new Date(task.end_date);
-      const leftPct = (start - minDate) / 86400000 / totalDays * 100;
-      const widthPct = Math.max(1, (end - start) / 86400000 + 1) / totalDays * 100;
+      const leftPct = Math.max(0, (start - snapStart) / 86400000 / gridSpan * 100);
+      const widthPct = Math.max(0.5, ((end - start) / 86400000 + 1) / gridSpan * 100);
+      const clickAttr = isAdmin ? `onclick="openTaskModal('${task.id}')"` : '';
       return `<div class="gantt-row">
-        <div class="gantt-row-name">${task.completed?'<i class="ti ti-check" style="color:var(--ok)"></i>':''} ${escapeHtml(task.title)}</div>
-        <div class="gantt-row-bar-area">
-          <div class="gantt-bar ${task.completed?'done':''}" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%" onclick="openTaskModal('${task.id}')">
-            <span class="gantt-bar-label">${escapeHtml(task.title)}</span>
+        <div class="gantt-row-name">
+          ${task.completed ? '<i class="ti ti-circle-check" style="color:var(--ok);flex-shrink:0"></i>' : '<i class="ti ti-circle" style="color:var(--border-s);flex-shrink:0"></i>'}
+          <span style="${task.completed ? 'text-decoration:line-through;color:var(--muted)' : ''}">${escapeHtml(task.title)}</span>
+        </div>
+        <div class="gantt-row-bars">
+          <div style="display:flex;width:100%;height:100%;position:absolute;top:0;left:0">${gridColsHtml}</div>
+          ${todayLine}
+          <div class="gantt-bar-layer">
+            <div class="gantt-bar ${task.completed?'done':''}" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%" ${clickAttr} title="${escapeHtml(task.start_date + ' → ' + task.end_date)}">
+              <span class="gantt-bar-label">${escapeHtml(task.title)}</span>
+            </div>
           </div>
         </div>
       </div>`;
     }).join('');
 
-    wrap.innerHTML = `<div class="gantt-wrap">
+    wrap.innerHTML = `<div class="gantt-wrap"><div class="gantt-inner">
       <div class="gantt-header">
         <div class="gantt-task-col">Uppgift</div>
-        <div class="gantt-dates">${weekLabels}</div>
+        <div class="gantt-timeline">${headerCols}</div>
       </div>
       ${rows}
-    </div>`;
+    </div></div>`;
   } catch(e) {
     wrap.innerHTML = `<div class="alert al-e"><i class="ti ti-alert-circle"></i>${escapeHtml(e.message)}</div>`;
   }
@@ -3146,7 +3217,7 @@ async function submitTaskModal() {
       await api('/api/orders/' + _currentOrder.id + '/tasks', { method: 'POST', body: JSON.stringify(body) });
     }
     closeTaskModal();
-    renderGantt(_currentOrder.id);
+    renderPlanering(_currentOrder.id);
     t('Uppgift sparad');
   } catch(e) { t(e.message, 'err'); }
 }
@@ -3156,7 +3227,7 @@ async function deleteCurrentTask() {
   try {
     await api('/api/orders/' + _currentOrder.id + '/tasks/' + _editingTaskId, { method: 'DELETE' });
     closeTaskModal();
-    renderGantt(_currentOrder.id);
+    renderPlanering(_currentOrder.id);
     t('Uppgift borttagen');
   } catch(e) { t(e.message, 'err'); }
 }
@@ -3173,35 +3244,49 @@ function updateBilledPreview() {
   document.getElementById('te-billed-preview').textContent = 'Debiteras: ' + (billedM === 0 ? billedH + ' h' : billedH + ' h ' + billedM + ' min');
 }
 
+function _fmtMin(totalMin) {
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return m === 0 ? h + ' h' : h + ' h ' + m + ' min';
+}
+
 async function renderTimeEntries(orderId) {
   const tbody = document.getElementById('od-time-tbody');
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const cols = isAdmin ? 5 : 3;
   try {
     const entries = await api('/api/orders/' + orderId + '/time-entries');
     if (!entries.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Inga tidsposter.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="${cols}" style="color:var(--muted);text-align:center;padding:20px">Inga tidsposter.</td></tr>`;
       document.getElementById('od-time-summary').style.display = 'none';
       return;
     }
-    const isAdmin = currentUser && currentUser.role === 'admin';
     tbody.innerHTML = entries.map(e => {
-      const actual = e.hours * 60 + e.minutes;
-      const actualStr = Math.floor(actual/60) + ' h ' + (actual%60) + ' min';
-      const billedStr = Math.floor(e.billed_minutes/60) + ' h ' + (e.billed_minutes%60) + ' min';
-      return `<tr>
-        <td>${e.worked_at}</td>
-        <td>${escapeHtml(e.description||'—')}</td>
-        <td style="text-align:right">${actualStr}</td>
-        <td style="text-align:right;font-weight:600">${billedStr}</td>
-        <td>${isAdmin?`<button class="btn btn-danger btn-sm btn-ico" onclick="deleteTimeEntry('${e.id}')"><i class="ti ti-trash"></i></button>`:''}</td>
-      </tr>`;
+      const billedStr = _fmtMin(e.billed_minutes);
+      if (isAdmin) {
+        const actualStr = _fmtMin(e.hours * 60 + e.minutes);
+        return `<tr>
+          <td>${e.worked_at}</td>
+          <td>${escapeHtml(e.description||'—')}</td>
+          <td style="text-align:right">${actualStr}</td>
+          <td style="text-align:right;font-weight:600">${billedStr}</td>
+          <td><button class="btn btn-danger btn-sm btn-ico" onclick="deleteTimeEntry('${e.id}')"><i class="ti ti-trash"></i></button></td>
+        </tr>`;
+      } else {
+        return `<tr>
+          <td>${e.worked_at}</td>
+          <td>${escapeHtml(e.description||'—')}</td>
+          <td style="text-align:right;font-weight:600">${billedStr}</td>
+        </tr>`;
+      }
     }).join('');
     const totalActual = entries.reduce((s,e) => s + e.hours*60 + e.minutes, 0);
     const totalBilled = entries.reduce((s,e) => s + e.billed_minutes, 0);
-    document.getElementById('ts-actual').textContent = Math.floor(totalActual/60) + ' h ' + (totalActual%60) + ' min';
-    document.getElementById('ts-billed').textContent = Math.floor(totalBilled/60) + ' h ' + (totalBilled%60) + ' min';
+    document.getElementById('ts-actual').textContent = _fmtMin(totalActual);
+    document.getElementById('ts-billed').textContent = _fmtMin(totalBilled);
     document.getElementById('od-time-summary').style.display = 'flex';
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--err);padding:16px">${escapeHtml(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="color:var(--err);padding:16px">${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
@@ -3365,13 +3450,29 @@ function renderPhaseSettings() {
     return;
   }
   el.innerHTML = phases.map((p, idx) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)" id="phase-row-${p.id}">
       <span style="width:24px;height:24px;border-radius:50%;background:var(--tint2);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--blue);flex-shrink:0">${idx+1}</span>
-      <span style="flex:1;font-size:13px;font-weight:500">${escapeHtml(p.name)}</span>
+      <input class="fi" id="phase-name-${p.id}" value="${escapeHtml(p.name)}" style="flex:1;padding:6px 10px;font-size:13px" onblur="savePhaseNameIfChanged('${p.id}')" onkeydown="if(event.key==='Enter')this.blur()">
       <button class="btn btn-g btn-sm btn-ico" onclick="movePhase('${p.id}',-1)" ${idx===0?'disabled':''}><i class="ti ti-arrow-up"></i></button>
       <button class="btn btn-g btn-sm btn-ico" onclick="movePhase('${p.id}',1)" ${idx===phases.length-1?'disabled':''}><i class="ti ti-arrow-down"></i></button>
       <button class="btn btn-danger btn-sm btn-ico" onclick="deletePhaseTemplate('${p.id}')"><i class="ti ti-trash"></i></button>
     </div>`).join('');
+}
+
+async function savePhaseNameIfChanged(id) {
+  const input = document.getElementById('phase-name-' + id);
+  if (!input) return;
+  const newName = input.value.trim();
+  const phase = _settingsPhases.find(p => p.id === id);
+  if (!phase || newName === phase.name || !newName) return;
+  try {
+    await api('/api/phase-templates/' + id, {
+      method: 'PUT',
+      body: JSON.stringify({ order_type: phase.order_type, name: newName, position: phase.position })
+    });
+    phase.name = newName;
+    t('Fas uppdaterad');
+  } catch(e) { t(e.message, 'err'); input.value = phase.name; }
 }
 
 async function addPhaseTemplate() {
