@@ -4280,9 +4280,11 @@ function renderTicketDetail() {
     typeSel.value = tk.type;
     typeSel.onchange = () => updateTicketField('type', typeSel.value);
 
-    // Kategori: nolla BÅDA handlers innan vi rör DOM
+    // Kategori — handlers sätts EN gång vid laddning och rivs aldrig mer
     const catSel = document.getElementById('td-cat-sel');
     const subcatSel = document.getElementById('td-subcat-sel');
+
+    // Koppla loss tillfälligt bara för att undvika spurious fire under innerHTML-rebuild
     catSel.onchange = null;
     subcatSel.onchange = null;
 
@@ -4290,23 +4292,15 @@ function renderTicketDetail() {
     catSel.innerHTML = '<option value="">— välj —</option>' + topCats.map(c =>
       `<option value="${c.id}"${tk.category?.id===c.id?' selected':''}>${escapeHtml(c.name)}</option>`
     ).join('');
-
-    // _updateSubcatOptions skriver subcatSel.innerHTML — handlers är fortfarande null
     _updateSubcatOptions(tk.category?.id, tk.subcategory?.id);
 
-    // setTimeout(0) låter webbläsaren tömma eventkön (köade change-events från innerHTML-rebuild)
-    // innan vi kopplar tillbaka handlers — annars avfyras de köade events direkt på de nya handlers
-    setTimeout(() => {
-      subcatSel.onchange = () => updateTicketField('subcategory_id', subcatSel.value || null);
-      catSel.onchange = () => {
-        subcatSel.onchange = null;
-        _updateSubcatOptions(catSel.value, null);
-        setTimeout(() => {
-          subcatSel.onchange = () => updateTicketField('subcategory_id', subcatSel.value || null);
-        }, 0);
-        updateTicketField('category_id', catSel.value || null);
-      };
-    }, 0);
+    // Koppla handlers — updateTicketField anropar INTE renderTicketDetail,
+    // så dessa handlers sitter kvar orubbade för hela sessionens livstid
+    catSel.onchange = () => {
+      _updateSubcatOptions(catSel.value, null);
+      updateTicketField('category_id', catSel.value || null);
+    };
+    subcatSel.onchange = () => updateTicketField('subcategory_id', subcatSel.value || null);
 
     // Tilldelad
     const assignSel = document.getElementById('td-assign-sel');
@@ -4526,12 +4520,40 @@ async function updateTicketField(field, value) {
     _currentTicket = await api('/api/tickets/' + _currentTicket.id, {
       method: 'PUT', body: JSON.stringify(body),
     });
-    renderTicketDetail();
-    // Uppdatera i listan
+    // Uppdatera INTE select-elementen — de har redan rätt värde sedan användaren ändrade dem.
+    // Bara uppdatera badges, SLA och historik.
+    _refreshTicketMeta();
     const idx = _tickets.findIndex(t => t.id === _currentTicket.id);
     if (idx >= 0) _tickets[idx] = _currentTicket;
     t('Ärende uppdaterat');
   } catch(e) { t(e.message, 'err'); }
+}
+
+function _refreshTicketMeta() {
+  const tk = _currentTicket;
+  // Badges i topprad
+  document.getElementById('td-badges').innerHTML =
+    `<span class="b ${PRIO_CLS[tk.priority]||''}">${PRIO_LABEL[tk.priority]||tk.priority}</span>` +
+    `<span class="b ${STATUS_CLS[tk.status]||''}">${STATUS_LABEL[tk.status]||tk.status}</span>` +
+    `<span class="b b-muted">${TYPE_LABEL[tk.type]||tk.type}</span>` +
+    (tk.sla_breached ? '<span class="b" style="background:#fce8e6;color:#c5221f">SLA brutet</span>' : '');
+  // SLA
+  const slaEl = document.getElementById('td-sla-info');
+  if (slaEl) slaEl.innerHTML = tk.sla_due_at
+    ? `<span class="${tk.sla_breached?'sla-breach':'sla-ok'}">${new Date(tk.sla_due_at).toLocaleString('sv-SE')}</span>`
+    : '—';
+  // Historik
+  const hist = tk.history || [];
+  const histEl = document.getElementById('td-history');
+  if (histEl) histEl.innerHTML = hist.length
+    ? hist.map(h => {
+        const fm = {status:'Status',priority:'Prioritet',type:'Typ',assigned_to:'Tilldelad',category_id:'Kategori',subcategory_id:'Underkategori'};
+        return `<div style="padding:5px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--muted);font-size:11px">${new Date(h.changed_at).toLocaleString('sv-SE')}</span><br>
+          <span>${fm[h.field]||h.field}: <em style="color:var(--muted)">${h.old_value||'—'}</em> → <strong>${h.new_value||'—'}</strong></span>
+        </div>`;
+      }).join('')
+    : '<span style="color:var(--muted)">Ingen historik ännu.</span>';
 }
 
 async function submitTicketReply() {
