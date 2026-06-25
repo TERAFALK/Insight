@@ -1208,7 +1208,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <div id="stab-users" style="display:none">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
               <div class="fsec" style="margin:0">Administratörer &amp; tekniker</div>
-              <button class="btn btn-p btn-sm" onclick="nav('users');setTimeout(openCreateUser,80)"><i class="ti ti-plus"></i> Ny användare</button>
+              <button class="btn btn-p btn-sm" onclick="openUserModal(null)"><i class="ti ti-plus"></i> Ny användare</button>
             </div>
             <div id="s-users-list"></div>
           </div>
@@ -1530,6 +1530,40 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 </div>
 
 <!-- ══ MODALER ══ -->
+
+<!-- Modal: Användare (skapa/redigera admin & tekniker) -->
+<div id="modal-user" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-user')">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700" id="mu-title">Ny användare</div>
+      <button class="btn btn-g btn-sm btn-ico" onclick="closeModal('modal-user')"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="mu-error" class="alert al-e" style="display:none;margin-bottom:14px"><i class="ti ti-alert-circle"></i><span id="mu-error-msg"></span></div>
+    <div class="f2">
+      <div class="fr" style="margin:0"><label class="fl">Namn</label><input class="fi" id="mu-name" placeholder="Förnamn Efternamn"></div>
+      <div class="fr" style="margin:0"><label class="fl">E-postadress *</label><input class="fi" id="mu-email" type="email" placeholder="anvandare@foretaget.se"></div>
+    </div>
+    <div class="fr"><label class="fl" id="mu-pw-label">Lösenord *</label><input class="fi" id="mu-password" type="password" placeholder="Minst 8 tecken" autocomplete="new-password"></div>
+    <div class="fr" style="margin:0"><label class="fl">Roll</label>
+      <select class="fi" id="mu-role">
+        <option value="admin">Admin</option>
+        <option value="technician">Tekniker</option>
+      </select>
+    </div>
+    <div class="fr" style="margin:0" id="mu-active-row" style="display:none">
+      <label class="fl">Status</label>
+      <select class="fi" id="mu-active">
+        <option value="true">Aktiv</option>
+        <option value="false">Inaktiv</option>
+      </select>
+    </div>
+    <input type="hidden" id="mu-user-id">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-g" onclick="closeModal('modal-user')">Avbryt</button>
+      <button class="btn btn-p" id="mu-submit-btn" onclick="submitUserModal()"><i class="ti ti-check"></i> Spara</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal: Nytt ärende -->
 <div id="modal-ticket" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-ticket')">
@@ -4285,7 +4319,7 @@ async function loadSettingsUsers() {
     const users = await api('/api/users');
     const staff = users.filter(u => u.role === 'admin' || u.role === 'technician');
     if (!staff.length) {
-      el.innerHTML = '<div style="color:var(--muted);font-size:13px">Inga användare.</div>';
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px">Inga admins eller tekniker skapade ännu.</div>';
       return;
     }
     el.innerHTML = `<table class="tbl"><thead><tr><th>Namn</th><th>E-post</th><th>Roll</th><th>Status</th><th></th></tr></thead><tbody>` +
@@ -4299,14 +4333,94 @@ async function loadSettingsUsers() {
           <td>${roleBadge}</td>
           <td>${statusBadge}</td>
           <td style="text-align:right;white-space:nowrap">
-            <button class="btn btn-g btn-sm" onclick="openEditUser('${u.id}')"><i class="ti ti-edit"></i></button>
-            ${isSelf ? '' : `<button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteUser('${u.id}','${escapeHtml(u.email)}')"><i class="ti ti-trash"></i></button>`}
+            <button class="btn btn-g btn-sm" onclick="openUserModal('${u.id}')"><i class="ti ti-edit"></i> Redigera</button>
+            ${isSelf ? '' : `<button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteStaffUser('${u.id}','${escapeHtml(u.email)}')"><i class="ti ti-trash"></i></button>`}
           </td>
         </tr>`;
       }).join('') + `</tbody></table>`;
   } catch(e) {
     el.innerHTML = `<div class="alert al-e"><i class="ti ti-alert-circle"></i><span>${e.message}</span></div>`;
   }
+}
+
+// ── User modal (create/edit admin & technician) ───────────────────────────
+
+async function openUserModal(userId) {
+  document.getElementById('mu-error').style.display = 'none';
+  document.getElementById('mu-password').value = '';
+  document.getElementById('mu-user-id').value = userId || '';
+
+  if (userId) {
+    document.getElementById('mu-title').textContent = 'Redigera användare';
+    document.getElementById('mu-pw-label').textContent = 'Nytt lösenord (lämna tomt för oförändrat)';
+    document.getElementById('mu-active-row').style.display = '';
+    try {
+      const users = await api('/api/users');
+      const u = users.find(u => u.id === userId);
+      if (u) {
+        document.getElementById('mu-name').value = u.full_name || '';
+        document.getElementById('mu-email').value = u.email || '';
+        document.getElementById('mu-role').value = u.role || 'admin';
+        document.getElementById('mu-active').value = u.is_active ? 'true' : 'false';
+      }
+    } catch(e) { /* ignore */ }
+  } else {
+    document.getElementById('mu-title').textContent = 'Ny användare';
+    document.getElementById('mu-pw-label').textContent = 'Lösenord *';
+    document.getElementById('mu-active-row').style.display = 'none';
+    document.getElementById('mu-name').value = '';
+    document.getElementById('mu-email').value = '';
+    document.getElementById('mu-role').value = 'technician';
+  }
+  openModal('modal-user');
+}
+
+async function submitUserModal() {
+  const userId = document.getElementById('mu-user-id').value;
+  const full_name = document.getElementById('mu-name').value.trim();
+  const email = document.getElementById('mu-email').value.trim();
+  const password = document.getElementById('mu-password').value;
+  const role = document.getElementById('mu-role').value;
+  const is_active = document.getElementById('mu-active').value !== 'false';
+  const errEl = document.getElementById('mu-error');
+  const errMsg = document.getElementById('mu-error-msg');
+  errEl.style.display = 'none';
+
+  if (!email) { errMsg.textContent = 'E-postadress krävs.'; errEl.style.display = 'flex'; return; }
+  if (!userId && !password) { errMsg.textContent = 'Lösenord krävs för ny användare.'; errEl.style.display = 'flex'; return; }
+  if (password && password.length < 8) { errMsg.textContent = 'Lösenordet måste vara minst 8 tecken.'; errEl.style.display = 'flex'; return; }
+
+  const btn = document.getElementById('mu-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar...';
+  try {
+    if (userId) {
+      const body = { full_name, email, role, is_active };
+      if (password) body.password = password;
+      await api(`/api/users/${userId}`, { method: 'PUT', body: JSON.stringify(body) });
+      t(`${email} uppdaterad`);
+    } else {
+      await api('/api/users', { method: 'POST', body: JSON.stringify({ full_name, email, password, role, customer_id: null }) });
+      t(`${email} skapad`);
+    }
+    closeModal('modal-user');
+    loadSettingsUsers();
+  } catch(e) {
+    errMsg.textContent = e.message;
+    errEl.style.display = 'flex';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-check"></i> Spara';
+  }
+}
+
+async function deleteStaffUser(userId, email) {
+  if (!confirm(`Ta bort användaren ${email}? Detta kan inte ångras.`)) return;
+  try {
+    await api(`/api/users/${userId}`, { method: 'DELETE' });
+    t(`${email} borttagen`);
+    loadSettingsUsers();
+  } catch(e) { t(e.message, 'err'); }
 }
 
 function setPhaseTab(tab) {
