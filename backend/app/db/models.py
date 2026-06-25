@@ -48,6 +48,28 @@ class Customer(Base):
     reports: Mapped[list["Report"]] = relationship(
         back_populates="customer", cascade="all, delete-orphan"
     )
+    contacts: Mapped[list["CustomerContact"]] = relationship(
+        back_populates="customer", cascade="all, delete-orphan"
+    )
+
+
+class CustomerContact(Base):
+    """Kontaktperson på en kund som kan ta emot notifieringar."""
+
+    __tablename__ = "customer_contacts"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    customer_id: Mapped[str] = mapped_column(
+        String, ForeignKey("customers.id"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False)
+    phone: Mapped[str] = mapped_column(String, default="")
+    title: Mapped[str] = mapped_column(String, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    customer: Mapped["Customer"] = relationship(back_populates="contacts")
 
 
 class IntegrationCredential(Base):
@@ -312,6 +334,12 @@ class Ticket(Base):
     history: Mapped[list["TicketHistory"]] = relationship(
         back_populates="ticket", cascade="all, delete-orphan", order_by="TicketHistory.changed_at"
     )
+    contacts: Mapped[list["TicketContact"]] = relationship(
+        back_populates="ticket", cascade="all, delete-orphan"
+    )
+    time_entries: Mapped[list["TicketTimeEntry"]] = relationship(
+        back_populates="ticket", cascade="all, delete-orphan", order_by="TicketTimeEntry.worked_at"
+    )
 
 
 class TicketMessage(Base):
@@ -384,3 +412,41 @@ class TicketHistory(Base):
     changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     ticket: Mapped["Ticket"] = relationship(back_populates="history")
+
+
+class TicketContact(Base):
+    """Kontaktperson kopplad till ett ärende som ska ta emot notifieringar."""
+
+    __tablename__ = "ticket_contacts"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    ticket_id: Mapped[str] = mapped_column(
+        String, ForeignKey("tickets.id"), nullable=False, index=True
+    )
+    contact_id: Mapped[str] = mapped_column(
+        String, ForeignKey("customer_contacts.id"), nullable=False
+    )
+
+    ticket: Mapped["Ticket"] = relationship(back_populates="contacts")
+    contact: Mapped["CustomerContact"] = relationship()
+
+
+class TicketTimeEntry(Base):
+    """Registrerad arbetstid på ett ärende."""
+
+    __tablename__ = "ticket_time_entries"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    ticket_id: Mapped[str] = mapped_column(
+        String, ForeignKey("tickets.id"), nullable=False, index=True
+    )
+    user_id: Mapped[str | None] = mapped_column(String, ForeignKey("users.id"), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    hours: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    billed_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    worked_at: Mapped[date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    ticket: Mapped["Ticket"] = relationship(back_populates="time_entries")
+    user: Mapped["User | None"] = relationship()

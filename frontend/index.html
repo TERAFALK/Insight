@@ -524,6 +524,10 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 .sla-ok{color:var(--ok);font-size:12px;font-weight:600}
 .sla-warn{color:#f59e0b;font-size:12px;font-weight:600}
 .sla-breach{color:var(--err);font-size:12px;font-weight:600}
+.td-pane{transition:none}
+.td-contact-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.td-contact-row:last-child{border-bottom:none}
+.td-contact-avatar{width:28px;height:28px;border-radius:6px;background:var(--tint2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--blue);flex-shrink:0}
 /* ── Inställningar: undermeny ── */
 .settings-subnav{display:flex;flex-direction:column;gap:2px;position:sticky;top:24px}
 .ssn-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:7px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:background 0.15s,color 0.15s}
@@ -757,6 +761,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <div class="cd-tab" data-tab="orders" onclick="switchCdTab('orders')"><i class="ti ti-clipboard-list"></i> Order & Projekt</div>
         <div class="cd-tab" data-tab="tickets" onclick="switchCdTab('tickets')"><i class="ti ti-ticket"></i> Ärenden</div>
         <div class="cd-tab" data-tab="reports" onclick="switchCdTab('reports')"><i class="ti ti-file-description"></i> Rapporter</div>
+        <div class="cd-tab" data-tab="contacts" onclick="switchCdTab('contacts')"><i class="ti ti-users"></i> Kontakter</div>
       </div>
 
       <!-- Flik: Nätverk -->
@@ -905,6 +910,15 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <!-- Flik: Rapporter -->
       <div class="cd-tab-pane" id="cd-pane-reports">
         <div id="cd-reports-list"><div class="skel" style="padding:32px">Laddar rapporter...</div></div>
+      </div>
+
+      <!-- Flik: Kontakter -->
+      <div class="cd-tab-pane" id="cd-pane-contacts">
+        <div class="ph" style="margin-bottom:16px">
+          <div></div>
+          <button class="btn btn-p btn-sm" id="cd-new-contact-btn" onclick="openNewContactModal()"><i class="ti ti-plus"></i> Lägg till kontakt</button>
+        </div>
+        <div id="cd-contacts-list"><div class="skel" style="padding:32px">Laddar kontakter...</div></div>
       </div>
 
       <div style="display:flex;gap:9px;margin-top:14px" id="cd-admin-actions">
@@ -1198,38 +1212,82 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
     <!-- ══ ÄRENDE – DETALJ ══ -->
     <div class="view" id="v-ticket-detail">
-      <div class="ph">
-        <div class="ph-title" style="display:flex;align-items:center;gap:10px">
-          <button class="btn btn-g btn-sm" onclick="nav('tickets')"><i class="ti ti-arrow-left"></i></button>
-          <span id="td-number" style="color:var(--blue);font-weight:700"></span>
-          <span id="td-title-header" style="font-weight:500"></span>
+      <!-- Topprad -->
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-g btn-sm" onclick="nav('tickets')"><i class="ti ti-arrow-left"></i></button>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+            <span id="td-number" style="color:var(--blue);font-weight:800;font-size:15px;font-family:monospace"></span>
+            <div id="td-badges" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          </div>
+          <div id="td-title-header" style="font-size:17px;font-weight:700;color:var(--text);line-height:1.3"></div>
         </div>
-        <div class="ph-actions" id="td-header-actions"></div>
+        <div id="td-header-actions"></div>
       </div>
+
+      <!-- Huvudlayout: flikar + sidebar -->
       <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
-        <!-- Vänster: meddelandetråd -->
+        <!-- Vänster: flikar -->
         <div>
-          <!-- Statusbadges -->
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="td-badges"></div>
-          <!-- Meddelanden -->
-          <div id="td-messages" style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px"></div>
-          <!-- Svarsformulär -->
-          <div class="card" id="td-reply-card">
-            <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
-              <span style="font-size:13px;font-weight:600">Svara</span>
-              <label id="td-internal-wrap" style="display:none;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-left:8px">
-                <input type="checkbox" id="td-internal-cb"> Intern notering
-              </label>
-            </div>
-            <textarea id="td-reply-body" class="fi" rows="4" placeholder="Skriv ditt svar…" style="width:100%;resize:vertical;font-size:13px"></textarea>
-            <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-              <button class="btn btn-p btn-sm" onclick="submitTicketReply()"><i class="ti ti-send"></i> Skicka</button>
-              <label class="btn btn-g btn-sm" style="cursor:pointer"><i class="ti ti-paperclip"></i> Bifoga <input type="file" id="td-attach-input" style="display:none" onchange="uploadTicketAttachment(this)"></label>
+          <div class="cd-tabs" style="margin-bottom:0;border-radius:var(--r) var(--r) 0 0">
+            <div class="cd-tab active" data-tdtab="messages" onclick="switchTdTab('messages')"><i class="ti ti-messages"></i> Meddelanden</div>
+            <div class="cd-tab" data-tdtab="time" onclick="switchTdTab('time')"><i class="ti ti-clock"></i> Tid</div>
+            <div class="cd-tab" data-tdtab="history" onclick="switchTdTab('history')"><i class="ti ti-history"></i> Historik</div>
+          </div>
+
+          <!-- Flik: Meddelanden -->
+          <div id="td-pane-messages" class="td-pane active" style="border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r) var(--r);padding:16px;background:var(--surface)">
+            <div id="td-messages" style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px"></div>
+            <!-- Svarsformulär -->
+            <div id="td-reply-card">
+              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap">
+                <span style="font-size:13px;font-weight:600">Svara</span>
+                <label id="td-internal-wrap" style="display:none;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-left:4px">
+                  <input type="checkbox" id="td-internal-cb"> Intern notering
+                </label>
+              </div>
+              <textarea id="td-reply-body" class="fi" rows="4" placeholder="Skriv ditt svar…" style="width:100%;resize:vertical;font-size:13px"></textarea>
+              <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+                <button class="btn btn-p btn-sm" onclick="submitTicketReply()"><i class="ti ti-send"></i> Skicka</button>
+                <label class="btn btn-g btn-sm" style="cursor:pointer"><i class="ti ti-paperclip"></i> Bifoga <input type="file" id="td-attach-input" style="display:none" onchange="uploadTicketAttachment(this)"></label>
+              </div>
             </div>
           </div>
+
+          <!-- Flik: Tid -->
+          <div id="td-pane-time" class="td-pane" style="display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r) var(--r);background:var(--surface)">
+            <div id="td-time-form-wrap" style="padding:16px;border-bottom:1px solid var(--border)">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px">Registrera tid</div>
+              <div class="time-form">
+                <div><label class="fl">Datum</label><input class="fi" type="date" id="tdt-date"></div>
+                <div><label class="fl">Beskrivning</label><input class="fi" type="text" id="tdt-desc" placeholder="Vad utfördes?"></div>
+                <div><label class="fl">Timmar</label><input class="fi" type="number" id="tdt-hours" min="0" max="23" value="0" oninput="updateTdBilledPreview()"></div>
+                <div><label class="fl">Minuter</label><input class="fi" type="number" id="tdt-minutes" min="0" max="59" value="0" oninput="updateTdBilledPreview()"></div>
+                <div><label class="fl">&nbsp;</label><button class="btn btn-p" onclick="submitTicketTimeEntry()"><i class="ti ti-plus"></i> Lägg till</button></div>
+              </div>
+              <div class="b b-info" id="tdt-billed-preview" style="margin-top:8px">Debiteras: 0 min</div>
+            </div>
+            <div class="cb0">
+              <table class="tbl" id="td-time-table">
+                <thead><tr><th>Datum</th><th>Beskrivning</th><th>Utfört av</th><th style="text-align:right">Faktisk tid</th><th style="text-align:right">Tid</th><th style="width:40px"></th></tr></thead>
+                <tbody id="td-time-tbody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Inga tidsposter.</td></tr></tbody>
+              </table>
+              <div class="time-summary" id="td-time-summary" style="display:none">
+                <div class="time-sum-item"><div class="time-sum-val" id="tds-actual">0 h</div><div class="time-sum-lbl">Faktisk tid</div></div>
+                <div class="time-sum-item"><div class="time-sum-val" id="tds-billed">0 h</div><div class="time-sum-lbl">Tid</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flik: Historik -->
+          <div id="td-pane-history" class="td-pane" style="display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r) var(--r);padding:16px;background:var(--surface)">
+            <div id="td-history" style="font-size:12px"></div>
+          </div>
         </div>
-        <!-- Höger: metadata -->
+
+        <!-- Höger: metadata + åtgärder -->
         <div style="display:flex;flex-direction:column;gap:12px">
+          <!-- Info -->
           <div class="card">
             <div class="ch"><span class="cht">Information</span></div>
             <div class="cb" id="td-meta"></div>
@@ -1255,10 +1313,10 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
                 <label class="fl">Typ</label>
                 <select class="fi" id="td-type-sel" onchange="updateTicketField('type',this.value)">
                   <option value="incident">Incident</option>
-                  <option value="service_request">Serviceförfrågan</option>
-                  <option value="change">Ändringsärende</option>
+                  <option value="service_request">Service Request</option>
+                  <option value="change">Change Request</option>
                   <option value="problem">Problem</option>
-                  <option value="information">Informationsförfrågan</option>
+                  <option value="information">Information Request</option>
                 </select>
               </div>
               <div class="fr" style="margin:0 0 8px">
@@ -1275,10 +1333,13 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
               </div>
             </div>
           </div>
-          <!-- Historik -->
-          <div class="card">
-            <div class="ch"><span class="cht">Historik</span></div>
-            <div class="cb" id="td-history" style="font-size:12px"></div>
+          <!-- Kontaktpersoner -->
+          <div class="card" id="td-contacts-card">
+            <div class="ch">
+              <span class="cht">Mottagare</span>
+              <button class="btn btn-g btn-sm" onclick="openAddTicketContactModal()"><i class="ti ti-plus"></i></button>
+            </div>
+            <div class="cb" id="td-contacts-list" style="font-size:13px"></div>
           </div>
         </div>
       </div>
@@ -1438,10 +1499,10 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <label class="fl">Typ</label>
         <select class="fi" id="mt-type">
           <option value="incident">Incident</option>
-          <option value="service_request">Serviceförfrågan</option>
-          <option value="change">Ändringsärende</option>
+          <option value="service_request">Service Request</option>
+          <option value="change">Change Request</option>
           <option value="problem">Problem</option>
-          <option value="information">Informationsförfrågan</option>
+          <option value="information">Information Request</option>
         </select>
       </div>
       <div class="fr" style="margin:0">
@@ -1467,6 +1528,47 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
       <button class="btn btn-g" onclick="closeModal('modal-ticket')">Avbryt</button>
       <button class="btn btn-p" onclick="saveNewTicket()"><i class="ti ti-check"></i> Skapa ärende</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ny/redigera kundkontakt -->
+<div id="modal-contact" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-contact')">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700" id="mc-title">Ny kontaktperson</div>
+      <button class="btn btn-g btn-sm btn-ico" onclick="closeModal('modal-contact')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="f2">
+      <div class="fr" style="margin:0"><label class="fl">Namn *</label><input class="fi" id="mc-name" placeholder="Förnamn Efternamn"></div>
+      <div class="fr" style="margin:0"><label class="fl">E-post *</label><input class="fi" id="mc-email" type="email" placeholder="namn@foretag.se"></div>
+    </div>
+    <div class="f2">
+      <div class="fr" style="margin:0"><label class="fl">Telefon</label><input class="fi" id="mc-phone" placeholder="+46 70 000 00 00"></div>
+      <div class="fr" style="margin:0"><label class="fl">Titel/Roll</label><input class="fi" id="mc-title-input" placeholder="IT-ansvarig"></div>
+    </div>
+    <input type="hidden" id="mc-contact-id">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-g" onclick="closeModal('modal-contact')">Avbryt</button>
+      <button class="btn btn-p" onclick="saveContact()"><i class="ti ti-check"></i> Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Lägg till kontaktperson på ärende -->
+<div id="modal-ticket-contact" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-ticket-contact')">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700">Lägg till mottagare</div>
+      <button class="btn btn-g btn-sm btn-ico" onclick="closeModal('modal-ticket-contact')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="fr">
+      <label class="fl">Kontaktperson</label>
+      <select class="fi" id="mtc-contact-sel"><option value="">— välj kontakt —</option></select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-g" onclick="closeModal('modal-ticket-contact')">Avbryt</button>
+      <button class="btn btn-p" onclick="saveTicketContact()"><i class="ti ti-check"></i> Lägg till</button>
     </div>
   </div>
 </div>
@@ -3079,6 +3181,91 @@ function switchCdTab(tab) {
   if (tab === 'orders' && currentCustomerId) loadCustomerOrders(currentCustomerId);
   if (tab === 'tickets' && currentCustomerId) loadCustomerTickets(currentCustomerId);
   if (tab === 'reports' && currentCustomerId) loadCustomerReports(currentCustomerId);
+  if (tab === 'contacts' && currentCustomerId) loadCustomerContacts(currentCustomerId);
+}
+
+// ── Kundkontakter ─────────────────────────────────────────────────────────────
+
+async function loadCustomerContacts(customerId) {
+  const el = document.getElementById('cd-contacts-list');
+  if (!el) return;
+  el.innerHTML = '<div class="skel" style="padding:24px">Laddar kontakter...</div>';
+  try {
+    const contacts = await api('/api/customers/' + customerId + '/contacts');
+    if (!contacts.length) {
+      el.innerHTML = '<div class="empty"><i class="ti ti-users"></i>Inga kontaktpersoner tillagda.</div>';
+      return;
+    }
+    el.innerHTML = `<div class="card"><div class="cb0"><table class="tbl hov">
+      <thead><tr><th>Namn</th><th>E-post</th><th>Telefon</th><th>Roll</th><th style="width:80px"></th></tr></thead>
+      <tbody>
+        ${contacts.map(c => `<tr>
+          <td style="font-weight:600">${escapeHtml(c.name)}</td>
+          <td style="font-size:12px">${escapeHtml(c.email)}</td>
+          <td style="font-size:12px;color:var(--muted)">${escapeHtml(c.phone||'—')}</td>
+          <td style="font-size:12px;color:var(--muted)">${escapeHtml(c.title||'—')}</td>
+          <td style="display:flex;gap:4px">
+            <button class="btn btn-g btn-sm btn-ico" onclick="openEditContactModal('${c.id}','${escapeHtml(c.name)}','${escapeHtml(c.email)}','${escapeHtml(c.phone||'')}','${escapeHtml(c.title||'')}')"><i class="ti ti-edit"></i></button>
+            <button class="btn btn-danger btn-sm btn-ico" onclick="deleteContact('${c.id}')"><i class="ti ti-trash"></i></button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div></div>`;
+  } catch(e) { el.innerHTML = `<div style="color:var(--err);padding:16px">${e.message}</div>`; }
+}
+
+function openNewContactModal() {
+  document.getElementById('mc-title').textContent = 'Ny kontaktperson';
+  document.getElementById('mc-name').value = '';
+  document.getElementById('mc-email').value = '';
+  document.getElementById('mc-phone').value = '';
+  document.getElementById('mc-title-input').value = '';
+  document.getElementById('mc-contact-id').value = '';
+  openModal('modal-contact');
+}
+
+function openEditContactModal(id, name, email, phone, title) {
+  document.getElementById('mc-title').textContent = 'Redigera kontaktperson';
+  document.getElementById('mc-name').value = name;
+  document.getElementById('mc-email').value = email;
+  document.getElementById('mc-phone').value = phone;
+  document.getElementById('mc-title-input').value = title;
+  document.getElementById('mc-contact-id').value = id;
+  openModal('modal-contact');
+}
+
+async function saveContact() {
+  const name = document.getElementById('mc-name').value.trim();
+  const email = document.getElementById('mc-email').value.trim();
+  const phone = document.getElementById('mc-phone').value.trim();
+  const title = document.getElementById('mc-title-input').value.trim();
+  const contactId = document.getElementById('mc-contact-id').value;
+  if (!name) { t('Namn krävs', 'err'); return; }
+  if (!email) { t('E-post krävs', 'err'); return; }
+  try {
+    if (contactId) {
+      await api('/api/customers/' + currentCustomerId + '/contacts/' + contactId, {
+        method: 'PUT', body: JSON.stringify({ name, email, phone, title }),
+      });
+      t('Kontaktperson uppdaterad');
+    } else {
+      await api('/api/customers/' + currentCustomerId + '/contacts', {
+        method: 'POST', body: JSON.stringify({ name, email, phone, title }),
+      });
+      t('Kontaktperson tillagd');
+    }
+    closeModal('modal-contact');
+    loadCustomerContacts(currentCustomerId);
+  } catch(e) { t(e.message, 'err'); }
+}
+
+async function deleteContact(contactId) {
+  if (!confirm('Ta bort kontaktpersonen?')) return;
+  try {
+    await api('/api/customers/' + currentCustomerId + '/contacts/' + contactId, { method: 'DELETE' });
+    t('Kontaktperson borttagen');
+    loadCustomerContacts(currentCustomerId);
+  } catch(e) { t(e.message, 'err'); }
 }
 
 async function loadCustomerTickets(customerId) {
@@ -3900,7 +4087,7 @@ const PRIO_LABEL   = { critical:'Kritisk', high:'Hög', medium:'Medium', low:'L�
 const PRIO_CLS     = { critical:'tp-critical', high:'tp-high', medium:'tp-medium', low:'tp-low' };
 const STATUS_LABEL = { new:'Ny', open:'Öppen', in_progress:'Pågår', pending_customer:'Väntar på kund', resolved:'Löst', closed:'Stängd', cancelled:'Makulerad' };
 const STATUS_CLS   = { new:'ts-new', open:'ts-open', in_progress:'ts-in_progress', pending_customer:'ts-pending_customer', resolved:'ts-resolved', closed:'ts-closed', cancelled:'ts-cancelled' };
-const TYPE_LABEL   = { incident:'Incident', service_request:'Serviceförfrågan', change:'Ändringsärende', problem:'Problem', information:'Informationsförfrågan' };
+const TYPE_LABEL   = { incident:'Incident', service_request:'Service Request', change:'Change Request', problem:'Problem', information:'Information Request' };
 
 let _tickets = [];
 let _ticketFilter = { status: 'all', mine: false };
@@ -3992,6 +4179,10 @@ function _relTime(iso) {
 
 async function openTicketDetail(ticketId) {
   nav('ticket-detail');
+  switchTdTab('messages');
+  // Sätt dagens datum i tidregistreringsformuläret
+  const dateEl = document.getElementById('tdt-date');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
   try {
     _currentTicket = await api('/api/tickets/' + ticketId);
     await _ensureTicketMeta();
@@ -4009,6 +4200,14 @@ async function _ensureTicketMeta() {
       _ticketStaff = users.filter(u => u.role === 'admin' || u.role === 'technician');
     } catch(e) {}
   }
+}
+
+function switchTdTab(tab) {
+  document.querySelectorAll('[data-tdtab]').forEach(el => el.classList.toggle('active', el.dataset.tdtab === tab));
+  document.querySelectorAll('.td-pane').forEach(el => el.style.display = 'none');
+  const pane = document.getElementById('td-pane-' + tab);
+  if (pane) { pane.style.display = ''; pane.classList.add('active'); }
+  if (tab === 'time') renderTicketTimeEntries();
 }
 
 function renderTicketDetail() {
@@ -4071,6 +4270,9 @@ function renderTicketDetail() {
   // Åtgärdspanel (personal)
   const actCard = document.getElementById('td-actions-card');
   actCard.style.display = isStaff ? '' : 'none';
+  const contactsCard = document.getElementById('td-contacts-card');
+  contactsCard.style.display = isStaff ? '' : 'none';
+
   if (isStaff) {
     // Status-dropdown
     const statusSel = document.getElementById('td-status-sel');
@@ -4096,17 +4298,164 @@ function renderTicketDetail() {
     assignSel.innerHTML = '<option value="">— ej tilldelad —</option>' + _ticketStaff.map(u =>
       `<option value="${u.id}"${tk.assigned_to?.id===u.id?' selected':''}>${escapeHtml(u.full_name||u.email)}</option>`
     ).join('');
+
+    // Kontaktpersoner
+    renderTicketContacts();
+
+    // Tidpost-formulär: visa bara för personal
+    const timeFormWrap = document.getElementById('td-time-form-wrap');
+    if (timeFormWrap) timeFormWrap.style.display = '';
+  } else {
+    const timeFormWrap = document.getElementById('td-time-form-wrap');
+    if (timeFormWrap) timeFormWrap.style.display = 'none';
   }
 
   // Historik
   const hist = tk.history || [];
   document.getElementById('td-history').innerHTML = hist.length ? hist.map(h => {
     const fieldMap = { status:'Status', priority:'Prioritet', type:'Typ', assigned_to:'Tilldelad' };
-    return `<div style="padding:5px 0;border-bottom:1px solid var(--border)">
-      <span style="color:var(--muted)">${new Date(h.changed_at).toLocaleString('sv-SE')}</span><br>
-      ${fieldMap[h.field]||h.field}: <em>${h.old_value||'—'}</em> → <strong>${h.new_value||'—'}</strong>
+    return `<div style="padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);font-size:11px">${new Date(h.changed_at).toLocaleString('sv-SE')}</span><br>
+      <span style="font-size:12px">${fieldMap[h.field]||h.field}: <em style="color:var(--muted)">${h.old_value||'—'}</em> → <strong>${h.new_value||'—'}</strong></span>
     </div>`;
-  }).join('') : '<span style="color:var(--muted)">Ingen historik</span>';
+  }).join('') : '<span style="color:var(--muted);font-size:13px">Ingen historik</span>';
+
+  // Tidsposter
+  renderTicketTimeEntries();
+}
+
+function renderTicketContacts() {
+  const tk = _currentTicket;
+  const contacts = tk.contacts || [];
+  const el = document.getElementById('td-contacts-list');
+  if (!contacts.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px">Inga mottagare tillagda.</div>';
+    return;
+  }
+  el.innerHTML = contacts.map(c => `
+    <div class="td-contact-row">
+      <div class="td-contact-avatar">${escapeHtml(c.name.charAt(0).toUpperCase())}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.name)}</div>
+        <div style="color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.email)}</div>
+      </div>
+      <button class="btn btn-danger btn-sm btn-ico" onclick="removeTicketContact('${c.id}')"><i class="ti ti-x"></i></button>
+    </div>
+  `).join('');
+}
+
+async function openAddTicketContactModal() {
+  const customerId = _currentTicket?.customer_id;
+  if (!customerId) return;
+  try {
+    const contacts = await api('/api/customers/' + customerId + '/contacts');
+    const existing = new Set((_currentTicket.contacts||[]).map(c => c.contact_id));
+    const available = contacts.filter(c => !existing.has(c.id));
+    const sel = document.getElementById('mtc-contact-sel');
+    if (!available.length) {
+      t('Inga fler kontaktpersoner att lägga till', 'warn');
+      return;
+    }
+    sel.innerHTML = '<option value="">— välj kontakt —</option>' + available.map(c =>
+      `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.email)})</option>`
+    ).join('');
+    openModal('modal-ticket-contact');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+async function saveTicketContact() {
+  const contactId = document.getElementById('mtc-contact-sel').value;
+  if (!contactId) { t('Välj kontaktperson', 'err'); return; }
+  try {
+    _currentTicket = await api('/api/tickets/' + _currentTicket.id + '/contacts', {
+      method: 'POST', body: JSON.stringify({ contact_id: contactId }),
+    });
+    closeModal('modal-ticket-contact');
+    renderTicketDetail();
+    t('Mottagare tillagd');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+async function removeTicketContact(tcId) {
+  try {
+    await api('/api/tickets/' + _currentTicket.id + '/contacts/' + tcId, { method: 'DELETE' });
+    _currentTicket = await api('/api/tickets/' + _currentTicket.id);
+    renderTicketDetail();
+    t('Mottagare borttagen');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+// ── Tidregistrering (ärende) ─────────────────────────────────────────────────
+
+function updateTdBilledPreview() {
+  const h = parseInt(document.getElementById('tdt-hours')?.value)||0;
+  const m = parseInt(document.getElementById('tdt-minutes')?.value)||0;
+  const total = h*60 + m;
+  const billed = total <= 0 ? 0 : Math.ceil(total/30)*30;
+  const el = document.getElementById('tdt-billed-preview');
+  if (el) el.textContent = `Debiteras: ${billed} min (${Math.floor(billed/60)}h ${billed%60}m)`;
+}
+
+function renderTicketTimeEntries() {
+  const tk = _currentTicket;
+  const entries = tk.time_entries || [];
+  const tbody = document.getElementById('td-time-tbody');
+  if (!tbody) return;
+  if (!entries.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Inga tidsposter.</td></tr>`;
+    document.getElementById('td-time-summary').style.display = 'none';
+    return;
+  }
+  const isStaff = currentUser?.role === 'admin' || currentUser?.role === 'technician';
+  let totalActual = 0, totalBilled = 0;
+  tbody.innerHTML = entries.map(e => {
+    const actual = e.hours*60 + e.minutes;
+    totalActual += actual;
+    totalBilled += e.billed_minutes;
+    return `<tr>
+      <td style="font-size:12px">${e.worked_at}</td>
+      <td style="font-size:12px">${escapeHtml(e.description||'—')}</td>
+      <td style="font-size:12px;color:var(--muted)">${escapeHtml(e.user_name||'—')}</td>
+      <td style="text-align:right;font-size:12px">${e.hours}h ${e.minutes}m</td>
+      <td style="text-align:right;font-size:12px;font-weight:600">${Math.floor(e.billed_minutes/60)}h ${e.billed_minutes%60}m</td>
+      <td>${isStaff ? `<button class="btn btn-danger btn-sm btn-ico" onclick="deleteTicketTimeEntry('${e.id}')"><i class="ti ti-trash"></i></button>` : ''}</td>
+    </tr>`;
+  }).join('');
+  const sumEl = document.getElementById('td-time-summary');
+  sumEl.style.display = '';
+  document.getElementById('tds-actual').textContent = `${Math.floor(totalActual/60)}h ${totalActual%60}m`;
+  document.getElementById('tds-billed').textContent = `${Math.floor(totalBilled/60)}h ${totalBilled%60}m`;
+}
+
+async function submitTicketTimeEntry() {
+  const dateVal = document.getElementById('tdt-date').value;
+  const desc = document.getElementById('tdt-desc').value.trim();
+  const hours = parseInt(document.getElementById('tdt-hours').value)||0;
+  const minutes = parseInt(document.getElementById('tdt-minutes').value)||0;
+  if (!dateVal) { t('Ange datum', 'err'); return; }
+  if (hours === 0 && minutes === 0) { t('Ange tid', 'err'); return; }
+  try {
+    await api('/api/tickets/' + _currentTicket.id + '/time-entries', {
+      method: 'POST',
+      body: JSON.stringify({ description: desc||null, hours, minutes, worked_at: dateVal }),
+    });
+    document.getElementById('tdt-hours').value = 0;
+    document.getElementById('tdt-minutes').value = 0;
+    document.getElementById('tdt-desc').value = '';
+    updateTdBilledPreview();
+    _currentTicket = await api('/api/tickets/' + _currentTicket.id);
+    renderTicketTimeEntries();
+    t('Tidspost registrerad');
+  } catch(e) { t(e.message, 'err'); }
+}
+
+async function deleteTicketTimeEntry(entryId) {
+  try {
+    await api('/api/tickets/' + _currentTicket.id + '/time-entries/' + entryId, { method: 'DELETE' });
+    _currentTicket = await api('/api/tickets/' + _currentTicket.id);
+    renderTicketTimeEntries();
+    t('Tidspost borttagen');
+  } catch(e) { t(e.message, 'err'); }
 }
 
 function _updateSubcatOptions(parentId, selectedId) {

@@ -118,18 +118,26 @@ async def _handle_message(db, raw_msg: dict, headers: dict) -> None:
             await _add_email_reply(db, ticket, sender_email, sender_name, body_html, graph_id)
             return
 
-    # Nytt ärende — försök matcha kund på e-post
+    # Nytt ärende — försök matcha kund på e-post (primär kontakt eller kontaktperson)
+    from app.db.models import CustomerContact
     customer = await db.scalar(
-        select(Customer).where(Customer.contact_email.ilike(sender_email))
+        select(Customer).where(Customer.contact_email.ilike(sender_email), Customer.is_active == True)
     )
+    if not customer:
+        # Prova att matcha mot kontaktpersoner
+        contact = await db.scalar(
+            select(CustomerContact).where(
+                CustomerContact.email.ilike(sender_email),
+                CustomerContact.is_active == True,
+            )
+        )
+        if contact:
+            customer = await db.get(Customer, contact.customer_id)
 
     if not customer:
-        logger.info(
-            "Inkommande e-post från okänd avsändare %s — inget ärende skapat. "
-            "Lägg till kontakt-e-posten på en kund för automatisk matchning.",
-            sender_email,
-        )
-        return
+        # Skapa ärende på generisk "Extern"-kund
+        customer = await _get_or_create_extern_customer(db)
+        logger.info("Inkommande e-post från okänd avsändare %s → kopplas till Extern-kund", sender_email)
 
     ticket_number = await _generate_number(db)
     sla_due = await _default_sla_due(db)
@@ -234,6 +242,28 @@ async def _default_sla_due(db) -> "datetime | None":
     if not policy:
         return None
     return datetime.now(timezone.utc) + timedelta(hours=policy.resolution_hours)
+
+
+async def _get_or_create_extern_customer(db) -> "Customer":
+    from app.db.models import Customer
+    from sqlalchemy import select
+
+    customer = await db.scalar(
+        select(Customer).where(Customer.name == "Extern", Customer.is_active == True)
+    )
+    if not customer:
+        customer = Customer(
+            id=str(uuid.uuid4()),
+            name="Extern",
+            contact_name="Okänd avsändare",
+            contact_email="support@terafalk.com",
+            city="",
+            is_active=True,
+        )
+        db.add(customer)
+        await db.flush()
+        logger.info("Skapade generisk Extern-kund för okända avsändare")
+    return customer
 
 
 def _clean_subject(subject: str) -> str:

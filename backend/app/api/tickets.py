@@ -1,10 +1,11 @@
 """API-endpoints för ITIL-baserad ärendehantering."""
 
 import html
+import math
 import os
 import shutil
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
@@ -16,8 +17,9 @@ from sqlalchemy.orm import selectinload
 from app.api.auth import current_user, require_admin
 from app.db.database import get_db, AsyncSessionLocal
 from app.db.models import (
-    Customer, Ticket, TicketAttachment, TicketCategory,
-    TicketHistory, TicketMessage, TicketSlaPolicy, User,
+    Customer, CustomerContact, Ticket, TicketAttachment, TicketCategory,
+    TicketContact, TicketHistory, TicketMessage, TicketSlaPolicy,
+    TicketTimeEntry, User,
 )
 
 router = APIRouter()
@@ -102,12 +104,20 @@ async def _get_ticket_or_404(ticket_id: str, db: AsyncSession) -> Ticket:
             selectinload(Ticket.messages).selectinload(TicketMessage.attachments),
             selectinload(Ticket.attachments),
             selectinload(Ticket.history),
+            selectinload(Ticket.contacts).selectinload(TicketContact.contact),
+            selectinload(Ticket.time_entries).selectinload(TicketTimeEntry.user),
         )
         .where(Ticket.id == ticket_id)
     )
     if not ticket:
         raise HTTPException(status_code=404, detail="Ärende hittades inte")
     return ticket
+
+
+def _round_up_to_half_hour(total_minutes: int) -> int:
+    if total_minutes <= 0:
+        return 0
+    return math.ceil(total_minutes / 30) * 30
 
 
 def _ticket_dict(ticket: Ticket, include_internals: bool = True) -> dict:
@@ -172,6 +182,29 @@ def _ticket_dict(ticket: Ticket, include_internals: bool = True) -> dict:
         "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
         "messages": messages,
         "history": history,
+        "contacts": [
+            {
+                "id": tc.id,
+                "contact_id": tc.contact_id,
+                "name": tc.contact.name,
+                "email": tc.contact.email,
+            }
+            for tc in (ticket.contacts or [])
+            if tc.contact
+        ],
+        "time_entries": [
+            {
+                "id": e.id,
+                "description": e.description,
+                "hours": e.hours,
+                "minutes": e.minutes,
+                "billed_minutes": e.billed_minutes,
+                "worked_at": e.worked_at.isoformat(),
+                "user_name": (e.user.full_name or e.user.email) if e.user else None,
+                "created_at": e.created_at.isoformat(),
+            }
+            for e in (ticket.time_entries or [])
+        ],
     }
 
 
@@ -196,6 +229,8 @@ async def list_tickets(
         selectinload(Ticket.messages).selectinload(TicketMessage.author),
         selectinload(Ticket.messages).selectinload(TicketMessage.attachments),
         selectinload(Ticket.history),
+        selectinload(Ticket.contacts).selectinload(TicketContact.contact),
+        selectinload(Ticket.time_entries).selectinload(TicketTimeEntry.user),
     )
     if not _is_staff(user):
         q = q.where(Ticket.customer_id == user.customer_id)
@@ -490,3 +525,139 @@ async def download_attachment(
     if not att or not os.path.exists(att.file_path):
         raise HTTPException(status_code=404, detail="Fil saknas")
     return FileResponse(path=att.file_path, filename=att.original_name, media_type=att.mime_type)
+
+
+# ── Kontaktpersoner ────────────────────────────────────────────────────────────
+
+class AddContactBody(BaseModel):
+    contact_id: str
+
+
+@router.post("/{ticket_id}/contacts", status_code=201)
+async def add_ticket_contact(
+    ticket_id: str,
+    body: AddContactBody,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not _is_staff(user):
+        raise HTTPException(status_code=403, detail="Åtkomst nekad")
+    ticket = await _get_ticket_or_404(ticket_id, db)
+    # Kontrollera att kontakten tillhör rätt kund
+    contact = await db.get(CustomerContact, body.contact_id)
+    if not contact or contact.customer_id != ticket.customer_id:
+        raise HTTPException(status_code=400, detail="Kontaktperson tillhör inte den aktuella kunden")
+    # Undvik dubbletter
+    already = any(tc.contact_id == body.contact_id for tc in (ticket.contacts or []))
+    if already:
+        raise HTTPException(status_code=400, detail="Kontaktpersonen är redan tillagd")
+    db.add(TicketContact(
+        id=str(uuid.uuid4()),
+        ticket_id=ticket.id,
+        contact_id=body.contact_id,
+    ))
+    await db.commit()
+    return await _get_ticket_or_404(ticket_id, db)
+
+
+@router.delete("/{ticket_id}/contacts/{tc_id}", status_code=204)
+async def remove_ticket_contact(
+    ticket_id: str,
+    tc_id: str,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not _is_staff(user):
+        raise HTTPException(status_code=403, detail="Åtkomst nekad")
+    ticket = await _get_ticket_or_404(ticket_id, db)
+    tc = next((c for c in (ticket.contacts or []) if c.id == tc_id), None)
+    if not tc:
+        raise HTTPException(status_code=404, detail="Kontaktkoppling saknas")
+    await db.delete(tc)
+    await db.commit()
+
+
+# ── Tidregistrering ────────────────────────────────────────────────────────────
+
+class TicketTimeEntryBody(BaseModel):
+    description: str | None = None
+    hours: int
+    minutes: int
+    worked_at: date
+
+
+@router.get("/{ticket_id}/time-entries")
+async def list_ticket_time_entries(
+    ticket_id: str,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    ticket = await _get_ticket_or_404(ticket_id, db)
+    _check_ticket_access(ticket, user)
+    return [
+        {
+            "id": e.id,
+            "description": e.description,
+            "hours": e.hours,
+            "minutes": e.minutes,
+            "billed_minutes": e.billed_minutes,
+            "worked_at": e.worked_at.isoformat(),
+            "user_name": (e.user.full_name or e.user.email) if e.user else None,
+            "created_at": e.created_at.isoformat(),
+        }
+        for e in (ticket.time_entries or [])
+    ]
+
+
+@router.post("/{ticket_id}/time-entries", status_code=201)
+async def create_ticket_time_entry(
+    ticket_id: str,
+    body: TicketTimeEntryBody,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not _is_staff(user):
+        raise HTTPException(status_code=403, detail="Åtkomst nekad")
+    ticket = await _get_ticket_or_404(ticket_id, db)
+    total_minutes = body.hours * 60 + body.minutes
+    billed = _round_up_to_half_hour(total_minutes)
+    entry = TicketTimeEntry(
+        id=str(uuid.uuid4()),
+        ticket_id=ticket.id,
+        user_id=user.id,
+        description=body.description,
+        hours=body.hours,
+        minutes=body.minutes,
+        billed_minutes=billed,
+        worked_at=body.worked_at,
+    )
+    db.add(entry)
+    await db.commit()
+    await db.refresh(entry)
+    return {
+        "id": entry.id,
+        "description": entry.description,
+        "hours": entry.hours,
+        "minutes": entry.minutes,
+        "billed_minutes": entry.billed_minutes,
+        "worked_at": entry.worked_at.isoformat(),
+        "user_name": user.full_name or user.email,
+        "created_at": entry.created_at.isoformat(),
+    }
+
+
+@router.delete("/{ticket_id}/time-entries/{entry_id}", status_code=204)
+async def delete_ticket_time_entry(
+    ticket_id: str,
+    entry_id: str,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not _is_staff(user):
+        raise HTTPException(status_code=403, detail="Åtkomst nekad")
+    ticket = await _get_ticket_or_404(ticket_id, db)
+    entry = next((e for e in (ticket.time_entries or []) if e.id == entry_id), None)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Tidspost saknas")
+    await db.delete(entry)
+    await db.commit()

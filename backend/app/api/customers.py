@@ -13,7 +13,7 @@ from app.core.integration_cache import get_cached, refresh_in_background, set_ca
 from app.core.security import encrypt
 from app.core.time_utils import now_stockholm
 from app.db.database import get_db
-from app.db.models import Customer, IntegrationCredential, User
+from app.db.models import Customer, CustomerContact, IntegrationCredential, User
 from app.integrations.registry import INTEGRATIONS, get_client
 
 router = APIRouter()
@@ -33,6 +33,20 @@ class CustomerUpdate(BaseModel):
     contact_name: str | None = None
     contact_email: str | None = None
     city: str | None = None
+
+
+class ContactCreate(BaseModel):
+    name: str
+    email: str
+    phone: str = ""
+    title: str = ""
+
+
+class ContactUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    title: str | None = None
 
 
 class CredentialUpsert(BaseModel):
@@ -168,6 +182,73 @@ async def delete_customer(
     c = await db.get(Customer, customer_id)
     if not c:
         raise HTTPException(404, "Kund hittades inte")
+    c.is_active = False
+    await db.commit()
+
+
+# ── Kontaktpersoner ──────────────────────────────────────────────────────────
+
+@router.get("/{customer_id}/contacts")
+async def list_contacts(
+    customer_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    if user.role == "customer" and user.customer_id != customer_id:
+        raise HTTPException(403, "Åtkomst nekad")
+    contacts = await db.scalars(
+        select(CustomerContact)
+        .where(CustomerContact.customer_id == customer_id, CustomerContact.is_active == True)
+        .order_by(CustomerContact.name)
+    )
+    return [
+        {"id": c.id, "name": c.name, "email": c.email, "phone": c.phone, "title": c.title}
+        for c in contacts.all()
+    ]
+
+
+@router.post("/{customer_id}/contacts", status_code=201)
+async def create_contact(
+    customer_id: str,
+    body: ContactCreate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    c = CustomerContact(customer_id=customer_id, **body.model_dump())
+    db.add(c)
+    await db.commit()
+    await db.refresh(c)
+    return {"id": c.id, "name": c.name, "email": c.email, "phone": c.phone, "title": c.title}
+
+
+@router.put("/{customer_id}/contacts/{contact_id}")
+async def update_contact(
+    customer_id: str,
+    contact_id: str,
+    body: ContactUpdate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    c = await db.get(CustomerContact, contact_id)
+    if not c or c.customer_id != customer_id:
+        raise HTTPException(404, "Kontaktperson hittades inte")
+    for field, value in body.model_dump(exclude_none=True).items():
+        setattr(c, field, value)
+    await db.commit()
+    await db.refresh(c)
+    return {"id": c.id, "name": c.name, "email": c.email, "phone": c.phone, "title": c.title}
+
+
+@router.delete("/{customer_id}/contacts/{contact_id}", status_code=204)
+async def delete_contact(
+    customer_id: str,
+    contact_id: str,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    c = await db.get(CustomerContact, contact_id)
+    if not c or c.customer_id != customer_id:
+        raise HTTPException(404, "Kontaktperson hittades inte")
     c.is_active = False
     await db.commit()
 

@@ -30,7 +30,7 @@ async def _send(to_email: str, to_name: str, subject: str, body_html: str) -> No
         logger.warning("Graph ej konfigurerat — hoppar över ärendemejl till %s", to_email)
         return
 
-    sender = app_settings.get("graph_sender") or "noreply@terafalk.com"
+    sender = app_settings.get("graph_sender") or "support@terafalk.com"
     token = await _get_token()
     url = f"https://graph.microsoft.com/v1.0/users/{sender}/sendMail"
 
@@ -98,9 +98,20 @@ async def send_ticket_reply(ticket, replier, message_body: str, is_internal: boo
     prio_label = PRIORITY_LABELS.get(t.priority, t.priority)
 
     if replier.role in ("admin", "technician"):
-        # Personal svarar → notifiera kund
-        if not t.customer or not t.customer.contact_email:
+        # Personal svarar → notifiera kund + ärendekontakter
+        recipients = []
+        if t.customer and t.customer.contact_email:
+            recipients.append((t.customer.contact_email, t.customer.name))
+        # Lägg till ärendets kontaktpersoner
+        for tc in (t.contacts or []):
+            c = tc.contact
+            if c and c.email and c.is_active:
+                if c.email not in {r[0] for r in recipients}:
+                    recipients.append((c.email, c.name))
+
+        if not recipients:
             return
+
         content = f"""
         <h2 style="margin:0 0 16px;font-size:16px">Nytt svar på ditt ärende</h2>
         <div style="background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:16px;margin-bottom:16px">
@@ -112,18 +123,16 @@ async def send_ticket_reply(ticket, replier, message_body: str, is_internal: boo
         </div>
         <p style="font-size:13px;color:#555">Logga in i Insight-portalen för att svara, eller svara på detta e-post.</p>
         """
-        await _send(
-            t.customer.contact_email, t.customer.name,
-            f"[{t.ticket_number}] Nytt svar: {t.title}",
-            _base_html(content),
-        )
+        subject = f"[{t.ticket_number}] Nytt svar: {t.title}"
+        for email, name in recipients:
+            await _send(email, name, subject, _base_html(content))
     else:
         # Kund svarar → notifiera tilldelad tekniker eller support@
         if t.assigned_to and t.assigned_to.email:
             target_email = t.assigned_to.email
             target_name  = t.assigned_to.full_name or t.assigned_to.email
         else:
-            target_email = app_settings.get("graph_sender") or "support@terafalk.com"
+            target_email = "support@terafalk.com"
             target_name  = "TERAFALK Support"
 
         content = f"""
@@ -147,7 +156,7 @@ async def send_sla_breach_warning(ticket) -> None:
         target_email = t.assigned_to.email
         target_name  = t.assigned_to.full_name or t.assigned_to.email
     else:
-        target_email = app_settings.get("graph_sender") or "support@terafalk.com"
+        target_email = "support@terafalk.com"
         target_name  = "TERAFALK Support"
 
     content = f"""
