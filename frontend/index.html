@@ -4228,13 +4228,31 @@ function renderTicketDetail() {
     ${tk.sla_breached ? '<span class="b" style="background:#fce8e6;color:#c5221f">SLA brutet</span>' : ''}
   `;
 
-  // Meddelanden
-  const msgs = tk.messages || [];
+  // Beskrivning överst (visas alltid om den finns)
   const msgsEl = document.getElementById('td-messages');
-  if (!msgs.length) {
-    msgsEl.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px">Inga meddelanden ännu.</div>`;
-  } else {
-    msgsEl.innerHTML = msgs.map(m => {
+  let descHtml = '';
+  if (tk.description) {
+    descHtml = `<div class="ticket-msg from-customer" style="border-left-color:#6b7280;background:#f8f9fa;margin-bottom:4px">
+      <div class="ticket-msg-header">
+        <span class="ticket-msg-author" style="color:var(--sub)"><i class="ti ti-align-left" style="font-size:12px"></i> Beskrivning</span>
+        <span>${new Date(tk.created_at).toLocaleString('sv-SE')}</span>
+      </div>
+      <div>${tk.description}</div>
+    </div>`;
+  }
+
+  // Meddelanden — senaste svaret överst (hoppar över mail-meddelanden som är dubbletter av description)
+  const allMsgs = tk.messages || [];
+  // Vid e-postskapade ärenden är första meddelandet samma som description — visa det inte igen
+  const msgs = tk.source === 'email'
+    ? allMsgs.slice(1)   // hoppa över första meddelandet (= originalmailen = description)
+    : allMsgs;
+
+  let msgsHtml = '';
+  if (msgs.length) {
+    // Senaste överst
+    const reversed = [...msgs].reverse();
+    msgsHtml = reversed.map(m => {
       const isStaffMsg = m.author_role === 'admin' || m.author_role === 'technician';
       const cls = m.is_internal ? 'internal' : isStaffMsg ? 'from-staff' : 'from-customer';
       const tag = m.is_internal ? ' <span style="font-size:10px;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 5px">INTERN</span>' : '';
@@ -4243,14 +4261,23 @@ function renderTicketDetail() {
       ).join(' ');
       return `<div class="ticket-msg ${cls}">
         <div class="ticket-msg-header">
-          <span class="ticket-msg-author">${escapeHtml(m.author_name)}${tag}</span>
+          <span class="ticket-msg-author">${escapeHtml(m.author_name||'Okänd')}${tag}</span>
           <span>${_relTime(m.created_at)}</span>
         </div>
         <div>${m.body}</div>
         ${atts}
       </div>`;
     }).join('');
+  } else if (!tk.description) {
+    msgsHtml = `<div style="color:var(--muted);font-size:13px;padding:8px">Inga meddelanden ännu.</div>`;
   }
+
+  // Separator om det finns både description och svar
+  const separator = (tk.description && msgs.length)
+    ? `<div style="display:flex;align-items:center;gap:8px;margin:8px 0;color:var(--muted);font-size:11px"><div style="flex:1;height:1px;background:var(--border)"></div>Svar<div style="flex:1;height:1px;background:var(--border)"></div></div>`
+    : '';
+
+  msgsEl.innerHTML = descHtml + separator + msgsHtml;
 
   // Svarsformulär
   const closed = ['closed','cancelled','resolved'].includes(tk.status);
@@ -4337,7 +4364,7 @@ function renderTicketContacts() {
   }
   el.innerHTML = contacts.map(c => `
     <div class="td-contact-row">
-      <div class="td-contact-avatar">${escapeHtml(c.name.charAt(0).toUpperCase())}</div>
+      <div class="td-contact-avatar">${escapeHtml((c.name||'?').charAt(0).toUpperCase())}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.name)}</div>
         <div style="color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.email)}</div>

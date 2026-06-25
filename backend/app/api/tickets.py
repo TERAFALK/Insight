@@ -316,7 +316,8 @@ async def create_ticket(
     except Exception:
         pass
 
-    return await _get_ticket_or_404(ticket.id, db)
+    ticket = await _get_ticket_or_404(ticket.id, db)
+    return _ticket_dict(ticket, include_internals=_is_staff(user))
 
 
 # ── Detalj ─────────────────────────────────────────────────────────────────────
@@ -401,7 +402,8 @@ async def update_ticket(
         ticket.title = body.title
 
     await db.commit()
-    return await _get_ticket_or_404(ticket_id, db)
+    ticket = await _get_ticket_or_404(ticket_id, db)
+    return _ticket_dict(ticket, include_internals=_is_staff(user))
 
 
 # ── Meddelanden ────────────────────────────────────────────────────────────────
@@ -557,7 +559,8 @@ async def add_ticket_contact(
         contact_id=body.contact_id,
     ))
     await db.commit()
-    return await _get_ticket_or_404(ticket_id, db)
+    ticket = await _get_ticket_or_404(ticket_id, db)
+    return _ticket_dict(ticket, include_internals=True)
 
 
 @router.delete("/{ticket_id}/contacts/{tc_id}", status_code=204)
