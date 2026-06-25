@@ -1101,7 +1101,8 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
               <div class="fr" style="margin:0"><label class="fl">Client ID</label><input class="fi" id="s-graph-client-id" placeholder="App registration client ID"></div>
             </div>
             <div class="fr"><label class="fl">Client Secret</label><input class="fi" type="password" id="s-graph-client-secret" placeholder="Lämna tomt för att behålla befintligt"></div>
-            <div class="fr"><label class="fl">Avsändaradress</label><input class="fi" id="s-graph-sender" placeholder="noreply@terafalk.com"></div>
+            <div class="fr"><label class="fl">Avsändaradress (rapporter)</label><input class="fi" id="s-graph-sender" placeholder="noreply@terafalk.com"></div>
+            <div class="fr"><label class="fl">Support-inkorg &amp; ärendeavsändare</label><input class="fi" id="s-support-inbox" placeholder="support@terafalk.com"></div>
             <button class="btn btn-p btn-sm" onclick="saveAppSettings()" style="margin-top:4px"><i class="ti ti-check"></i> Spara e-postinställningar</button>
           </div>
 
@@ -3099,6 +3100,7 @@ async function loadSettings() {
     set('s-graph-client-id',   appCfg.graph_client_id);
     set('s-graph-client-secret', appCfg.graph_client_secret);
     set('s-graph-sender',      appCfg.graph_sender);
+    set('s-support-inbox',     appCfg.support_inbox);
     set('s-ms-client-id',      appCfg.ms_app_client_id);
     set('s-ms-client-secret',  appCfg.ms_app_client_secret);
     set('s-ms-redirect-uri',   appCfg.ms_app_redirect_uri);
@@ -3114,6 +3116,7 @@ async function saveAppSettings() {
     graph_client_id:    document.getElementById('s-graph-client-id')?.value,
     graph_client_secret: document.getElementById('s-graph-client-secret')?.value,
     graph_sender:       document.getElementById('s-graph-sender')?.value,
+    support_inbox:      document.getElementById('s-support-inbox')?.value,
     ms_app_client_id:   document.getElementById('s-ms-client-id')?.value,
     ms_app_client_secret: document.getElementById('s-ms-client-secret')?.value,
     ms_app_redirect_uri: document.getElementById('s-ms-redirect-uri')?.value,

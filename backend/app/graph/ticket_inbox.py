@@ -36,7 +36,7 @@ async def poll_support_inbox() -> None:
     if not app_settings.get("graph_tenant_id"):
         return
 
-    mailbox = app_settings.get("graph_sender") or "support@terafalk.com"
+    mailbox = app_settings.get("support_inbox") or "support@terafalk.com"
 
     try:
         token = await _get_token()
@@ -125,19 +125,30 @@ async def _handle_message(db, raw_msg: dict, headers: dict) -> None:
     )
     if not customer:
         # Prova att matcha mot kontaktpersoner
-        contact = await db.scalar(
+        contact_row = await db.scalar(
             select(CustomerContact).where(
                 CustomerContact.email.ilike(sender_email),
                 CustomerContact.is_active == True,
             )
         )
-        if contact:
-            customer = await db.get(Customer, contact.customer_id)
+        if contact_row:
+            customer = await db.get(Customer, contact_row.customer_id)
 
     if not customer:
-        # Skapa ärende på generisk "Extern"-kund
+        # Domänmatchning: t.ex. user@company.com → matcha kunder vars contact_email slutar på @company.com
+        domain = sender_email.split("@")[-1] if "@" in sender_email else ""
+        if domain:
+            customer = await db.scalar(
+                select(Customer).where(
+                    Customer.contact_email.ilike(f"%@{domain}"),
+                    Customer.is_active == True,
+                ).order_by(Customer.created_at)
+            )
+
+    if not customer:
+        # Skapa ärende på generisk "Okänd kund"
         customer = await _get_or_create_extern_customer(db)
-        logger.info("Inkommande e-post från okänd avsändare %s → kopplas till Extern-kund", sender_email)
+        logger.info("Inkommande e-post från okänd avsändare %s → kopplas till Okänd kund", sender_email)
 
     ticket_number = await _generate_number(db)
     sla_due = await _default_sla_due(db)
@@ -249,12 +260,12 @@ async def _get_or_create_extern_customer(db) -> "Customer":
     from sqlalchemy import select
 
     customer = await db.scalar(
-        select(Customer).where(Customer.name == "Extern", Customer.is_active == True)
+        select(Customer).where(Customer.name == "Okänd kund", Customer.is_active == True)
     )
     if not customer:
         customer = Customer(
             id=str(uuid.uuid4()),
-            name="Extern",
+            name="Okänd kund",
             contact_name="Okänd avsändare",
             contact_email="support@terafalk.com",
             city="",

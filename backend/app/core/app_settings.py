@@ -13,6 +13,7 @@ _KEYS: dict[str, tuple[str, str]] = {
     "graph_client_id":      ("GRAPH_CLIENT_ID",       ""),
     "graph_client_secret":  ("GRAPH_CLIENT_SECRET",   ""),
     "graph_sender":         ("GRAPH_SENDER",          "noreply@terafalk.com"),
+    "support_inbox":        ("SUPPORT_INBOX",         "support@terafalk.com"),
     "ms_app_client_id":     ("MS_APP_CLIENT_ID",      ""),
     "ms_app_client_secret": ("MS_APP_CLIENT_SECRET",  ""),
     "ms_app_redirect_uri":  ("MS_APP_REDIRECT_URI",   ""),

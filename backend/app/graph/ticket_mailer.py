@@ -30,7 +30,7 @@ async def _send(to_email: str, to_name: str, subject: str, body_html: str) -> No
         logger.warning("Graph ej konfigurerat — hoppar över ärendemejl till %s", to_email)
         return
 
-    sender = app_settings.get("graph_sender") or "support@terafalk.com"
+    sender = app_settings.get("support_inbox") or "support@terafalk.com"
     token = await _get_token()
     url = f"https://graph.microsoft.com/v1.0/users/{sender}/sendMail"
 
@@ -132,7 +132,7 @@ async def send_ticket_reply(ticket, replier, message_body: str, is_internal: boo
             target_email = t.assigned_to.email
             target_name  = t.assigned_to.full_name or t.assigned_to.email
         else:
-            target_email = "support@terafalk.com"
+            target_email = app_settings.get("support_inbox") or "support@terafalk.com"
             target_name  = "TERAFALK Support"
 
         content = f"""
