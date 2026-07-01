@@ -49,6 +49,10 @@ async def init_db() -> None:
             # First-response-SLA
             "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS first_response_due_at TIMESTAMPTZ",
             "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS response_sla_breached BOOLEAN NOT NULL DEFAULT FALSE",
+            # CSAT (kundnöjdhet)
+            "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_score INTEGER",
+            "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_comment TEXT",
+            "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_submitted_at TIMESTAMPTZ",
             # En äldre audit_logs-design hade extra NOT NULL-kolumner (t.ex. user_email)
             # som blockerar inserts från den nya modellen. Droppa alla kolumner som
             # inte tillhör den nuvarande modellen (no-op på fräscha installationer).

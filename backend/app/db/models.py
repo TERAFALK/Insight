@@ -367,6 +367,10 @@ class Ticket(Base):
     first_responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Kundnöjdhet (CSAT) — sätts av kunden på ett löst/stängt ärende
+    csat_score: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 1–5
+    csat_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    csat_submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

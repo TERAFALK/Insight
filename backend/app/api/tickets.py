@@ -171,6 +171,9 @@ def _ticket_dict(ticket: Ticket, include_internals: bool = True) -> dict:
         "first_responded_at": ticket.first_responded_at.isoformat() if ticket.first_responded_at else None,
         "resolved_at": ticket.resolved_at.isoformat() if ticket.resolved_at else None,
         "closed_at": ticket.closed_at.isoformat() if ticket.closed_at else None,
+        "csat_score": ticket.csat_score,
+        "csat_comment": ticket.csat_comment,
+        "csat_submitted_at": ticket.csat_submitted_at.isoformat() if ticket.csat_submitted_at else None,
         "created_at": ticket.created_at.isoformat(),
         "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
         "parent_ticket_id": ticket.parent_ticket_id,
@@ -477,6 +480,95 @@ async def update_ticket(
         logger.warning("Kunde inte skicka ärendenotis för %s: %s", ticket.ticket_number, e)
 
     return _ticket_dict(ticket, include_internals=_is_staff(user))
+
+
+# ── CSAT (kundnöjdhet) ──────────────────────────────────────────────────────────
+
+class CsatBody(BaseModel):
+    score: int
+    comment: str | None = None
+
+
+@router.post("/{ticket_id}/csat")
+async def submit_csat(
+    ticket_id: str,
+    body: CsatBody,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    ticket = await _get_ticket_or_404(ticket_id, db)
+    _check_ticket_access(ticket, user)
+    if ticket.status not in ("resolved", "closed"):
+        raise HTTPException(status_code=400, detail="Ärendet är inte löst än")
+    if not (1 <= body.score <= 5):
+        raise HTTPException(status_code=400, detail="Betyg måste vara 1–5")
+    ticket.csat_score = body.score
+    ticket.csat_comment = (body.comment or "").strip() or None
+    ticket.csat_submitted_at = datetime.now(timezone.utc)
+    await db.commit()
+    ticket = await _get_ticket_or_404(ticket_id, db)
+    return _ticket_dict(ticket, include_internals=_is_staff(user))
+
+
+# ── Bulkåtgärder ────────────────────────────────────────────────────────────────
+
+class BulkBody(BaseModel):
+    ids: list[str]
+    action: str            # "status" | "assign" | "priority"
+    value: str | None = None
+
+
+@router.post("/bulk")
+async def bulk_update_tickets(
+    body: BulkBody,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    if body.action not in ("status", "assign", "priority"):
+        raise HTTPException(status_code=400, detail="Ogiltig åtgärd")
+    if body.action == "status" and body.value not in VALID_STATUSES:
+        raise HTTPException(status_code=400, detail="Ogiltig status")
+    if body.action == "priority" and body.value not in VALID_PRIOS:
+        raise HTTPException(status_code=400, detail="Ogiltig prioritet")
+
+    now = datetime.now(timezone.utc)
+    updated = 0
+    for tid in body.ids:
+        t = await db.get(Ticket, tid)
+        if not t:
+            continue
+        if body.action == "status":
+            v = body.value
+            # Stängda ärenden är terminala — hoppa över återöppning
+            if t.status == "closed" and v != "closed":
+                continue
+            if v != t.status:
+                await _add_history(db, t.id, user.id, "status", t.status, v)
+                t.status = v
+                if v == "resolved":
+                    t.resolved_at = now
+                if v == "closed":
+                    t.closed_at = now
+                updated += 1
+        elif body.action == "assign":
+            newv = body.value or None
+            if newv != t.assigned_to_user_id:
+                await _add_history(db, t.id, user.id, "assigned_to", t.assigned_to_user_id, newv)
+                t.assigned_to_user_id = newv
+                updated += 1
+        elif body.action == "priority":
+            v = body.value
+            if v != t.priority:
+                await _add_history(db, t.id, user.id, "priority", t.priority, v)
+                t.priority = v
+                response_due, resolution_due = await _sla_dues(v, db)
+                t.sla_due_at = resolution_due
+                if t.first_responded_at is None:
+                    t.first_response_due_at = response_due
+                    t.response_sla_breached = False
+                updated += 1
+    await db.commit()
+    return {"updated": updated}
 
 
 @router.delete("/{ticket_id}", status_code=204)

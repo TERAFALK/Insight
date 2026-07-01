@@ -1281,6 +1281,12 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <button class="btn btn-g btn-sm" id="ticket-mine-btn" onclick="toggleTicketMine()"><i class="ti ti-user"></i> Mina ärenden</button>
         <input class="fi" id="ticket-search" placeholder="Sök ärende, kund, innehåll…" oninput="onTicketSearch()" style="width:220px;padding:6px 10px">
       </div>
+      <div id="ticket-bulk-bar" style="display:none;align-items:center;gap:10px;margin-bottom:12px;padding:8px 12px;background:var(--tint);border-radius:8px;flex-wrap:wrap">
+        <span id="bulk-count" style="font-size:13px;font-weight:600"></span>
+        <select id="bulk-status" class="fi" onchange="applyBulk('status',this.value)" style="font-size:12px;width:auto;padding:4px 8px"></select>
+        <select id="bulk-assign" class="fi" onchange="applyBulk('assign',this.value)" style="font-size:12px;width:auto;padding:4px 8px"></select>
+        <button class="btn btn-g btn-sm" onclick="clearBulk()">Avmarkera</button>
+      </div>
       <div class="card" style="padding:0;overflow:hidden">
         <table class="tbl" id="tickets-table">
           <thead><tr>
@@ -1316,6 +1322,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       </div>
 
       <div id="td-merge-banner" style="margin-bottom:16px"></div>
+      <div id="td-csat" style="margin-bottom:16px"></div>
 
       <!-- 2-kolumn: konversation + sidebar -->
       <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start">
@@ -4658,6 +4665,51 @@ function onTicketSearch() {
   _ticketSearchTimer = setTimeout(loadTickets, 300);
 }
 
+let _bulkSelected = new Set();
+
+function toggleBulk(id, checked) {
+  if (checked) _bulkSelected.add(id); else _bulkSelected.delete(id);
+  updateBulkBar();
+}
+
+function clearBulk() {
+  _bulkSelected.clear();
+  document.querySelectorAll('.tk-check').forEach(c => c.checked = false);
+  updateBulkBar();
+}
+
+async function updateBulkBar() {
+  const bar = document.getElementById('ticket-bulk-bar');
+  if (!bar) return;
+  const n = _bulkSelected.size;
+  if (!n) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  document.getElementById('bulk-count').textContent = n + ' valda';
+  const ss = document.getElementById('bulk-status');
+  ss.innerHTML = '<option value="">Sätt status…</option>' +
+    Object.entries(STATUS_LABEL).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+  if (!_ticketStaff.length) {
+    try { const u = await api('/api/users'); _ticketStaff = u.filter(x => x.role === 'admin'); } catch(e) {}
+  }
+  const as = document.getElementById('bulk-assign');
+  as.innerHTML = '<option value="">Tilldela…</option><option value="__none__">— Ingen —</option>' +
+    _ticketStaff.map(u => `<option value="${u.id}">${escapeHtml(u.full_name || u.email)}</option>`).join('');
+}
+
+async function applyBulk(action, value) {
+  if (!value) return;
+  const ids = [..._bulkSelected];
+  if (!ids.length) return;
+  const v = value === '__none__' ? '' : value;
+  try {
+    const r = await api('/api/tickets/bulk', { method: 'POST', body: JSON.stringify({ ids, action, value: v }) });
+    t(`${r.updated} ärenden uppdaterade`);
+    _bulkSelected.clear();
+    await loadTickets();
+    updateBulkBar();
+  } catch(e) { t(e.message, 'err'); }
+}
+
 function setTicketFilter(key, val, btn) {
   _ticketFilter[key] = val;
   if (btn) {
@@ -4702,10 +4754,12 @@ function renderTicketsTable() {
     return;
   }
 
+  const isStaff = currentUser?.role === 'admin';
   tbody.innerHTML = list.map(tk => {
     const sla = _slaDisplay(tk);
+    const chk = isStaff ? `<input type="checkbox" class="tk-check" onclick="event.stopPropagation()" onchange="toggleBulk('${tk.id}',this.checked)" ${_bulkSelected.has(tk.id)?'checked':''} style="margin-right:6px;vertical-align:middle">` : '';
     return `<tr style="cursor:pointer" onclick="openTicketDetail('${tk.id}')">
-      <td><span style="font-family:monospace;font-weight:700;color:var(--blue);font-size:12px">${escapeHtml(tk.ticket_number)}</span></td>
+      <td>${chk}<span style="font-family:monospace;font-weight:700;color:var(--blue);font-size:12px">${escapeHtml(tk.ticket_number)}</span></td>
       <td>${escapeHtml(tk.title)}</td>
       <td style="font-size:12px">${escapeHtml(tk.customer_name||'—')}</td>
       <td><span class="b b-muted" style="font-size:11px">${TYPE_LABEL[tk.type]||tk.type}</span></td>
@@ -4795,6 +4849,47 @@ function renderTicketTags() {
   el.innerHTML = chips + addCtl;
 }
 
+function renderTicketCsat() {
+  const el = document.getElementById('td-csat');
+  if (!el) return;
+  const tk = _currentTicket;
+  const isStaff = currentUser?.role === 'admin';
+  const done = tk.csat_score != null;
+  const resolved = ['resolved','closed'].includes(tk.status);
+  if (!resolved && !done) { el.innerHTML = ''; return; }
+
+  const stars = n => '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n);
+  if (done) {
+    el.innerHTML = `<div class="card" style="padding:12px 16px">
+      <div style="font-size:12px;color:var(--muted)">Kundnöjdhet</div>
+      <div style="font-size:18px;color:#f59e0b;letter-spacing:2px">${stars(tk.csat_score)} <span style="font-size:13px;color:var(--text)">${tk.csat_score}/5</span></div>
+      ${tk.csat_comment ? `<div style="font-size:13px;color:var(--sub);margin-top:4px">${escapeHtml(tk.csat_comment)}</div>` : ''}
+    </div>`;
+    return;
+  }
+  if (!isStaff) {
+    el.innerHTML = `<div class="card" style="padding:12px 16px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">Hur nöjd är du med hanteringen?</div>
+      <div style="display:flex;gap:4px;margin-bottom:8px">${[1,2,3,4,5].map(n =>
+        `<button onclick="submitCsat(${n})" class="btn btn-g btn-sm" style="font-size:16px;padding:2px 8px" title="${n}/5">★${n}</button>`).join('')}</div>
+      <textarea id="csat-comment" class="fi" rows="2" placeholder="Valfri kommentar…" style="width:100%;resize:vertical;font-size:13px"></textarea>
+    </div>`;
+  } else {
+    el.innerHTML = `<div style="font-size:12px;color:var(--muted)">Inväntar kundens nöjdhetsbetyg.</div>`;
+  }
+}
+
+async function submitCsat(score) {
+  const comment = document.getElementById('csat-comment')?.value || '';
+  try {
+    _currentTicket = await api('/api/tickets/' + _currentTicket.id + '/csat', {
+      method: 'POST', body: JSON.stringify({ score, comment }),
+    });
+    renderTicketCsat();
+    t('Tack för din återkoppling!');
+  } catch(e) { t(e.message, 'err'); }
+}
+
 async function addTicketTag(tagId) {
   if (!tagId) return;
   try {
@@ -4846,6 +4941,7 @@ function renderTicketDetail() {
     (tk.sla_breached ? '<span class="b" style="background:#fce8e6;color:#c5221f">SLA brutet</span>' : '') +
     (tk.response_sla_breached ? '<span class="b" style="background:#fef3e2;color:#b45309">Svars-SLA brutet</span>' : '');
   renderTicketTags();
+  renderTicketCsat();
 
   // Admin-åtgärder (merga + radera)
   const adminActions = document.getElementById('td-admin-actions');
