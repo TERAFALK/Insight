@@ -17,7 +17,7 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.db.database import init_db
 from app.db.seed import seed_first_admin
-from app.api import auth, customers, reports, integrations, notifications, scheduler as scheduler_router, users, ms_auth, admin_settings, dashboard, orders, phase_templates, tickets, ticket_settings, audit_log, canned_responses
+from app.api import auth, customers, reports, integrations, notifications, scheduler as scheduler_router, users, ms_auth, admin_settings, dashboard, orders, phase_templates, tickets, ticket_settings, audit_log, canned_responses, public
 from app.core import app_settings
 from app.core.scheduler import start_scheduler
 
@@ -67,6 +67,7 @@ app.include_router(ticket_settings.router,    prefix="/api/ticket-settings",    
 app.include_router(notifications.router,      prefix="/api/notifications",       tags=["Notifications"])
 app.include_router(audit_log.router,          prefix="/api/audit",               tags=["Audit"])
 app.include_router(canned_responses.router,   prefix="/api/canned-responses",    tags=["Canned Responses"])
+app.include_router(public.router,             prefix="/api/public",              tags=["Public"])
 
 
 @app.get("/api/health")

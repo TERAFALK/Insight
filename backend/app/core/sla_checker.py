@@ -16,6 +16,9 @@ OPEN_STATUSES = {"new", "open", "in_progress", "pending_customer"}
 # Lösta ärenden stängs automatiskt efter så här många dagar utan ny aktivitet.
 AUTO_CLOSE_DAYS = 7
 
+# Fördröjd nöjdhetsenkät skickas så här länge efter att ärendet lösts.
+CSAT_SURVEY_DELAY_DAYS = 1
+
 
 async def check_sla_breaches() -> None:
     now = datetime.now(timezone.utc)
@@ -80,6 +83,56 @@ async def check_sla_breaches() -> None:
         if breached or resp_breached:
             await db.commit()
             logger.info("SLA-brott markerade: %d resolution, %d response", len(breached), len(resp_breached))
+
+
+async def send_pending_csat_surveys() -> None:
+    """Skickar fördröjd nöjdhetsenkät för lösta ärenden som ännu inte betygsatts."""
+    import secrets
+    from app.graph.mailer import portal_url
+    if not portal_url():
+        return  # Enkätlänken kräver portal_url — skickas när det konfigurerats
+
+    from sqlalchemy.orm import selectinload
+    from app.db.models import TicketContact
+    from app.graph.ticket_mailer import _customer_recipients, send_csat_survey
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=CSAT_SURVEY_DELAY_DAYS)
+    async with AsyncSessionLocal() as db:
+        tickets = (await db.scalars(
+            select(Ticket)
+            .options(
+                selectinload(Ticket.customer),
+                selectinload(Ticket.created_by),
+                selectinload(Ticket.contacts).selectinload(TicketContact.contact),
+            )
+            .where(
+                Ticket.status == "resolved",
+                Ticket.resolved_at.isnot(None),
+                Ticket.resolved_at <= cutoff,
+                Ticket.csat_score.is_(None),
+                Ticket.csat_survey_sent_at.is_(None),
+            )
+        )).all()
+
+        sent = 0
+        for ticket in tickets:
+            recipients = _customer_recipients(ticket)
+            now = datetime.now(timezone.utc)
+            if not recipients:
+                ticket.csat_survey_sent_at = now  # markera så vi inte försöker om och om
+                continue
+            if not ticket.csat_token:
+                ticket.csat_token = secrets.token_urlsafe(24)
+            try:
+                await send_csat_survey(ticket, recipients)
+                ticket.csat_survey_sent_at = now
+                sent += 1
+            except Exception as e:
+                logger.warning("Kunde inte skicka CSAT-enkät för %s: %s", ticket.ticket_number, e)
+        if tickets:
+            await db.commit()
+        if sent:
+            logger.info("Skickade %d nöjdhetsenkäter", sent)
 
 
 async def auto_close_resolved_tickets() -> None:

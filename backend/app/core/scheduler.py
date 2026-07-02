@@ -44,6 +44,12 @@ def start_scheduler() -> None:
         from app.core.sla_checker import auto_close_resolved_tickets
         await auto_close_resolved_tickets()
 
+    async def _send_csat_surveys():
+        if not await acquire_run_lock("csat_surveys", 3600):
+            return
+        from app.core.sla_checker import send_pending_csat_surveys
+        await send_pending_csat_surveys()
+
     # Körs varje dag; run_scheduled_reports avgör vilka kunder som är schemalagda idag.
     _scheduler.add_job(
         _run_monthly_reports,
@@ -74,6 +80,13 @@ def start_scheduler() -> None:
         trigger="interval",
         hours=6,
         id="auto_close_resolved",
+        replace_existing=True,
+    )
+    _scheduler.add_job(
+        _send_csat_surveys,
+        trigger="interval",
+        hours=3,
+        id="csat_surveys",
         replace_existing=True,
     )
     _scheduler.start()

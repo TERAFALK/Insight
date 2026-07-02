@@ -3,7 +3,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func as sqlfunc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -14,7 +14,7 @@ from app.core.integration_cache import get_cached, refresh_in_background, set_ca
 from app.core.security import encrypt
 from app.core.time_utils import now_stockholm
 from app.db.database import get_db
-from app.db.models import Customer, CustomerContact, IntegrationCredential, User
+from app.db.models import Customer, CustomerContact, IntegrationCredential, Ticket, User
 from app.integrations.registry import INTEGRATIONS, get_client
 
 router = APIRouter()
@@ -152,9 +152,17 @@ async def get_customer(
             "last_verified_at": cred.last_verified_at if cred else None,
         })
 
+    # Sammanlagt nöjdhetsbetyg (snitt över alla betygsatta ärenden)
+    csat_avg, csat_count = (await db.execute(
+        select(sqlfunc.avg(Ticket.csat_score), sqlfunc.count(Ticket.csat_score))
+        .where(Ticket.customer_id == customer_id, Ticket.csat_score.isnot(None))
+    )).one()
+
     return {
         "id": c.id,
         "name": c.name,
+        "csat_avg": round(float(csat_avg), 2) if csat_avg is not None else None,
+        "csat_count": int(csat_count or 0),
         "contact_name": c.contact_name,
         "city": c.city,
         "report_frequency": c.report_frequency,

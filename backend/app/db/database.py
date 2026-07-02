@@ -53,6 +53,8 @@ async def init_db() -> None:
             "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_score INTEGER",
             "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_comment TEXT",
             "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_submitted_at TIMESTAMPTZ",
+            "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_token VARCHAR",
+            "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_survey_sent_at TIMESTAMPTZ",
             # Per-kund rapportschema
             "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_frequency VARCHAR NOT NULL DEFAULT 'monthly'",
             "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_day INTEGER NOT NULL DEFAULT 0",

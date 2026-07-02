@@ -224,6 +224,31 @@ async def send_ticket_resolved(ticket) -> None:
     await _send_to_all(recipients, f"[{t.ticket_number}] Ärende löst: {t.title}", body)
 
 
+async def send_csat_survey(ticket, recipients: list[tuple[str, str]]) -> None:
+    """Fördröjd nöjdhetsenkät med inloggningsfria stjärnlänkar till den publika sidan."""
+    from app.graph.mailer import portal_url
+    base = portal_url()
+    if not base or not ticket.csat_token or not recipients:
+        return
+    t = ticket
+
+    def star(n: int) -> str:
+        url = f"{base}/#csat/{t.id}/{t.csat_token}/{n}"
+        return f'<a href="{url}" style="text-decoration:none;font-size:30px;color:#f59e0b;margin:0 3px">★</a>'
+
+    stars = "".join(star(n) for n in range(1, 6))
+    content = (
+        heading("Hur nöjd är du med hanteringen?")
+        + paragraph(f"Ditt ärende <strong>{t.ticket_number}</strong> — {html_escape(t.title)} har lösts. "
+                    "Vi uppskattar din återkoppling.")
+        + f'<div style="text-align:center;margin:6px 0 14px">{stars}</div>'
+        + paragraph("Klicka på antal stjärnor ovan för att lämna ditt betyg — du kan även skriva en kommentar. "
+                    "Ingen inloggning krävs.")
+    )
+    body = render_email(content, footer_note=_FOOTER, preheader=f"Betygsätt ärende {t.ticket_number}")
+    await _send_to_all(recipients, f"[{t.ticket_number}] Hur nöjd är du med hanteringen?", body)
+
+
 async def send_ticket_mention(ticket, mentioned_user, note_body: str, author) -> None:
     """Notifiera en kollega som @mentionats i en intern notering."""
     cfg = await _get_setting("ticket_mention")

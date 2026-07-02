@@ -663,6 +663,11 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
 </div>
 
+<!-- ═══ PUBLIK NÖJDHETSENKÄT (ingen inloggning) ═══ -->
+<div id="csat-screen" style="display:none;position:fixed;inset:0;background:#eef2f8;align-items:center;justify-content:center;padding:20px;z-index:1000">
+  <div id="csat-box" style="background:#fff;border-radius:12px;padding:32px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.15)"></div>
+</div>
+
 <!-- ═══ APP ═══ -->
 <div id="app-screen" class="app" style="display:none">
 
@@ -1981,7 +1986,62 @@ function doLogout() {
   document.getElementById('app-screen').style.display = 'none';
 }
 
-if (authToken) { showApp(); }
+// Publik enkätlänk (#csat/<id>/<token>[/<score>]) — visas utan inloggning.
+const _csatBoot = (location.hash || '').match(/^#csat\/([\w-]+)\/([\w.~_-]+)(?:\/(\d))?/);
+if (_csatBoot) {
+  showPublicCsat(_csatBoot[1], _csatBoot[2], _csatBoot[3] ? parseInt(_csatBoot[3], 10) : 0);
+} else if (authToken) {
+  showApp();
+}
+
+let _publicCsat = null;
+
+async function showPublicCsat(id, token, preScore) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('csat-screen').style.display = 'flex';
+  const box = document.getElementById('csat-box');
+  box.innerHTML = '<div style="text-align:center;color:#888">Laddar…</div>';
+  try {
+    const resp = await fetch('/api/public/csat/' + id + '?token=' + encodeURIComponent(token));
+    if (!resp.ok) throw new Error('bad');
+    const info = await resp.json();
+    _publicCsat = { id, token, score: preScore || info.score || 0 };
+    renderPublicCsat(info);
+  } catch(e) {
+    box.innerHTML = '<div style="text-align:center"><div style="font-size:40px">⚠️</div><p style="color:#555">Enkätlänken är ogiltig eller har gått ut.</p></div>';
+  }
+}
+
+function renderPublicCsat(info) {
+  const sc = _publicCsat.score;
+  document.getElementById('csat-box').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px"><span style="font:700 20px Arial;letter-spacing:.06em;color:#0047a3">TERAFALK</span></div>
+    <div style="font-size:15px;font-weight:600;text-align:center;margin-bottom:4px">Hur nöjd är du med hanteringen?</div>
+    <div style="font-size:12px;color:#888;text-align:center;margin-bottom:16px">Ärende ${escapeHtml(info.ticket_number)} — ${escapeHtml(info.title)}</div>
+    <div id="pcsat-stars" style="font-size:38px;text-align:center;color:#d1d5db;margin-bottom:14px;user-select:none">${[1,2,3,4,5].map(n =>
+      `<span onclick="setPublicStar(${n})" data-star="${n}" style="cursor:pointer;margin:0 2px;color:${n<=sc?'#f59e0b':'#d1d5db'}">★</span>`).join('')}</div>
+    <textarea id="pcsat-comment" rows="3" placeholder="Valfri kommentar…" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:14px;resize:vertical;margin-bottom:14px"></textarea>
+    <button onclick="submitPublicCsat()" style="width:100%;background:#0047a3;color:#fff;border:none;border-radius:8px;padding:11px;font-size:15px;font-weight:600;cursor:pointer">Skicka betyg</button>`;
+}
+
+function setPublicStar(n) {
+  _publicCsat.score = n;
+  document.querySelectorAll('#pcsat-stars [data-star]').forEach(s =>
+    s.style.color = parseInt(s.dataset.star, 10) <= n ? '#f59e0b' : '#d1d5db');
+}
+
+async function submitPublicCsat() {
+  if (!_publicCsat.score) { alert('Välj antal stjärnor först'); return; }
+  const comment = document.getElementById('pcsat-comment').value || '';
+  try {
+    const r = await fetch('/api/public/csat/' + _publicCsat.id + '?token=' + encodeURIComponent(_publicCsat.token), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score: _publicCsat.score, comment }),
+    });
+    if (!r.ok) throw new Error('Kunde inte spara betyget');
+    document.getElementById('csat-box').innerHTML = '<div style="text-align:center"><div style="font-size:48px;color:#16a34a">✓</div><p style="font-size:16px;font-weight:600">Tack för din återkoppling!</p><p style="color:#888;font-size:13px">Du kan stänga fönstret.</p></div>';
+  } catch(e) { alert(e.message); }
+}
 
 document.getElementById('login-year').textContent = new Date().getFullYear();
 
@@ -2391,7 +2451,9 @@ async function loadCustomerDetail(customerId) {
     if (_navGen !== gen) return;
     document.getElementById('cd-name').textContent = customer.name;
     document.getElementById('cd-eyebrow').textContent = `Kund · ${customer.city || '—'}`;
-    document.getElementById('cd-sub').textContent = [customer.contact_name, customer.city].filter(Boolean).join(' · ') || '—';
+    const subParts = [customer.contact_name, customer.city].filter(Boolean);
+    if (customer.csat_count > 0) subParts.push(`★ ${customer.csat_avg}/5 (${customer.csat_count} betyg)`);
+    document.getElementById('cd-sub').textContent = subParts.join(' · ') || '—';
     const freqEl = document.getElementById('cd-report-freq');
     const dayEl = document.getElementById('cd-report-day');
     if (freqEl) freqEl.value = customer.report_frequency || 'monthly';
@@ -4922,22 +4984,34 @@ function renderTicketCsat() {
     return;
   }
   if (!isStaff) {
+    _csatSelected = 0;
     el.innerHTML = `<div class="card" style="padding:12px 16px">
       <div style="font-size:13px;font-weight:600;margin-bottom:6px">Hur nöjd är du med hanteringen?</div>
-      <div style="display:flex;gap:4px;margin-bottom:8px">${[1,2,3,4,5].map(n =>
-        `<button onclick="submitCsat(${n})" class="btn btn-g btn-sm" style="font-size:16px;padding:2px 8px" title="${n}/5">★${n}</button>`).join('')}</div>
-      <textarea id="csat-comment" class="fi" rows="2" placeholder="Valfri kommentar…" style="width:100%;resize:vertical;font-size:13px"></textarea>
+      <div id="csat-stars" style="font-size:26px;color:#d1d5db;margin-bottom:8px;user-select:none">${[1,2,3,4,5].map(n =>
+        `<span onclick="setCsatStar(${n})" data-star="${n}" style="cursor:pointer;margin-right:2px">★</span>`).join('')}</div>
+      <textarea id="csat-comment" class="fi" rows="2" placeholder="Valfri kommentar…" style="width:100%;resize:vertical;font-size:13px;margin-bottom:8px"></textarea>
+      <button class="btn btn-p btn-sm" onclick="submitCsat()"><i class="ti ti-send"></i> Skicka betyg</button>
     </div>`;
   } else {
     el.innerHTML = `<div style="font-size:12px;color:var(--muted)">Inväntar kundens nöjdhetsbetyg.</div>`;
   }
 }
 
-async function submitCsat(score) {
+let _csatSelected = 0;
+
+function setCsatStar(n) {
+  _csatSelected = n;
+  document.querySelectorAll('#csat-stars [data-star]').forEach(s => {
+    s.style.color = parseInt(s.dataset.star, 10) <= n ? '#f59e0b' : '#d1d5db';
+  });
+}
+
+async function submitCsat() {
+  if (!_csatSelected) { t('Välj antal stjärnor först', 'err'); return; }
   const comment = document.getElementById('csat-comment')?.value || '';
   try {
     _currentTicket = await api('/api/tickets/' + _currentTicket.id + '/csat', {
-      method: 'POST', body: JSON.stringify({ score, comment }),
+      method: 'POST', body: JSON.stringify({ score: _csatSelected, comment }),
     });
     renderTicketCsat();
     t('Tack för din återkoppling!');
