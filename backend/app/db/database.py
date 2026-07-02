@@ -53,6 +53,9 @@ async def init_db() -> None:
             "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_score INTEGER",
             "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_comment TEXT",
             "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS csat_submitted_at TIMESTAMPTZ",
+            # Per-kund rapportschema
+            "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_frequency VARCHAR NOT NULL DEFAULT 'monthly'",
+            "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_day INTEGER NOT NULL DEFAULT 0",
             # En äldre audit_logs-design hade extra NOT NULL-kolumner (t.ex. user_email)
             # som blockerar inserts från den nya modellen. Droppa alla kolumner som
             # inte tillhör den nuvarande modellen (no-op på fräscha installationer).
@@ -178,6 +181,7 @@ async def _seed_notification_settings() -> None:
         ("ticket_status_changed", "Ärendestatus ändrad",             False, False, True,  False),
         ("ticket_resolved",       "Ärende löst",                     True,  True,  False, False),
         ("ticket_assigned",       "Ärende tilldelat",                True,  False, True,  False),
+        ("ticket_mention",        "Nämnd i intern notering",         True,  False, False, False),
         ("ticket_sla_warning",    "SLA-varning",                     True,  False, True,  False),
         ("order_created",         "Ny order/projekt skapad",         True,  True,  False, False),
         ("order_status_changed",  "Order/projekt status ändrad",     True,  True,  True,  False),

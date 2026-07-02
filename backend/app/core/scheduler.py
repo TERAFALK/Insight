@@ -21,11 +21,10 @@ def start_scheduler() -> None:
     from app.core.redis_client import acquire_run_lock
 
     async def _run_monthly_reports():
-        if not await acquire_run_lock("monthly_reports", 600):
+        if not await acquire_run_lock("scheduled_reports", 3600):
             return
-        from app.reports.runner import run_all_reports
-        logger.info("Schemalagd rapportkörning startar")
-        await run_all_reports()
+        from app.reports.runner import run_scheduled_reports
+        await run_scheduled_reports()
 
     async def _poll_ticket_inbox():
         if not await acquire_run_lock("ticket_inbox_poll", 90):
@@ -45,10 +44,10 @@ def start_scheduler() -> None:
         from app.core.sla_checker import auto_close_resolved_tickets
         await auto_close_resolved_tickets()
 
+    # Körs varje dag; run_scheduled_reports avgör vilka kunder som är schemalagda idag.
     _scheduler.add_job(
         _run_monthly_reports,
         trigger=CronTrigger(
-            day=settings.REPORT_SCHEDULE_DAY,
             hour=settings.REPORT_SCHEDULE_HOUR,
             minute=settings.REPORT_SCHEDULE_MINUTE,
             timezone="Europe/Stockholm",
@@ -99,7 +98,6 @@ def reschedule(day: int, hour: int, minute: int) -> None:
         return
     job.reschedule(
         trigger=CronTrigger(
-            day=day,
             hour=hour,
             minute=minute,
             timezone="Europe/Stockholm",

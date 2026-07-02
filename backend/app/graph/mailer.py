@@ -111,10 +111,15 @@ async def send_mail(
 
 def pdf_attachment(filename: str, content_b64: str) -> dict:
     """Bygger en Graph-bilaga för en PDF (contentBytes ska vara base64)."""
+    return file_attachment(filename, content_b64, "application/pdf")
+
+
+def file_attachment(filename: str, content_b64: str, mime_type: str = "application/octet-stream") -> dict:
+    """Bygger en generisk Graph-fileAttachment (contentBytes ska vara base64)."""
     return {
         "@odata.type": "#microsoft.graph.fileAttachment",
         "name": filename,
-        "contentType": "application/pdf",
+        "contentType": mime_type,
         "contentBytes": content_b64,
     }
 

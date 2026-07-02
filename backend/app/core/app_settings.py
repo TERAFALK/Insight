@@ -21,6 +21,8 @@ _KEYS: dict[str, tuple[str, str]] = {
     "business_hours_end":     ("BUSINESS_HOURS_END",     "17:00"),
     "business_days":          ("BUSINESS_DAYS",          "1,2,3,4,5"),  # ISO: mån=1 … sön=7
     "business_timezone":      ("BUSINESS_TIMEZONE",      "Europe/Stockholm"),
+    # Vid SLA-brott omfördelas ärendet automatiskt till denna användare (tomt = av)
+    "escalation_user_id":     ("ESCALATION_USER_ID",     ""),
     "ms_app_client_id":     ("MS_APP_CLIENT_ID",      ""),
     "ms_app_client_secret": ("MS_APP_CLIENT_SECRET",  ""),
     "ms_app_redirect_uri":  ("MS_APP_REDIRECT_URI",   ""),
@@ -33,6 +35,10 @@ _store: dict[str, str] = {}
 
 def get(key: str) -> str:
     return _store.get(key, "")
+
+
+def is_secret(key: str) -> bool:
+    return key in _SECRET_KEYS
 
 
 def all_settings(mask_secrets: bool = True) -> dict[str, str]:

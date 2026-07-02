@@ -29,8 +29,10 @@ async def update_settings(
     for key, value in body.items():
         if not isinstance(value, str):
             continue
-        if value == _SECRET_PLACEHOLDER or value == "":
-            continue  # hoppa över oförändrade/tomma secrets
+        if value == _SECRET_PLACEHOLDER:
+            continue  # oförändrad secret (maskerat värde)
+        if value == "" and app_settings.is_secret(key):
+            continue  # skriv aldrig över en secret med tomt
         await app_settings.update(key, value)
         changed.append(key)
     if changed:

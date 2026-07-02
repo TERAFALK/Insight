@@ -62,10 +62,13 @@ def _customer_recipients(ticket) -> list[tuple[str, str]]:
     return out
 
 
-async def _send_to_all(recipients: list[tuple[str, str]], subject: str, body_html: str) -> None:
+async def _send_to_all(
+    recipients: list[tuple[str, str]], subject: str, body_html: str,
+    attachments: list[dict] | None = None,
+) -> None:
     for email, name in recipients:
         try:
-            await send_mail(email, name, subject, body_html)
+            await send_mail(email, name, subject, body_html, attachments=attachments or None)
         except Exception as e:
             logger.warning("Kunde inte skicka ärendemejl till %s: %s", email, e)
 
@@ -93,7 +96,7 @@ async def send_ticket_created(
     await _send_to_all([(to_email, to_name)], f"[{ticket_number}] Ärende registrerat: {title}", body)
 
 
-async def send_ticket_reply(ticket, replier, message_body: str, is_internal: bool) -> None:
+async def send_ticket_reply(ticket, replier, message_body: str, is_internal: bool, attachments: list[dict] | None = None) -> None:
     """Notifiera rätt mottagare när ett (publikt) svar postas."""
     if is_internal:
         return
@@ -118,7 +121,7 @@ async def send_ticket_reply(ticket, replier, message_body: str, is_internal: boo
             + paragraph("Logga in i Insight-portalen för att svara, eller svara på detta mejl.")
         )
         body = render_email(content, footer_note=_FOOTER, preheader=f"Nytt svar på {t.ticket_number}")
-        await _send_to_all(recipients, f"[{t.ticket_number}] Nytt svar: {t.title}", body)
+        await _send_to_all(recipients, f"[{t.ticket_number}] Nytt svar: {t.title}", body, attachments)
     else:
         cfg = await _get_setting("ticket_reply_customer")
         if cfg and not cfg.enabled:
@@ -141,7 +144,7 @@ async def send_ticket_reply(ticket, replier, message_body: str, is_internal: boo
             + ticket_button(t.id)
         )
         body = render_email(content, footer_note=_FOOTER, preheader=f"Kundsvar på {t.ticket_number}")
-        await _send_to_all(recipients, f"[{t.ticket_number}] Kundsvar: {t.title}", body)
+        await _send_to_all(recipients, f"[{t.ticket_number}] Kundsvar: {t.title}", body, attachments)
 
 
 async def send_ticket_assigned(ticket, assigned_user) -> None:
@@ -219,6 +222,34 @@ async def send_ticket_resolved(ticket) -> None:
     )
     body = render_email(content, footer_note=_FOOTER, preheader=f"Ärende {t.ticket_number} löst")
     await _send_to_all(recipients, f"[{t.ticket_number}] Ärende löst: {t.title}", body)
+
+
+async def send_ticket_mention(ticket, mentioned_user, note_body: str, author) -> None:
+    """Notifiera en kollega som @mentionats i en intern notering."""
+    cfg = await _get_setting("ticket_mention")
+    if cfg and not cfg.enabled:
+        return
+    if not (mentioned_user and mentioned_user.email):
+        return
+    t = ticket
+    author_name = (author.full_name or author.email) if author else "En kollega"
+    content = (
+        heading("Du har nämnts i ett ärende")
+        + paragraph(f"{html_escape(author_name)} nämnde dig i en intern notering.")
+        + info_card([("Ärende", f"{t.ticket_number} — {t.title}")])
+        + quote_block(note_body)
+        + ticket_button(t.id)
+    )
+    body = render_email(content, footer_note=_FOOTER, preheader=f"Nämnd i {t.ticket_number}")
+    await _send_to_all(
+        [(mentioned_user.email, mentioned_user.full_name or mentioned_user.email)],
+        f"[{t.ticket_number}] Du nämndes: {t.title}", body,
+    )
+
+
+def html_escape(s: str) -> str:
+    import html as _html
+    return _html.escape(s or "")
 
 
 async def send_sla_breach_warning(ticket, kind: str = "resolution") -> None:

@@ -52,6 +52,42 @@ async def run_report_for_customer(customer_id: str) -> None:
         await _generate_report(customer_id)
 
 
+async def run_scheduled_reports() -> None:
+    """Körs dagligen. Genererar rapport för de kunder vars schema matchar idag."""
+    import calendar
+    from app.core.config import settings as _settings
+
+    default_day = _settings.REPORT_SCHEDULE_DAY
+    today = now_stockholm()
+    quarter_months = {1, 4, 7, 10}
+
+    async with AsyncSessionLocal() as db:
+        customers = (
+            await db.scalars(select(Customer).where(Customer.is_active == True))
+        ).all()
+
+    due = []
+    for c in customers:
+        freq = c.report_frequency or "monthly"
+        if freq == "off":
+            continue
+        if freq == "quarterly" and today.month not in quarter_months:
+            continue
+        day = c.report_day or default_day
+        # Klamra mot månadens sista dag (t.ex. dag 31 i februari → sista feb)
+        last = calendar.monthrange(today.year, today.month)[1]
+        if today.day != min(day, last):
+            continue
+        due.append(c)
+
+    logger.info("Schemalagd rapportkörning: %d kunder att köra idag", len(due))
+    for c in due:
+        try:
+            await run_report_for_customer(c.id)
+        except Exception as e:
+            logger.error("Rapport misslyckades för %s: %s", c.name, e)
+
+
 async def _generate_report(customer_id: str) -> None:
     async with AsyncSessionLocal() as db:
         customer = await db.scalar(

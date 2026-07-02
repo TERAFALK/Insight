@@ -32,8 +32,24 @@ async def check_sla_breaches() -> None:
             )
         )
         breached = tickets.all()
+
+        # Auto-eskalering: omfördela brutna ärenden till konfigurerad användare
+        from app.core import app_settings
+        from app.db.models import User, TicketHistory as _TH
+        import uuid as _uuid
+        esc_id = app_settings.get("escalation_user_id") or None
+        esc_user = await db.get(User, esc_id) if esc_id else None
+
         for ticket in breached:
             ticket.sla_breached = True
+            if esc_user and ticket.assigned_to_user_id != esc_user.id:
+                db.add(_TH(
+                    id=str(_uuid.uuid4()), ticket_id=ticket.id, user_id=None,
+                    field_changed="assigned_to",
+                    old_value=ticket.assigned_to_user_id, new_value=esc_user.id,
+                ))
+                ticket.assigned_to = esc_user  # sätter både FK och relation för notisen
+                logger.info("Eskalerade %s till %s vid SLA-brott", ticket.ticket_number, esc_user.email)
             try:
                 from app.graph.ticket_mailer import send_sla_breach_warning
                 await send_sla_breach_warning(ticket, kind="resolution")

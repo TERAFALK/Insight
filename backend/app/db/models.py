@@ -38,6 +38,9 @@ class Customer(Base):
     contact_name: Mapped[str] = mapped_column(String, default="")
     city: Mapped[str] = mapped_column(String, default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Rapportschema per kund: monthly | quarterly | off. report_day 0 = global standard.
+    report_frequency: Mapped[str] = mapped_column(String, default="monthly", server_default="monthly")
+    report_day: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     # Relationer

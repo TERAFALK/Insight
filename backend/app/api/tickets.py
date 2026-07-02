@@ -446,14 +446,16 @@ async def update_ticket(
         await _add_history(db, ticket.id, user.id, "type", ticket.type, body.type)
         ticket.type = body.type
 
-    if body.assigned_to_user_id is not None and body.assigned_to_user_id != ticket.assigned_to_user_id:
+    # model_fields_set skiljer "skickades som null" (avtilldela) från "skickades inte".
+    fields_set = body.model_fields_set
+    if "assigned_to_user_id" in fields_set and (body.assigned_to_user_id or None) != ticket.assigned_to_user_id:
         await _add_history(db, ticket.id, user.id, "assigned_to",
-                           ticket.assigned_to_user_id, body.assigned_to_user_id)
+                           ticket.assigned_to_user_id, body.assigned_to_user_id or None)
         ticket.assigned_to_user_id = body.assigned_to_user_id or None
 
-    if body.category_id is not None:
+    if "category_id" in fields_set:
         ticket.category_id = body.category_id or None
-    if body.subcategory_id is not None:
+    if "subcategory_id" in fields_set:
         ticket.subcategory_id = body.subcategory_id or None
     if body.resolution is not None:
         ticket.resolution = body.resolution
@@ -685,6 +687,7 @@ async def merge_ticket(
 class MessageBody(BaseModel):
     body: str
     is_internal: bool = False
+    attachment_ids: list[str] = []
 
 
 @router.post("/{ticket_id}/messages", status_code=201)
@@ -719,6 +722,14 @@ async def post_message(
     )
     db.add(msg)
 
+    # Koppla ev. bifogade filer (uppladdade innan svaret) till detta meddelande
+    linked_attachments = []
+    for att_id in (body.attachment_ids or []):
+        att = await db.get(TicketAttachment, att_id)
+        if att and att.ticket_id == ticket.id and att.message_id is None:
+            att.message_id = msg.id
+            linked_attachments.append(att)
+
     # Auto-statusövergång
     if not body.is_internal:
         now = datetime.now(timezone.utc)
@@ -746,12 +757,45 @@ async def post_message(
 
     await db.commit()
 
+    # Bygg mejlbilagor av de kopplade filerna (bara publika svar mejlas ut).
+    # Graph inline-bilagor hålls små; större filer förblir i portalen.
+    email_attachments = []
+    if not body.is_internal and linked_attachments:
+        import base64
+        from app.graph.mailer import file_attachment
+        for att in linked_attachments:
+            try:
+                if os.path.getsize(att.file_path) <= 3 * 1024 * 1024:
+                    with open(att.file_path, "rb") as f:
+                        b64 = base64.b64encode(f.read()).decode()
+                    email_attachments.append(file_attachment(att.original_name, b64, att.mime_type))
+                else:
+                    logger.info("Bilaga %s för stor för mejl — endast i portalen", att.original_name)
+            except OSError:
+                pass
+
     # Skicka notifiering
     try:
         from app.graph.ticket_mailer import send_ticket_reply
-        await send_ticket_reply(ticket, user, safe_body, body.is_internal)
+        await send_ticket_reply(ticket, user, safe_body, body.is_internal, attachments=email_attachments)
     except Exception as e:
         logger.warning("Kunde inte skicka svarsnotis för %s: %s", ticket.ticket_number, e)
+
+    # @mentions i interna noteringar → notifiera nämnda kollegor
+    if body.is_internal:
+        try:
+            import re
+            mentioned = {e.lower() for e in re.findall(r"@([\w.+-]+@[\w.-]+\.\w+)", body.body)}
+            if mentioned:
+                admins = (await db.scalars(
+                    select(User).where(User.role == "admin", User.is_active == True)
+                )).all()
+                from app.graph.ticket_mailer import send_ticket_mention
+                for mu in admins:
+                    if mu.email.lower() in mentioned and mu.id != user.id:
+                        await send_ticket_mention(ticket, mu, safe_body, user)
+        except Exception as e:
+            logger.warning("Kunde inte skicka mention-notis för %s: %s", ticket.ticket_number, e)
 
     await db.refresh(msg)
     return {

@@ -32,6 +32,8 @@ class CustomerUpdate(BaseModel):
     name: str | None = None
     contact_name: str | None = None
     city: str | None = None
+    report_frequency: str | None = None  # monthly | quarterly | off
+    report_day: int | None = None        # 0 = global standard
 
 
 class ContactCreate(BaseModel):
@@ -155,6 +157,8 @@ async def get_customer(
         "name": c.name,
         "contact_name": c.contact_name,
         "city": c.city,
+        "report_frequency": c.report_frequency,
+        "report_day": c.report_day,
         "integrations": integrations_status,
         "recent_reports": [
             {
@@ -179,6 +183,10 @@ async def update_customer(
     c = await db.get(Customer, customer_id)
     if not c:
         raise HTTPException(404, "Kund hittades inte")
+    if body.report_frequency is not None and body.report_frequency not in ("monthly", "quarterly", "off"):
+        raise HTTPException(400, "Ogiltig rapportfrekvens")
+    if body.report_day is not None and not (0 <= body.report_day <= 28):
+        raise HTTPException(400, "Rapportdag måste vara 0–28")
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(c, field, value)
     await log_action(db, admin, "customer.update", "customer", c.id, f"Uppdaterade kund {c.name}")

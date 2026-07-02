@@ -939,6 +939,20 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
       <!-- Flik: Rapporter -->
       <div class="cd-tab-pane" id="cd-pane-reports">
+        <div class="card" style="margin-bottom:16px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px">Rapportschema</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <select id="cd-report-freq" class="fi" style="width:auto">
+              <option value="monthly">Månadsvis</option>
+              <option value="quarterly">Kvartalsvis (jan/apr/jul/okt)</option>
+              <option value="off">Av</option>
+            </select>
+            <label style="font-size:12px;color:var(--muted)">Dag i månaden</label>
+            <input id="cd-report-day" class="fi" type="number" min="0" max="28" style="width:70px">
+            <span style="font-size:11px;color:var(--muted)">0 = global standarddag</span>
+            <button class="btn btn-p btn-sm" onclick="saveReportSchedule()"><i class="ti ti-check"></i> Spara schema</button>
+          </div>
+        </div>
         <div id="cd-reports-list"><div class="skel" style="padding:32px">Laddar rapporter...</div></div>
       </div>
 
@@ -971,7 +985,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
             <div class="mbox"><div class="mv" id="sched-next" style="font-size:16px">—</div><div class="ml">Nästa körning</div></div>
             <div class="mbox"><div class="mv" style="font-size:16px">Månadsvis</div><div class="ml">Frekvens</div></div>
           </div>
-          <div class="alert al-info" style="margin:0"><i class="ti ti-info-circle"></i><span>Rapporter skickas automatiskt den 1:a varje månad kl. 08:00. För att skicka manuellt, öppna en kund och klicka <strong>Generera rapport</strong>.</span></div>
+          <div class="alert al-info" style="margin:0"><i class="ti ti-info-circle"></i><span>Rapporter skickas enligt varje kunds schema (öppna en kund → fliken <strong>Rapporter</strong> för att välja frekvens och dag). Standarddag och tidpunkt ställs in under Inställningar. För att skicka manuellt, klicka <strong>Generera rapport</strong> på kunden.</span></div>
         </div>
       </div>
 
@@ -1222,6 +1236,11 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
             <div class="fr"><label class="fl">Tidszon</label><input class="fi" id="bh-tz" placeholder="Europe/Stockholm"></div>
             <button class="btn btn-p btn-sm" onclick="saveBusinessHours()" style="margin-top:4px"><i class="ti ti-check"></i> Spara arbetstider</button>
 
+            <div class="fsec">Eskalering vid SLA-brott</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Ärenden som bryter lösnings-SLA omfördelas automatiskt till vald person.</div>
+            <div class="fr" style="margin:0"><label class="fl">Eskalera till</label><select class="fi" id="esc-user"><option value="">— ingen (av) —</option></select></div>
+            <button class="btn btn-p btn-sm" onclick="saveEscalation()" style="margin-top:4px"><i class="ti ti-check"></i> Spara eskalering</button>
+
             <div class="fsec">Standardsvar</div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Återanvändbara svar som personal kan infoga i ärendesvar.</div>
             <div id="s-canned-list" style="margin-bottom:12px"></div>
@@ -1278,6 +1297,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <button class="btn btn-g btn-sm tfilter" data-filter="closed" onclick="setTicketFilter('status','closed',this)">Closed</button>
         </div>
         <div style="flex:1"></div>
+        <button class="btn btn-g btn-sm" id="ticket-mark-btn" onclick="toggleBulkMode()"><i class="ti ti-checkbox"></i> Markera</button>
         <button class="btn btn-g btn-sm" id="ticket-mine-btn" onclick="toggleTicketMine()"><i class="ti ti-user"></i> Mina ärenden</button>
         <input class="fi" id="ticket-search" placeholder="Sök ärende, kund, innehåll…" oninput="onTicketSearch()" style="width:220px;padding:6px 10px">
       </div>
@@ -1344,6 +1364,8 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
                 <button class="btn btn-p btn-sm" onclick="submitTicketReply()"><i class="ti ti-send"></i> Skicka svar</button>
                 <label class="btn btn-g btn-sm" style="cursor:pointer"><i class="ti ti-paperclip"></i> Bifoga<input type="file" id="td-attach-input" style="display:none" onchange="uploadTicketAttachment(this)"></label>
               </div>
+              <div id="td-pending-att" style="display:none;font-size:11px;color:var(--sub);margin-top:6px"></div>
+              <div id="td-mention-hint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px">Tips: nämn en kollega med <code>@deras@epost.se</code> i en intern notering så får de en notis.</div>
             </div>
           </div>
         </div>
@@ -2333,6 +2355,18 @@ async function submitEditCustomer() {
 
 // ── Kunddetalj (dynamisk, byggd från verifierade integrationer) ───────────
 
+async function saveReportSchedule() {
+  const freq = document.getElementById('cd-report-freq').value;
+  const day = parseInt(document.getElementById('cd-report-day').value, 10) || 0;
+  try {
+    await api('/api/customers/' + currentCustomerId, {
+      method: 'PUT',
+      body: JSON.stringify({ report_frequency: freq, report_day: day }),
+    });
+    t('Rapportschema sparat');
+  } catch(e) { t(e.message, 'err'); }
+}
+
 async function loadCustomerDetail(customerId) {
   const gen = _navGen;
   switchCdTab('network');
@@ -2358,6 +2392,10 @@ async function loadCustomerDetail(customerId) {
     document.getElementById('cd-name').textContent = customer.name;
     document.getElementById('cd-eyebrow').textContent = `Kund · ${customer.city || '—'}`;
     document.getElementById('cd-sub').textContent = [customer.contact_name, customer.city].filter(Boolean).join(' · ') || '—';
+    const freqEl = document.getElementById('cd-report-freq');
+    const dayEl = document.getElementById('cd-report-day');
+    if (freqEl) freqEl.value = customer.report_frequency || 'monthly';
+    if (dayEl) dayEl.value = customer.report_day ?? 0;
 
     // Integrationspillar — klickbara tabs för verifierade integrationer
     const verifiedKeys = customer.integrations.filter(i => i.verified).map(i => i.key);
@@ -3285,7 +3323,7 @@ async function loadSettings() {
     if (nextEl && s.next_run) {
       nextEl.textContent = 'Nästa körning: ' + new Date(s.next_run).toLocaleString('sv-SE', { dateStyle: 'long', timeStyle: 'short' });
     } else if (nextEl) {
-      nextEl.textContent = `Schema: dag ${s.day} varje månad kl ${String(s.hour).padStart(2,'0')}:${String(s.minute).padStart(2,'0')}`;
+      nextEl.textContent = `Standarddag: ${s.day} kl ${String(s.hour).padStart(2,'0')}:${String(s.minute).padStart(2,'0')} — per kund kan avvika (Kund → Rapporter)`;
     }
     // Populate app settings fields
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
@@ -4727,6 +4765,19 @@ function toggleTicketMine() {
   renderTicketsTable();
 }
 
+let _bulkMode = false;
+
+function toggleBulkMode() {
+  _bulkMode = !_bulkMode;
+  const btn = document.getElementById('ticket-mark-btn');
+  if (btn) {
+    btn.style.background = _bulkMode ? 'var(--blue)' : '';
+    btn.style.color = _bulkMode ? '#fff' : '';
+  }
+  if (!_bulkMode) { _bulkSelected.clear(); updateBulkBar(); }
+  renderTicketsTable();
+}
+
 function renderTicketsTable() {
   // Fritextsök sker serverside (loadTickets). Här filtreras bara status/mig.
   const myId = currentUser?.id;
@@ -4755,18 +4806,20 @@ function renderTicketsTable() {
   }
 
   const isStaff = currentUser?.role === 'admin';
+  const markBtn = document.getElementById('ticket-mark-btn');
+  if (markBtn) markBtn.style.display = isStaff ? '' : 'none';
   tbody.innerHTML = list.map(tk => {
     const sla = _slaDisplay(tk);
-    const chk = isStaff ? `<input type="checkbox" class="tk-check" onclick="event.stopPropagation()" onchange="toggleBulk('${tk.id}',this.checked)" ${_bulkSelected.has(tk.id)?'checked':''} style="margin-right:6px;vertical-align:middle">` : '';
+    const chk = (isStaff && _bulkMode) ? `<input type="checkbox" class="tk-check" onclick="event.stopPropagation()" onchange="toggleBulk('${tk.id}',this.checked)" ${_bulkSelected.has(tk.id)?'checked':''} style="margin-right:6px;vertical-align:middle">` : '';
     return `<tr style="cursor:pointer" onclick="openTicketDetail('${tk.id}')">
-      <td>${chk}<span style="font-family:monospace;font-weight:700;color:var(--blue);font-size:12px">${escapeHtml(tk.ticket_number)}</span></td>
-      <td>${escapeHtml(tk.title)}</td>
-      <td style="font-size:12px">${escapeHtml(tk.customer_name||'—')}</td>
-      <td><span class="b b-muted" style="font-size:11px">${TYPE_LABEL[tk.type]||tk.type}</span></td>
-      <td><span class="b ${PRIO_CLS[tk.priority]||''}" style="font-size:11px">${PRIO_LABEL[tk.priority]||tk.priority}</span></td>
-      <td><span class="b ${STATUS_CLS[tk.status]||''}" style="font-size:11px">${STATUS_LABEL[tk.status]||tk.status}</span></td>
-      <td style="font-size:12px">${escapeHtml(tk.assigned_to?.name||'—')}</td>
-      <td>${sla}</td>
+      <td style="white-space:nowrap">${chk}<span style="font-family:monospace;font-weight:700;color:var(--blue);font-size:12px">${escapeHtml(tk.ticket_number)}</span></td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(tk.title)}</td>
+      <td style="font-size:12px;white-space:nowrap">${escapeHtml(tk.customer_name||'—')}</td>
+      <td style="white-space:nowrap"><span class="b b-muted" style="font-size:11px">${TYPE_LABEL[tk.type]||tk.type}</span></td>
+      <td style="white-space:nowrap"><span class="b ${PRIO_CLS[tk.priority]||''}" style="font-size:11px">${PRIO_LABEL[tk.priority]||tk.priority}</span></td>
+      <td style="white-space:nowrap"><span class="b ${STATUS_CLS[tk.status]||''}" style="font-size:11px">${STATUS_LABEL[tk.status]||tk.status}</span></td>
+      <td style="font-size:12px;white-space:nowrap">${escapeHtml(tk.assigned_to?.name||'—')}</td>
+      <td style="white-space:nowrap">${sla}</td>
       <td style="font-size:12px;color:var(--muted)">${_relTime(tk.updated_at||tk.created_at)}</td>
     </tr>`;
   }).join('');
@@ -4797,6 +4850,7 @@ function _relTime(iso) {
 
 async function openTicketDetail(ticketId) {
   nav('ticket-detail');
+  _pendingAttachments = [];
   // Sätt dagens datum i tidregistreringsformuläret
   const dateEl = document.getElementById('tdt-date');
   if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
@@ -5095,6 +5149,9 @@ function renderTicketDetail() {
   const noReply = ['closed','cancelled'].includes(tk.status);
   document.getElementById('td-reply-card').style.display = (noReply && !isStaff) ? 'none' : '';
   if (isStaff) document.getElementById('td-internal-wrap').style.display = 'flex';
+  const mentionHint = document.getElementById('td-mention-hint');
+  if (mentionHint) mentionHint.style.display = isStaff ? '' : 'none';
+  renderPendingAttachments();
   const cannedSel = document.getElementById('td-canned-sel');
   if (cannedSel) {
     if (isStaff && _cannedResponses.length) {
@@ -5357,16 +5414,34 @@ function _refreshTicketMeta() {
     : '<span style="color:var(--muted)">Ingen historik ännu.</span>';
 }
 
+let _pendingAttachments = [];
+
+function renderPendingAttachments() {
+  const el = document.getElementById('td-pending-att');
+  if (!el) return;
+  if (!_pendingAttachments.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  el.innerHTML = 'Bifogas i svaret: ' + _pendingAttachments.map(a =>
+    `<span style="background:var(--tint);border-radius:4px;padding:1px 6px;margin-right:4px"><i class="ti ti-paperclip"></i> ${escapeHtml(a.name)} <span onclick="removePendingAttachment('${a.id}')" style="cursor:pointer;font-weight:700">×</span></span>`).join('');
+}
+
+function removePendingAttachment(id) {
+  _pendingAttachments = _pendingAttachments.filter(a => a.id !== id);
+  renderPendingAttachments();
+}
+
 async function submitTicketReply() {
   const body = document.getElementById('td-reply-body').value.trim();
   if (!body) return;
   const isInternal = document.getElementById('td-internal-cb')?.checked || false;
+  const attachment_ids = _pendingAttachments.map(a => a.id);
   try {
     await api('/api/tickets/' + _currentTicket.id + '/messages', {
-      method: 'POST', body: JSON.stringify({ body, is_internal: isInternal }),
+      method: 'POST', body: JSON.stringify({ body, is_internal: isInternal, attachment_ids }),
     });
     document.getElementById('td-reply-body').value = '';
     if (document.getElementById('td-internal-cb')) document.getElementById('td-internal-cb').checked = false;
+    _pendingAttachments = [];
     _currentTicket = await api('/api/tickets/' + _currentTicket.id);
     renderTicketDetail();
     t('Svar skickat');
@@ -5383,9 +5458,12 @@ async function uploadTicketAttachment(input) {
       method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken }, body: fd,
     });
     if (!resp.ok) throw new Error(await resp.text());
+    const att = await resp.json();
+    _pendingAttachments.push({ id: att.id, name: att.original_name });
     _currentTicket = await api('/api/tickets/' + _currentTicket.id);
     renderTicketDetail();
-    t('Fil bifogad');
+    renderPendingAttachments();
+    t('Fil bifogad — skickas med svaret');
   } catch(e) { t(e.message, 'err'); }
   input.value = '';
 }
@@ -5473,8 +5551,31 @@ async function loadTicketSettings() {
   renderCategorySettings();
   renderSlaSettings();
   loadBusinessHours();
+  loadEscalation();
   loadCannedResponses();
   loadTags();
+}
+
+async function loadEscalation() {
+  const sel = document.getElementById('esc-user');
+  if (!sel) return;
+  try {
+    const [users, cfg] = await Promise.all([api('/api/users'), api('/api/admin/settings')]);
+    const admins = users.filter(u => u.role === 'admin' && u.is_active);
+    sel.innerHTML = '<option value="">— ingen (av) —</option>' +
+      admins.map(u => `<option value="${u.id}">${escapeHtml(u.full_name || u.email)}</option>`).join('');
+    sel.value = cfg.escalation_user_id || '';
+  } catch(e) {}
+}
+
+async function saveEscalation() {
+  try {
+    await api('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify({ escalation_user_id: document.getElementById('esc-user').value }),
+    });
+    t('Eskalering sparad');
+  } catch(e) { t(e.message, 'err'); }
 }
 
 async function loadTags() {
