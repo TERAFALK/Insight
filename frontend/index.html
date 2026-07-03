@@ -657,6 +657,8 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="fr"><label class="fl">Lösenord</label><input class="fi" id="l-pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
       <div id="l-err" style="font-size:12px;color:#BE123C;margin-bottom:10px;display:none">Fel e-post eller lösenord</div>
       <button class="btn btn-p" style="width:100%;justify-content:center;height:42px;font-size:14px" onclick="doLogin()">Logga in</button>
+      <div style="display:flex;align-items:center;gap:8px;margin:14px 0;color:var(--muted);font-size:11px"><div style="flex:1;height:1px;background:var(--border)"></div>eller<div style="flex:1;height:1px;background:var(--border)"></div></div>
+      <button class="btn btn-g" style="width:100%;justify-content:center;height:42px;font-size:14px" onclick="msLogin()"><i class="ti ti-brand-windows"></i> Logga in med Microsoft</button>
       <div style="text-align:center;margin-top:12px"><a href="#" onclick="toggleForgot();return false" style="font-size:12px;color:var(--blue);text-decoration:none">Glömt lösenord?</a></div>
       <div id="forgot-box" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
         <div class="fr" style="margin:0"><label class="fl">E-postadress</label><input class="fi" id="f-email" type="email" placeholder="din@epost.se"></div>
@@ -2006,12 +2008,33 @@ const _csatId = _q.get('csat') || (_hCsat && _hCsat[1]);
 const _csatToken = _q.get('token') || (_hCsat && _hCsat[2]);
 const _csatScore = _q.get('score') || (_hCsat && _hCsat[3]) || '0';
 const _pwreset = _q.get('pwreset') || (_hReset && _hReset[1]);
-if (_csatId && _csatToken) {
+const _mslogin = _q.get('mslogin');
+const _mserr = _q.get('msloginerror');
+if (_mslogin) {
+  authToken = _mslogin;
+  localStorage.setItem('tf_token', authToken);
+  history.replaceState(null, '', location.pathname);  // rensa token ur URL/historik
+  showApp();
+} else if (_mserr) {
+  history.replaceState(null, '', location.pathname);
+  const err = document.getElementById('l-err');
+  if (err) { err.textContent = _mserr === '2' ? 'Kontot är inte en administratör i Insight.' : 'Microsoft-inloggning misslyckades.'; err.style.display = 'block'; }
+} else if (_csatId && _csatToken) {
   showPublicCsat(_csatId, _csatToken, parseInt(_csatScore, 10));
 } else if (_pwreset) {
   showPasswordReset(_pwreset);
 } else if (authToken) {
   showApp();
+}
+
+async function msLogin() {
+  try {
+    const { url } = await api('/api/auth/ms-login');
+    window.location.href = url;
+  } catch(e) {
+    const err = document.getElementById('l-err');
+    if (err) { err.textContent = e.message || 'Kunde inte starta Microsoft-inloggning'; err.style.display = 'block'; }
+  }
 }
 
 function toggleForgot() {

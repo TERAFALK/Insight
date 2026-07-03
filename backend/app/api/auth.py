@@ -1,8 +1,17 @@
+import secrets
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import jwt as jose_jwt
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import settings
 
 import logging
 
@@ -107,6 +116,115 @@ async def reset_password(
     user.hashed_password = hash_password(body.password)
     await db.commit()
     return {"status": "ok"}
+
+
+# ── Microsoft-inloggning (SSO för administratörer) ──────────────────────────────
+# Återanvänder mail-appens registrering (graph_*). Entra gatekeepar vem som får
+# logga in via "assignment required"; alla som når callbacken auto-provisioneras
+# som admin. Lokalt lösenord finns kvar som reserv (break-glass).
+
+def _ms_redirect_uri() -> str:
+    base = (app_settings.get("portal_url") or "").rstrip("/")
+    return f"{base}/api/auth/ms-login/callback"
+
+
+def _ms_state() -> str:
+    exp = datetime.now(timezone.utc) + timedelta(minutes=10)
+    return jose_jwt.encode(
+        {"type": "msstate", "nonce": secrets.token_urlsafe(8), "exp": exp},
+        settings.SECRET_KEY, algorithm="HS256",
+    )
+
+
+def _ms_check_state(state: str) -> bool:
+    try:
+        return jose_jwt.decode(state, settings.SECRET_KEY, algorithms=["HS256"]).get("type") == "msstate"
+    except Exception:
+        return False
+
+
+@router.get("/ms-login")
+@limiter.limit("15/minute")
+async def ms_login_start(request: Request):
+    """Returnerar Entra-authorize-URL som frontend redirectar till."""
+    tenant = app_settings.get("graph_tenant_id")
+    client_id = app_settings.get("graph_client_id")
+    if not tenant or not client_id or not app_settings.get("portal_url"):
+        raise HTTPException(400, "Microsoft-inloggning är inte konfigurerad (kräver Graph-app + PORTAL_URL)")
+    params = {
+        "client_id": client_id,
+        "response_type": "code",
+        "redirect_uri": _ms_redirect_uri(),
+        "response_mode": "query",
+        "scope": "openid profile email",
+        "state": _ms_state(),
+        "prompt": "select_account",
+    }
+    url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize?{urlencode(params)}"
+    return {"url": url}
+
+
+@router.get("/ms-login/callback")
+async def ms_login_callback(
+    code: str = "",
+    state: str = "",
+    error: str = "",
+    db: AsyncSession = Depends(get_db),
+):
+    base = (app_settings.get("portal_url") or "").rstrip("/")
+    if error or not code or not _ms_check_state(state):
+        return RedirectResponse(f"{base}/?msloginerror=1")
+
+    tenant = app_settings.get("graph_tenant_id")
+    client_id = app_settings.get("graph_client_id")
+    client_secret = app_settings.get("graph_client_secret")
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.post(
+                f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token",
+                data={
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": _ms_redirect_uri(),
+                    "scope": "openid profile email",
+                },
+            )
+            r.raise_for_status()
+            tokens = r.json()
+        # id_token kommer direkt från Microsoft över TLS (bekräftad via vår secret).
+        claims = jose_jwt.get_unverified_claims(tokens["id_token"])
+        if claims.get("aud") != client_id:
+            raise ValueError("Fel audience i id_token")
+        email = (claims.get("email") or claims.get("preferred_username") or claims.get("upn") or "").strip()
+        name = claims.get("name") or email
+        if not email:
+            raise ValueError("Ingen e-post i id_token")
+    except Exception as e:
+        logger.warning("MS-inloggning misslyckades: %s", e)
+        return RedirectResponse(f"{base}/?msloginerror=1")
+
+    user = await db.scalar(select(User).where(User.email.ilike(email)))
+    if user and user.role != "admin":
+        # E-posten tillhör en kundanvändare — höj aldrig via SSO
+        logger.warning("MS-inloggning nekad — %s är inte admin", email)
+        return RedirectResponse(f"{base}/?msloginerror=2")
+    if not user:
+        user = User(
+            email=email,
+            hashed_password=hash_password(secrets.token_urlsafe(24)),
+            full_name=name,
+            role="admin",
+            is_active=True,
+        )
+        db.add(user)
+    else:
+        user.is_active = True
+    await db.commit()
+
+    token = create_access_token(user.email)
+    return RedirectResponse(f"{base}/?mslogin={token}")
 
 
 async def current_user(
