@@ -67,7 +67,7 @@ async def forgot_password(
         try:
             token = create_reset_token(user.email)
             from app.graph.mailer import render_email, send_mail, heading, paragraph, button
-            link = f"{base}/#reset/{token}"
+            link = f"{base}/?pwreset={token}"
             content = (
                 heading("Återställ ditt lösenord")
                 + paragraph("Vi fick en begäran om att återställa lösenordet för ditt Insight-konto. "

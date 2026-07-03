@@ -192,8 +192,11 @@ def portal_url() -> str:
 
 
 def ticket_button(ticket_id: str) -> str:
-    """Knapp som länkar in i portalen till ett ärende, om portal_url är konfigurerad."""
+    """Knapp som länkar in i portalen till ett ärende, om portal_url är konfigurerad.
+
+    Använder query-param (inte #fragment) så länken överlever e-postklienters
+    länkomskrivning (t.ex. Outlook Safe Links, som tappar fragment)."""
     base = portal_url()
     if not base:
         return ""
-    return button("Öppna ärendet i portalen", f"{base}/#ticket/{ticket_id}")
+    return button("Öppna ärendet i portalen", f"{base}/?ticket={ticket_id}")

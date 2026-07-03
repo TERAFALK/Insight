@@ -1936,6 +1936,9 @@ async function showApp() {
 }
 
 function _handleDeepLink() {
+  // Från mejl: ?ticket=<id>. Från in-app: #ticket/<id>.
+  const q = new URLSearchParams(location.search).get('ticket');
+  if (q) { openTicketDetail(q); return; }
   const m = (location.hash || '').match(/^#ticket\/([\w-]+)/);
   if (m) openTicketDetail(m[1]);
 }
@@ -1992,13 +1995,13 @@ function doLogout() {
   document.getElementById('app-screen').style.display = 'none';
 }
 
-// Publika länkar utan inloggning: enkät (#csat/…) och lösenordsåterställning (#reset/…).
-const _csatBoot = (location.hash || '').match(/^#csat\/([\w-]+)\/([\w.~_-]+)(?:\/(\d))?/);
-const _resetBoot = (location.hash || '').match(/^#reset\/(.+)$/);
-if (_csatBoot) {
-  showPublicCsat(_csatBoot[1], _csatBoot[2], _csatBoot[3] ? parseInt(_csatBoot[3], 10) : 0);
-} else if (_resetBoot) {
-  showPasswordReset(_resetBoot[1]);
+// Publika länkar utan inloggning läses från query-parametrar (överlever e-postklienters
+// länkomskrivning, till skillnad från #fragment): ?csat=<id>&token=..., ?pwreset=<token>.
+const _q = new URLSearchParams(location.search);
+if (_q.get('csat') && _q.get('token')) {
+  showPublicCsat(_q.get('csat'), _q.get('token'), parseInt(_q.get('score') || '0', 10));
+} else if (_q.get('pwreset')) {
+  showPasswordReset(_q.get('pwreset'));
 } else if (authToken) {
   showApp();
 }

@@ -233,7 +233,7 @@ async def send_csat_survey(ticket, recipients: list[tuple[str, str]]) -> None:
     t = ticket
 
     def star(n: int) -> str:
-        url = f"{base}/#csat/{t.id}/{t.csat_token}/{n}"
+        url = f"{base}/?csat={t.id}&token={t.csat_token}&score={n}"
         return f'<a href="{url}" style="text-decoration:none;font-size:30px;color:#f59e0b;margin:0 3px">★</a>'
 
     stars = "".join(star(n) for n in range(1, 6))
