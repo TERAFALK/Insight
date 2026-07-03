@@ -347,6 +347,19 @@ async def create_ticket(
     await db.flush()
 
     await _add_history(db, ticket.id, user.id, "status", None, "new")
+
+    # En kundanvändare som skapar ett ärende kopplas som kontakt/bevakare på ärendet
+    if user.role == "customer":
+        own_contact = await db.scalar(
+            select(CustomerContact).where(
+                CustomerContact.user_id == user.id,
+                CustomerContact.customer_id == body.customer_id,
+                CustomerContact.is_active == True,
+            )
+        )
+        if own_contact:
+            db.add(TicketContact(id=str(uuid.uuid4()), ticket_id=ticket.id, contact_id=own_contact.id))
+
     await db.commit()
 
     # Bekräftelsemejl — skickas till den kundanvändare som skapade ärendet.

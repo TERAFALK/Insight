@@ -81,3 +81,21 @@ def create_access_token(subject: str) -> str:
 def decode_token(token: str) -> str:
     payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
     return payload["sub"]
+
+
+def create_reset_token(email: str, minutes: int = 60) -> str:
+    """Kortlivad token för lösenordsåterställning (separat 'type' så den ej kan användas som inloggning)."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
+    return jwt.encode(
+        {"sub": email, "type": "pwreset", "exp": expire},
+        settings.SECRET_KEY,
+        algorithm="HS256",
+    )
+
+
+def decode_reset_token(token: str) -> str:
+    """Returnerar e-post om token är en giltig, ej utgången återställningstoken."""
+    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+    if payload.get("type") != "pwreset":
+        raise ValueError("Fel token-typ")
+    return payload["sub"]
