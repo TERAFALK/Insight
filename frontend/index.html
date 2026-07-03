@@ -1997,6 +1997,8 @@ function doLogout() {
 
 // Publika länkar utan inloggning läses från query-parametrar (överlever e-postklienters
 // länkomskrivning, till skillnad från #fragment): ?csat=<id>&token=..., ?pwreset=<token>.
+let _resetToken = null;
+let _publicCsat = null;
 const _q = new URLSearchParams(location.search);
 const _hCsat = (location.hash || '').match(/^#csat\/([\w-]+)\/([\w.~_-]+)(?:\/(\d))?/);
 const _hReset = (location.hash || '').match(/^#reset\/(.+)$/);
@@ -2032,8 +2034,6 @@ async function submitForgot() {
   msg.style.display = 'block';
 }
 
-let _resetToken = null;
-
 function showPasswordReset(token) {
   _resetToken = token;
   document.getElementById('login-screen').style.display = 'none';
@@ -2063,8 +2063,6 @@ async function submitPasswordReset() {
     document.getElementById('csat-box').innerHTML = '<div style="text-align:center"><div style="font-size:48px;color:#16a34a">✓</div><p style="font-size:16px;font-weight:600">Lösenordet är uppdaterat</p><p style="color:#888;font-size:13px"><a href="/" style="color:#0047a3">Gå till inloggningen</a></p></div>';
   } catch(e) { showErr(e.message); }
 }
-
-let _publicCsat = null;
 
 async function showPublicCsat(id, token, preScore) {
   document.getElementById('login-screen').style.display = 'none';
