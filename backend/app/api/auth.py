@@ -76,7 +76,11 @@ async def forgot_password(
                 + paragraph("Begärde du inte detta kan du ignorera mejlet — inget ändras.")
             )
             html = render_email(content, footer_note="TERAFALK AB · Detta är ett automatiskt utskick.")
-            await send_mail(user.email, user.full_name or user.email, "Återställ ditt lösenord — Insight", html)
+            await send_mail(
+                user.email, user.full_name or user.email,
+                "Återställ ditt lösenord — Insight", html,
+                sender=app_settings.get("graph_sender") or None,
+            )
         except Exception as e:
             logger.warning("Kunde inte skicka återställningsmejl: %s", e)
     elif user and user.is_active and not base:

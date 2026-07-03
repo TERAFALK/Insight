@@ -1998,10 +1998,16 @@ function doLogout() {
 // Publika länkar utan inloggning läses från query-parametrar (överlever e-postklienters
 // länkomskrivning, till skillnad från #fragment): ?csat=<id>&token=..., ?pwreset=<token>.
 const _q = new URLSearchParams(location.search);
-if (_q.get('csat') && _q.get('token')) {
-  showPublicCsat(_q.get('csat'), _q.get('token'), parseInt(_q.get('score') || '0', 10));
-} else if (_q.get('pwreset')) {
-  showPasswordReset(_q.get('pwreset'));
+const _hCsat = (location.hash || '').match(/^#csat\/([\w-]+)\/([\w.~_-]+)(?:\/(\d))?/);
+const _hReset = (location.hash || '').match(/^#reset\/(.+)$/);
+const _csatId = _q.get('csat') || (_hCsat && _hCsat[1]);
+const _csatToken = _q.get('token') || (_hCsat && _hCsat[2]);
+const _csatScore = _q.get('score') || (_hCsat && _hCsat[3]) || '0';
+const _pwreset = _q.get('pwreset') || (_hReset && _hReset[1]);
+if (_csatId && _csatToken) {
+  showPublicCsat(_csatId, _csatToken, parseInt(_csatScore, 10));
+} else if (_pwreset) {
+  showPasswordReset(_pwreset);
 } else if (authToken) {
   showApp();
 }
