@@ -2018,7 +2018,12 @@ if (_mslogin) {
 } else if (_mserr) {
   history.replaceState(null, '', location.pathname);
   const err = document.getElementById('l-err');
-  if (err) { err.textContent = _mserr === '2' ? 'Kontot är inte en administratör i Insight.' : 'Microsoft-inloggning misslyckades.'; err.style.display = 'block'; }
+  if (err) {
+    const msg = _mserr === '2' ? 'Kontot är inte en administratör i Insight.'
+      : _mserr === '3' ? 'Ditt konto är inte tilldelat Insight-appen. Kontakta en administratör.'
+      : 'Microsoft-inloggning misslyckades.';
+    err.textContent = msg; err.style.display = 'block';
+  }
 } else if (_csatId && _csatToken) {
   showPublicCsat(_csatId, _csatToken, parseInt(_csatScore, 10));
 } else if (_pwreset) {
