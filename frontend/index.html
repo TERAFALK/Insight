@@ -1928,25 +1928,32 @@ async function showApp() {
 
   if (currentUser.role === 'customer') {
     currentCustomerId = currentUser.customer_id;
-    nav('dashboard');
-  } else {
-    loadDashboard();
   }
 
-  // Deep-link från mejl, t.ex. #ticket/<id>
-  _handleDeepLink();
+  // Routa från URL: mejl-deep-link (?ticket=) → hash-route (#/...) → översikt
+  const ticketQ = new URLSearchParams(location.search).get('ticket');
+  if (ticketQ) {
+    openTicketDetail(ticketQ);
+  } else if (!_routeFromHash()) {
+    nav('dashboard');
+  }
 }
 
-function _handleDeepLink() {
-  // Från mejl: ?ticket=<id>. Från in-app: #ticket/<id>.
-  const q = new URLSearchParams(location.search).get('ticket');
-  if (q) { openTicketDetail(q); return; }
-  const m = (location.hash || '').match(/^#ticket\/([\w-]+)/);
-  if (m) openTicketDetail(m[1]);
+function _routeFromHash() {
+  const raw = (location.hash || '').replace(/^#\/?/, '');
+  if (!raw) return false;
+  const [view, id] = raw.split('/');
+  if (view === 'customer' && id) { openCustomer(id); return true; }
+  if (view === 'ticket' && id) { openTicketDetail(id); return true; }
+  if (view === 'order' && id) { openOrderDetail(id); return true; }
+  if (view === 'integrations' && id) { openIntegrations(id); return true; }
+  if (SIMPLE_ROUTES.has(view)) { nav(view); return true; }
+  return false;
 }
 
 window.addEventListener('hashchange', () => {
-  if (currentUser) _handleDeepLink();
+  if (_suppressHashRoute) { _suppressHashRoute = false; return; }
+  if (currentUser) _routeFromHash();
 });
 
 function applyRoleUI() {
@@ -2180,9 +2187,22 @@ function refreshCurrent() {
   t('Uppdaterar...');
 }
 
+// Enkla vyer routas som #/<vy>. Detaljvyer (customer/ticket/order/integrations)
+// sätter sin egen hash med id i respektive open-funktion.
+const SIMPLE_ROUTES = new Set(['dashboard', 'customers', 'tickets', 'orders', 'reports', 'users', 'settings', 'add-customer']);
+let _suppressHashRoute = false;
+
+function _setHash(path) {
+  // Sätt hash utan att trigga en ny routing (flaggan nollställs i hashchange-lyssnaren).
+  if (location.hash === '#' + path) return;
+  _suppressHashRoute = true;
+  location.hash = path;
+}
+
 function nav(id) {
   _currentView = id;
   _navGen++;  // ogiltigförklarar alla pågående async-laddningar
+  if (SIMPLE_ROUTES.has(id)) _setHash('/' + id);
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const el = document.getElementById('v-' + id);
   if (el) el.classList.add('active');
@@ -2209,12 +2229,14 @@ function nav(id) {
 function openCustomer(customerId) {
   currentCustomerId = customerId;
   nav('customer-detail');
+  _setHash('/customer/' + customerId);
   loadCustomerDetail(customerId);
 }
 
 function openIntegrations(customerId) {
   currentCustomerId = customerId;
   nav('integrations');
+  _setHash('/integrations/' + customerId);
   loadIntegrationsView(customerId);
 }
 
@@ -3860,6 +3882,7 @@ async function openOrderDetail(orderId, backView) {
   _ordersBackView = backView || 'orders';
   document.getElementById('od-back-label').textContent = backView === 'customer-detail' ? 'Kund' : 'Order & Projekt';
   nav('order-detail');
+  _setHash('/order/' + orderId);
   await loadOrderDetail(orderId);
 }
 
@@ -5024,6 +5047,7 @@ function _relTime(iso) {
 
 async function openTicketDetail(ticketId) {
   nav('ticket-detail');
+  _setHash('/ticket/' + ticketId);
   _pendingAttachments = [];
   // Sätt dagens datum i tidregistreringsformuläret
   const dateEl = document.getElementById('tdt-date');
