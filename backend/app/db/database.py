@@ -173,7 +173,6 @@ async def get_db():
 async def _seed_notification_settings() -> None:
     """Skapa standardinställningar för notifikationer om de saknas."""
     from app.db.models import NotificationSetting
-    from sqlalchemy import select
 
     defaults = [
         # event_type, label, enabled, notify_customer, notify_assigned, notify_internal

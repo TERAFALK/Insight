@@ -12,7 +12,7 @@ Att lägga till en ny integration innebär:
 """
 
 from dataclasses import dataclass
-from typing import Awaitable, Callable, Protocol
+from typing import Protocol
 
 from app.db.models import IntegrationCredential
 

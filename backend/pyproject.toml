@@ -1,0 +1,17 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+# Pragmatiskt urval — pyflakes (F) + allvarliga fel (E9). Håller CI grönt på
+# befintlig kod utan en stor omskrivning; skärp gärna över tid.
+select = ["F", "E9"]
+ignore = [
+    "F401",  # oanvända importer (lazy-importmönster används medvetet)
+    "F811",  # 'status'-param skuggar fastapi.status
+    "F841",  # enstaka oanvända lokala variabler
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

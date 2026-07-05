@@ -5,7 +5,6 @@ vilka integrationer som faktiskt finns i `sections`.
 
 import os
 import re
-from datetime import datetime
 
 from app.core.time_utils import now_stockholm
 

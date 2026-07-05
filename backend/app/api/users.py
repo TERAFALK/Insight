@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.auth import current_user, require_admin
+from app.api.auth import require_admin
 from app.core.audit import log_action
 from app.core.security import hash_password
 from app.db.database import get_db

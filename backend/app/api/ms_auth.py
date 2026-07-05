@@ -10,12 +10,11 @@ Flöde:
 
 import html as html_lib
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.security import encrypt
 from app.core.time_utils import now_stockholm
 from app.db.database import get_db

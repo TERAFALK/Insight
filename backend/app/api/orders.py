@@ -6,7 +6,7 @@ import os
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -195,7 +195,6 @@ async def update_order(
 ):
     order = await _get_order_or_404(order_id, db)
     old_status = order.status
-    old_phase_name = order.current_phase.name if order.current_phase else None
 
     if body.title is not None:
         order.title = body.title

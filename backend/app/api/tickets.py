@@ -5,9 +5,9 @@ import logging
 import math
 import os
 import uuid
-from datetime import date, datetime, timezone, timedelta
+from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import or_, select, update
@@ -17,10 +17,10 @@ from sqlalchemy.orm import selectinload
 from app.api.auth import current_user, require_admin
 from app.core.limiter import limiter
 from app.core.uploads import save_upload, validate_extension
-from app.db.database import get_db, AsyncSessionLocal
+from app.db.database import get_db
 from app.db.models import (
-    Customer, CustomerContact, Ticket, TicketAttachment, TicketCategory,
-    TicketContact, TicketHistory, TicketMessage, TicketSlaPolicy,
+    Customer, CustomerContact, Ticket, TicketAttachment,
+    TicketContact, TicketHistory, TicketMessage,
     TicketTag, TicketTimeEntry, User,
 )
 

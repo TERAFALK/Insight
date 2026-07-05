@@ -207,7 +207,6 @@ class UnifiClient:
         stats = raw.get("statistics", {})
         counts = stats.get("counts", {})
         gateway = stats.get("gateway", {})
-        isp_info = stats.get("ispInfo", {})
 
         wans: list[WanStatus] = []
         for wan_name, wan_data in (stats.get("wans") or {}).items():

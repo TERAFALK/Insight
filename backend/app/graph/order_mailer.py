@@ -3,7 +3,7 @@
 import logging
 
 from app.core import app_settings
-from app.graph.mailer import heading, info_card, paragraph, render_email, send_mail
+from app.graph.mailer import heading, info_card, render_email, send_mail
 
 logger = logging.getLogger(__name__)
 

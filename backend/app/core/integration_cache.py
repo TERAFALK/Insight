@@ -7,7 +7,6 @@ Mönster: stale-while-revalidate
   en bakgrundsuppdatering om datan är äldre än CACHE_TTL_SECONDS.
 """
 
-import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

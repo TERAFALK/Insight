@@ -14,7 +14,6 @@ Logik:
 import logging
 import re
 import uuid
-from datetime import datetime, timezone
 
 import httpx
 
@@ -47,8 +46,6 @@ async def poll_support_inbox() -> None:
 
 async def _process_unread_messages(token: str, mailbox: str) -> None:
     from app.db.database import AsyncSessionLocal
-    from app.db.models import Customer, Ticket, TicketMessage, TicketHistory
-    from sqlalchemy import select
 
     headers = {"Authorization": f"Bearer {token}"}
     url = (
@@ -262,7 +259,7 @@ async def _generate_number(db) -> str:
     return await generate_ticket_number(db)
 
 
-async def _get_or_create_extern_customer(db) -> "Customer":
+async def _get_or_create_extern_customer(db) -> "Customer":  # noqa: F821
     from app.db.models import Customer
     from sqlalchemy import select
 

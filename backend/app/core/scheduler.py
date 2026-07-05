@@ -123,7 +123,6 @@ def reschedule(day: int, hour: int, minute: int) -> None:
 
 
 async def save_schedule_to_db(day: int, hour: int, minute: int) -> None:
-    from sqlalchemy import select
     from app.db.database import AsyncSessionLocal
     from app.db.models import SystemSetting
 

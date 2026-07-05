@@ -11,7 +11,6 @@ får ingen rapport alls (loggas, skickas inte).
 import asyncio
 import json
 import logging
-from datetime import datetime
 
 from app.core.time_utils import now_stockholm
 
