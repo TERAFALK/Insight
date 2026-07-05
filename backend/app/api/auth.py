@@ -205,17 +205,8 @@ async def ms_login_callback(
         logger.warning("MS-inloggning misslyckades: %s", e)
         return RedirectResponse(f"{base}/?msloginerror=1")
 
-    # Kräver en EXPLICIT app-roll i token. Entras "assignment required" kringgås av
-    # Global Admins/privilegierade roller, så vi litar inte på den — approller kräver
-    # uttrycklig tilldelning i Azure och kan inte kringgås.
-    roles = claims.get("roles") or []
-    if not any(r.lower() == "admin" for r in roles):
-        logger.warning(
-            "MS-inloggning nekad — %s har roles=%s (kräver app-rollen med Value 'admin')",
-            email, roles,
-        )
-        return RedirectResponse(f"{base}/?msloginerror=3")
-
+    # Åtkomst gatekeepas av Entras "assignment required" (tilldelade användare +
+    # privilegierade admins). Alla som når hit auto-provisioneras som Insight-admin.
     user = await db.scalar(select(User).where(User.email.ilike(email)))
     if user and user.role != "admin":
         # E-posten tillhör en kundanvändare — höj aldrig via SSO
