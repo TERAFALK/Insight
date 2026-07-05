@@ -208,8 +208,12 @@ async def ms_login_callback(
     # Kräver en EXPLICIT app-roll i token. Entras "assignment required" kringgås av
     # Global Admins/privilegierade roller, så vi litar inte på den — approller kräver
     # uttrycklig tilldelning i Azure och kan inte kringgås.
-    if "admin" not in (claims.get("roles") or []):
-        logger.warning("MS-inloggning nekad — %s saknar app-rollen 'admin'", email)
+    roles = claims.get("roles") or []
+    if not any(r.lower() == "admin" for r in roles):
+        logger.warning(
+            "MS-inloggning nekad — %s har roles=%s (kräver app-rollen med Value 'admin')",
+            email, roles,
+        )
         return RedirectResponse(f"{base}/?msloginerror=3")
 
     user = await db.scalar(select(User).where(User.email.ilike(email)))
