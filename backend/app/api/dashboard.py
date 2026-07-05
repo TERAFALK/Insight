@@ -5,20 +5,33 @@ Hämtar data parallellt och fyller på cache om den saknas.
 
 import asyncio
 import logging
+from datetime import timedelta
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.auth import require_admin
+from app.api.auth import current_user, require_admin
 from app.core.integration_cache import get_cached, set_cached
+from app.core.time_utils import now_stockholm
 from app.db.database import get_db
-from app.db.models import Customer, IntegrationCredential, User
+from app.db.models import (
+    Customer,
+    CustomerService,
+    IntegrationCredential,
+    Report,
+    Service,
+    Ticket,
+    User,
+)
 from app.integrations.registry import get_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Ärendestatusar som räknas som "öppna" (kräver fortfarande arbete)
+OPEN_TICKET_STATUSES = ("new", "open", "in_progress", "pending_customer")
 
 
 async def _ensure_cached(customer_id: str, integration_type: str, cred: IntegrationCredential) -> dict | None:
@@ -170,4 +183,211 @@ async def dashboard_summary(
             "inactive_licensed": ms_inactive_licensed,
             "secure_score_pct": ms_score_pct,
         },
+    }
+
+
+def _open_ticket_dict(t: Ticket) -> dict:
+    return {
+        "id": t.id,
+        "ticket_number": t.ticket_number,
+        "title": t.title,
+        "status": t.status,
+        "priority": t.priority,
+        "customer_name": t.customer.name if t.customer else "—",
+        "created_at": t.created_at.isoformat() if t.created_at else None,
+        "sla_breached": bool(t.sla_breached or t.response_sla_breached),
+    }
+
+
+@router.get("/admin")
+async def admin_dashboard(
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    """Lättviktiga aggregat för admin-översikten: ärenden, trend, tjänster."""
+    # Ärenden per status
+    status_rows = (await db.execute(
+        select(Ticket.status, func.count()).group_by(Ticket.status)
+    )).all()
+    status_counts = {status: count for status, count in status_rows}
+    open_total = sum(status_counts.get(s, 0) for s in OPEN_TICKET_STATUSES)
+
+    # SLA-brott bland öppna ärenden
+    sla_breached = await db.scalar(
+        select(func.count()).select_from(Ticket).where(
+            Ticket.status.in_(OPEN_TICKET_STATUSES),
+            (Ticket.sla_breached == True) | (Ticket.response_sla_breached == True),
+        )
+    ) or 0
+
+    # Trend: skapade + lösta per dag, senaste 14 dagarna
+    today = now_stockholm().date()
+    start = today - timedelta(days=13)
+    created_rows = (await db.execute(
+        select(func.date(Ticket.created_at), func.count())
+        .where(Ticket.created_at >= start)
+        .group_by(func.date(Ticket.created_at))
+    )).all()
+    resolved_rows = (await db.execute(
+        select(func.date(Ticket.resolved_at), func.count())
+        .where(Ticket.resolved_at.isnot(None), Ticket.resolved_at >= start)
+        .group_by(func.date(Ticket.resolved_at))
+    )).all()
+    created_by_day = {str(d): c for d, c in created_rows}
+    resolved_by_day = {str(d): c for d, c in resolved_rows}
+    trend = []
+    for i in range(14):
+        d = start + timedelta(days=i)
+        key = d.isoformat()
+        trend.append({
+            "date": key,
+            "created": created_by_day.get(key, 0),
+            "resolved": resolved_by_day.get(key, 0),
+        })
+
+    # Senaste öppna ärenden (topp 8)
+    rows = await db.scalars(
+        select(Ticket)
+        .where(Ticket.status.in_(OPEN_TICKET_STATUSES))
+        .options(selectinload(Ticket.customer))
+        .order_by(Ticket.created_at.desc())
+        .limit(8)
+    )
+    recent_open = [_open_ticket_dict(t) for t in rows.all()]
+
+    # Tjänsteadoption: antal aktiva tilldelningar per tjänst
+    svc_rows = (await db.execute(
+        select(Service.name, Service.icon, Service.color, func.count(CustomerService.id))
+        .select_from(Service)
+        .join(
+            CustomerService,
+            (CustomerService.service_id == Service.id) & (CustomerService.status == "active"),
+            isouter=True,
+        )
+        .where(Service.is_active == True)
+        .group_by(Service.id, Service.name, Service.icon, Service.color)
+        .order_by(Service.position, Service.name)
+    )).all()
+    service_adoption = [
+        {"name": name, "icon": icon, "color": color, "count": count}
+        for name, icon, color, count in svc_rows
+    ]
+
+    active_services_total = await db.scalar(
+        select(func.count()).select_from(CustomerService).where(CustomerService.status == "active")
+    ) or 0
+
+    return {
+        "tickets": {
+            "open_total": open_total,
+            "sla_breached": int(sla_breached),
+            "by_status": status_counts,
+            "trend": trend,
+            "recent_open": recent_open,
+        },
+        "services": {
+            "active_total": int(active_services_total),
+            "adoption": service_adoption,
+        },
+    }
+
+
+@router.get("/customer")
+async def customer_dashboard(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    """Översiktsdata för en inloggad kundanvändare (scopad på egen kund)."""
+    if user.role != "customer" or not user.customer_id:
+        raise HTTPException(403, "Endast för kundanvändare")
+    cid = user.customer_id
+
+    customer = await db.scalar(select(Customer).where(Customer.id == cid))
+    if not customer:
+        raise HTTPException(404, "Kund hittades inte")
+
+    # Öppna ärenden
+    open_rows = await db.scalars(
+        select(Ticket)
+        .where(Ticket.customer_id == cid, Ticket.status.in_(OPEN_TICKET_STATUSES))
+        .options(selectinload(Ticket.customer))
+        .order_by(Ticket.created_at.desc())
+        .limit(6)
+    )
+    open_list = open_rows.all()
+    open_total = await db.scalar(
+        select(func.count()).select_from(Ticket).where(
+            Ticket.customer_id == cid, Ticket.status.in_(OPEN_TICKET_STATUSES)
+        )
+    ) or 0
+
+    # Tjänster (alla tilldelade, med status)
+    svc_rows = await db.scalars(
+        select(CustomerService)
+        .where(CustomerService.customer_id == cid)
+        .options(selectinload(CustomerService.service))
+    )
+    services = []
+    for cs in svc_rows.all():
+        svc = cs.service
+        services.append({
+            "id": cs.id,
+            "name": svc.name if svc else "—",
+            "icon": svc.icon if svc else "ti-shield-check",
+            "color": svc.color if svc else "#0047A3",
+            "description": svc.description if svc else "",
+            "status": cs.status,
+        })
+    services.sort(key=lambda s: (s["status"] != "active", s["name"]))
+
+    # Drift-hälsa från cache (ingen live-hämtning här)
+    health = {}
+    unifi = get_cached(cid, "unifi")
+    if unifi is not None:
+        devices = unifi.data.get("devices") or []
+        offline = sum(1 for d in devices if not d.get("is_online", True))
+        wans = [w for h in (unifi.data.get("hosts") or []) for w in (h.get("wans") or [])]
+        wan_down = sum(1 for w in wans if not w.get("is_up", True))
+        health["unifi"] = {
+            "total_devices": len(devices) or unifi.data.get("total_devices", 0),
+            "offline_devices": offline,
+            "wan_total": len(wans),
+            "wan_down": wan_down,
+        }
+    ms = get_cached(cid, "microsoft")
+    if ms is not None:
+        mfa_reg = ms.data.get("mfa_registered", 0)
+        mfa_tot = ms.data.get("mfa_total", 0)
+        health["microsoft"] = {
+            "total_users": ms.data.get("total_users", 0),
+            "mfa_pct": round(mfa_reg / mfa_tot * 100) if mfa_tot else None,
+            "secure_score": ms.data.get("secure_score"),
+            "secure_score_max": ms.data.get("secure_score_max"),
+        }
+
+    # Senaste rapport
+    last_report = await db.scalar(
+        select(Report)
+        .where(Report.customer_id == cid, Report.send_status == "sent")
+        .order_by(Report.created_at.desc())
+        .limit(1)
+    )
+    report = None
+    if last_report:
+        report = {
+            "id": last_report.id,
+            "period": last_report.period,
+            "sent_at": last_report.sent_at.isoformat() if last_report.sent_at else None,
+            "has_pdf": bool(last_report.pdf_path),
+        }
+
+    return {
+        "customer": {"id": customer.id, "name": customer.name, "city": customer.city},
+        "tickets": {
+            "open_total": int(open_total),
+            "recent_open": [_open_ticket_dict(t) for t in open_list],
+        },
+        "services": services,
+        "health": health,
+        "last_report": report,
     }

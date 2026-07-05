@@ -250,6 +250,56 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 /* ── Mobile overlay ── */
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:199}
 
+/* ── Dashboard layout ── */
+.dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+.dash-col{display:flex;flex-direction:column;gap:14px}
+.stat-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.stat-hd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.stat.clk{cursor:pointer;transition:box-shadow .12s,transform .12s}
+.stat.clk:hover{box-shadow:var(--shadow-l);transform:translateY(-1px)}
+
+/* Ärenderad i dashboard */
+.drow{display:flex;align-items:center;gap:11px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.drow:last-child{border-bottom:none}
+.drow:hover{background:var(--tint)}
+.drow-main{flex:1;min-width:0}
+.drow-t{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow-s{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow-pri{width:4px;align-self:stretch;border-radius:3px;flex-shrink:0}
+.pri-critical{background:#DC2626}.pri-high{background:#EA580C}.pri-medium{background:#0047A3}.pri-low{background:#9CA3AF}
+
+/* Attention-rad */
+.att-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.att-row:last-child{border-bottom:none}
+.att-row:hover{background:var(--tint)}
+
+/* Tjänste-chips & kort */
+.svc-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border)}
+.svc-chip i{font-size:14px}
+.svc-chip.st-active{background:#EAF7EF;color:var(--ok);border-color:#BBE8CC}
+.svc-chip.st-paused{background:#FEF6E7;color:var(--warn);border-color:#F5D9A8}
+.svc-chip.st-ended{background:var(--tint);color:var(--muted)}
+.svc-card{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--rl);background:var(--surface);transition:box-shadow .12s}
+.svc-card.on{border-color:#BBE8CC}
+.svc-card.off{opacity:.65}
+.svc-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0}
+.svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+
+/* Mini-bars (tjänsteadoption) */
+.adopt-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:12px}
+.adopt-bar{flex:1;height:8px;background:var(--tint);border-radius:5px;overflow:hidden}
+.adopt-fill{height:100%;border-radius:5px}
+
+/* SVG-trendgraf */
+.trend-wrap{padding:14px 16px 8px}
+.trend-svg{width:100%;height:auto;display:block;overflow:visible}
+.trend-legend{display:flex;gap:16px;font-size:11px;color:var(--muted);padding:0 16px 12px}
+.trend-legend b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+/* Kundlist-tjänstchips */
+.svc-mini{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:12px;font-size:10.5px;font-weight:600;background:var(--tint2);color:var(--blue)}
+.svc-mini i{font-size:12px}
+
 
 /* ── Responsive ── */
 @media(max-width:768px){
@@ -456,6 +506,28 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
   /* Dashboard aggregatpaneler → stapla vertikalt, rutnät 2 kolumner */
   #dash-agg-panels{grid-template-columns:1fr !important}
   #dash-unifi-body,#dash-ms-body{grid-template-columns:repeat(2,1fr) !important}
+
+  /* Dashboard-två-kolumner → stapla */
+  .dash-grid{grid-template-columns:1fr}
+  .cd-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .cd-tabs::-webkit-scrollbar{display:none}
+  .cd-tab{white-space:nowrap;flex-shrink:0}
+
+  /* Tjänstekort → full bredd, touch-vänliga */
+  .svc-grid{grid-template-columns:1fr}
+  .svc-card{padding:14px}
+
+  /* Tjänstekolumn i kundlistan → chips vänsterjusterade */
+  #customers-tbody td[data-label="Tjänster"]{justify-content:flex-start;flex-wrap:wrap;gap:4px}
+  #customers-tbody td[data-label="Tjänster"]:before{display:none}
+
+  /* Dashboard-ärenderad/attention → touch-höjd */
+  .drow,.att-row{padding-top:12px;padding-bottom:12px}
+  /* Adoptionsrad: krymp tjänstnamn på liten skärm */
+  .adopt-row span:nth-child(2){width:96px}
+
+  /* Stat-kort: ikon + värde kompakt */
+  .stat{padding:14px 15px}
 }
 
 /* ── Integration pills ── */
@@ -734,16 +806,58 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
     <!-- ══ DASHBOARD ══ -->
     <div class="view active" id="v-dashboard">
+
+     <!-- ══ ADMIN-DASHBOARD ══ -->
+     <div id="dash-admin">
       <div class="ph">
         <div><div class="ph-title">Översikt</div><div class="ph-sub" id="dash-updated">Laddar...</div></div>
+        <button class="btn btn-g btn-sm" onclick="refreshCurrent()"><i class="ti ti-refresh"></i> <span class="btn-label">Uppdatera</span></button>
       </div>
 
       <!-- Topp-statistik -->
       <div class="stats" id="dash-stats">
-        <div class="stat accent"><div class="sl">Kunder</div><div class="sv" id="stat-customers"><span class="skel-box" style="display:inline-block;width:32px;height:28px;vertical-align:middle;filter:brightness(1.3)"></span></div><div class="sh">Totalt antal kunder</div></div>
-        <div class="stat"><div class="sl">UniFi-enheter</div><div class="sv" id="stat-devices"><span class="skel-box" style="display:inline-block;width:48px;height:28px;vertical-align:middle"></span></div><div class="sh">Totalt antal enheter</div></div>
-        <div class="stat"><div class="sl">Microsoft-användare</div><div class="sv" id="stat-ms-users"><span class="skel-box" style="display:inline-block;width:48px;height:28px;vertical-align:middle"></span></div><div class="sh">Totalt antal användare</div></div>
-        <div class="stat"><div class="sl">Rapporter</div><div class="sv" id="stat-reports"><span class="skel-box" style="display:inline-block;width:32px;height:28px;vertical-align:middle"></span></div><div class="sh">Senaste 30 dagarna</div></div>
+        <div class="stat accent clk" onclick="nav('customers')">
+          <div class="stat-hd"><div class="stat-ico" style="background:rgba(255,255,255,0.18);color:#fff"><i class="ti ti-users"></i></div><div class="sl">Kunder</div></div>
+          <div class="sv" id="stat-customers"><span class="skel-box" style="display:inline-block;width:32px;height:28px;vertical-align:middle;filter:brightness(1.3)"></span></div><div class="sh">Aktiva kunder</div>
+        </div>
+        <div class="stat clk" onclick="nav('tickets')">
+          <div class="stat-hd"><div class="stat-ico" style="background:var(--tint2);color:var(--blue)"><i class="ti ti-ticket"></i></div><div class="sl">Öppna ärenden</div></div>
+          <div class="sv" id="stat-open-tickets"><span class="skel-box" style="display:inline-block;width:36px;height:28px;vertical-align:middle"></span></div><div class="sh">Kräver hantering</div>
+        </div>
+        <div class="stat clk" onclick="nav('tickets')">
+          <div class="stat-hd"><div class="stat-ico" style="background:#FDECEC;color:var(--err)"><i class="ti ti-alarm"></i></div><div class="sl">SLA-brott</div></div>
+          <div class="sv" id="stat-sla"><span class="skel-box" style="display:inline-block;width:24px;height:28px;vertical-align:middle"></span></div><div class="sh">Öppna med brutet SLA</div>
+        </div>
+        <div class="stat">
+          <div class="stat-hd"><div class="stat-ico" style="background:#EAF7EF;color:var(--ok)"><i class="ti ti-shield-check"></i></div><div class="sl">Aktiva tjänster</div></div>
+          <div class="sv" id="stat-services"><span class="skel-box" style="display:inline-block;width:24px;height:28px;vertical-align:middle"></span></div><div class="sh">Sålda tjänsteavtal</div>
+        </div>
+      </div>
+
+      <!-- Två kolumner: ärenden/trend + åtgärd/tjänster -->
+      <div class="dash-grid">
+        <div class="dash-col">
+          <div class="card" style="margin-bottom:0">
+            <div class="ch"><span class="cht"><i class="ti ti-inbox" style="margin-right:6px;opacity:.7"></i>Senaste öppna ärenden</span><span class="b b-muted" id="dash-tickets-count"></span></div>
+            <div class="cb0" id="dash-tickets-list">
+              <div class="skel" style="padding:28px">Laddar ärenden...</div>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:0">
+            <div class="ch"><span class="cht"><i class="ti ti-chart-line" style="margin-right:6px;opacity:.7"></i>Ärendetrend · 14 dagar</span></div>
+            <div id="dash-trend"><div class="skel" style="padding:28px">Laddar graf...</div></div>
+          </div>
+        </div>
+        <div class="dash-col">
+          <div class="card" style="margin-bottom:0">
+            <div class="ch"><span class="cht"><i class="ti ti-alert-triangle" style="margin-right:6px;opacity:.7"></i>Kräver åtgärd</span></div>
+            <div class="cb0" id="dash-attention"><div class="skel" style="padding:28px">Laddar...</div></div>
+          </div>
+          <div class="card" style="margin-bottom:0">
+            <div class="ch"><span class="cht"><i class="ti ti-shield-check" style="margin-right:6px;opacity:.7"></i>Tjänsteadoption</span></div>
+            <div class="cb" id="dash-adoption"><div class="skel" style="padding:18px">Laddar...</div></div>
+          </div>
+        </div>
       </div>
 
       <!-- Tvåkolumns-panel: UniFi + Microsoft aggregat -->
@@ -769,6 +883,11 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           </div>
         </div>
       </div>
+     </div>
+     <!-- /dash-admin -->
+
+     <!-- ══ KUND-DASHBOARD (renderas för kundanvändare) ══ -->
+     <div id="dash-customer" style="display:none"></div>
 
     </div>
 
@@ -778,7 +897,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="ph"><div><div class="ph-title">Kunder</div><div class="ph-sub" id="customers-sub">Laddar...</div></div><button class="btn btn-p btn-sm" onclick="nav('add-customer')"><i class="ti ti-plus"></i> Ny kund</button></div>
       <div class="card">
         <table class="tbl hov">
-          <thead><tr><th>Kund</th><th>Ort</th><th>Integrationer</th><th>Status</th></tr></thead>
+          <thead><tr><th>Kund</th><th>Ort</th><th>Integrationer</th><th>Tjänster</th><th>Status</th></tr></thead>
           <tbody id="customers-tbody">
             <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Laddar kunder...</td></tr>
           </tbody>
@@ -801,6 +920,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <!-- Flikar -->
       <div class="cd-tabs">
         <div class="cd-tab active" data-tab="network" onclick="switchCdTab('network')"><i class="ti ti-activity"></i> Driftstatus</div>
+        <div class="cd-tab" data-tab="services" onclick="switchCdTab('services')"><i class="ti ti-shield-check"></i> Tjänster</div>
         <div class="cd-tab" data-tab="orders" onclick="switchCdTab('orders')"><i class="ti ti-clipboard-list"></i> Order & Projekt</div>
         <div class="cd-tab" data-tab="tickets" onclick="switchCdTab('tickets')"><i class="ti ti-ticket"></i> Ärenden</div>
         <div class="cd-tab" data-tab="reports" onclick="switchCdTab('reports')"><i class="ti ti-file-description"></i> Rapporter</div>
@@ -931,6 +1051,15 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <span id="cd-error-msg"></span>
         </div>
       </div><!-- /cd-pane-network -->
+
+      <!-- Flik: Tjänster -->
+      <div class="cd-tab-pane" id="cd-pane-services">
+        <div class="ph" style="margin-bottom:16px">
+          <div><div class="ph-title" style="font-size:16px">Tjänster på avtal</div><div class="ph-sub">Managed-tjänster kunden har hos oss</div></div>
+          <button class="btn btn-p btn-sm" id="cd-add-service-btn" style="display:none" onclick="openAssignServiceModal()"><i class="ti ti-plus"></i> Lägg till tjänst</button>
+        </div>
+        <div id="cd-services-list"><div class="skel" style="padding:32px">Laddar tjänster...</div></div>
+      </div>
 
       <!-- Flik: Order & Projekt -->
       <div class="cd-tab-pane" id="cd-pane-orders">
@@ -1139,6 +1268,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
             <div class="ssn-item" id="ssn-integrations" onclick="switchSettingsTab('integrations')"><i class="ti ti-plug-connected"></i> Integrationer</div>
             <div class="ssn-item" id="ssn-reports" onclick="switchSettingsTab('reports')"><i class="ti ti-calendar"></i> Rapporter</div>
             <div class="ssn-item" id="ssn-orderstatus" onclick="switchSettingsTab('orderstatus')"><i class="ti ti-list-check"></i> Orderstatus</div>
+            <div class="ssn-item" id="ssn-services" onclick="switchSettingsTab('services')"><i class="ti ti-shield-check"></i> Tjänster</div>
             <div class="ssn-item" id="ssn-tickets" onclick="switchSettingsTab('tickets')"><i class="ti ti-ticket"></i> Ärenden</div>
             <div class="ssn-item" id="ssn-users" onclick="switchSettingsTab('users')"><i class="ti ti-users"></i> Användare</div>
             <div class="ssn-item" id="ssn-audit" onclick="switchSettingsTab('audit')"><i class="ti ti-history"></i> Aktivitetslogg</div>
@@ -1213,6 +1343,23 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
               <input class="fi" id="s-new-phase-name" placeholder="Ny status…" style="flex:1">
               <button class="btn btn-p btn-sm" onclick="addPhaseTemplate()"><i class="ti ti-plus"></i> Lägg till</button>
             </div>
+          </div>
+
+          <!-- Tjänster (katalog) -->
+          <div id="stab-services" style="display:none">
+            <div class="fsec" style="margin-top:0">Tjänstekatalog</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Tjänster du säljer (t.ex. Managed Network). Koppla dem sedan på varje kund under Kund → Tjänster.</div>
+            <div id="s-services-list" style="margin-bottom:16px"></div>
+            <div class="fsec">Ny tjänst</div>
+            <div class="f2">
+              <div class="fr" style="margin:0"><label class="fl">Namn</label><input class="fi" id="svc-name" placeholder="t.ex. Managed Firewall"></div>
+              <div class="fr" style="margin:0"><label class="fl">Ikon (Tabler)</label><input class="fi" id="svc-icon" placeholder="ti-shield-check" value="ti-shield-check"></div>
+            </div>
+            <div class="f2" style="margin-top:12px">
+              <div class="fr" style="margin:0"><label class="fl">Färg</label><input class="fi" id="svc-color" type="color" value="#0047A3" style="height:40px;padding:4px"></div>
+              <div class="fr" style="margin:0"><label class="fl">Beskrivning</label><input class="fi" id="svc-desc" placeholder="Kort beskrivning"></div>
+            </div>
+            <button class="btn btn-p btn-sm" onclick="addService()" style="margin-top:14px"><i class="ti ti-plus"></i> Lägg till tjänst</button>
           </div>
 
           <!-- Ärenden -->
@@ -1745,6 +1892,35 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
       <button class="btn btn-g" onclick="closeModal('modal-contact')">Avbryt</button>
       <button class="btn btn-p" onclick="saveContact()"><i class="ti ti-check"></i> Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Tjänst på kund -->
+<div id="modal-service" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-service')">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:440px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700" id="ms-title">Lägg till tjänst</div>
+      <button class="btn btn-g btn-sm btn-ico" onclick="closeModal('modal-service')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="fr" style="margin:0 0 14px"><label class="fl">Tjänst</label>
+      <select class="fi" id="ms-service"></select></div>
+    <div class="f2">
+      <div class="fr" style="margin:0"><label class="fl">Status</label>
+        <select class="fi" id="ms-status">
+          <option value="active">Aktiv</option>
+          <option value="paused">Pausad</option>
+          <option value="ended">Avslutad</option>
+        </select></div>
+      <div class="fr" style="margin:0"><label class="fl">Startdatum</label>
+        <input class="fi" id="ms-start" type="date"></div>
+    </div>
+    <div class="fr" style="margin-top:14px"><label class="fl">Notering</label>
+      <textarea class="fi" id="ms-notes" rows="2" placeholder="Valfri intern notering"></textarea></div>
+    <input type="hidden" id="ms-assignment-id">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-g" onclick="closeModal('modal-service')">Avbryt</button>
+      <button class="btn btn-p" onclick="saveCustomerService()"><i class="ti ti-check"></i> Spara</button>
     </div>
   </div>
 </div>
@@ -2294,22 +2470,26 @@ let _customerIssueMap = {};
 
 async function loadDashboard() {
   const gen = _navGen;
+
+  // Kundanvändare: egen kund-dashboard (skild från adminvyn)
+  const admDiv = document.getElementById('dash-admin');
+  const custDiv = document.getElementById('dash-customer');
+  if (currentUser && currentUser.role === 'customer' && currentUser.customer_id) {
+    if (admDiv) admDiv.style.display = 'none';
+    if (custDiv) custDiv.style.display = '';
+    return loadCustomerDashboard(gen);
+  }
+  if (admDiv) admDiv.style.display = '';
+  if (custDiv) custDiv.style.display = 'none';
+
   document.getElementById('dash-updated').textContent = 'Laddar...';
   dashboardSkeletons();
-  statSkel('stat-customers'); statSkel('stat-devices'); statSkel('stat-ms-users'); statSkel('stat-reports');
-
-  // Kundanvändare: visa sin egen kund direkt
-  if (currentUser && currentUser.role === 'customer' && currentUser.customer_id) {
-    currentCustomerId = currentUser.customer_id;
-    nav('customer-detail');
-    loadCustomerDetail(currentUser.customer_id);
-    return;
-  }
+  statSkel('stat-customers'); statSkel('stat-open-tickets'); statSkel('stat-sla'); statSkel('stat-services');
 
   try {
-    const [summary, reports] = await Promise.all([
+    const [summary, adm] = await Promise.all([
       api('/api/dashboard/summary'),
-      api('/api/reports').catch(() => []),
+      api('/api/dashboard/admin').catch(() => null),
     ]);
     if (_navGen !== gen) return;
 
@@ -2328,9 +2508,18 @@ async function loadDashboard() {
 
     // Toppsiffror
     document.getElementById('stat-customers').textContent = customers.length;
-    document.getElementById('stat-devices').textContent = summary.unifi?.total_devices ?? '—';
-    document.getElementById('stat-ms-users').textContent = summary.microsoft?.total_users ?? '—';
-    document.getElementById('stat-reports').textContent = reports.length;
+    document.getElementById('stat-open-tickets').textContent = adm?.tickets?.open_total ?? '—';
+    const slaEl = document.getElementById('stat-sla');
+    const slaN = adm?.tickets?.sla_breached ?? 0;
+    slaEl.textContent = slaN;
+    slaEl.style.color = slaN > 0 ? 'var(--err)' : 'var(--text)';
+    document.getElementById('stat-services').textContent = adm?.services?.active_total ?? '—';
+
+    // Nya paneler
+    renderDashTickets(adm?.tickets?.recent_open || [], adm?.tickets?.open_total || 0);
+    renderDashTrend(adm?.tickets?.trend || []);
+    renderDashAttention(customers);
+    renderDashAdoption(adm?.services?.adoption || []);
 
     // UniFi aggregat-panel
     const u = summary.unifi || {};
@@ -2375,6 +2564,216 @@ async function loadDashboard() {
   } catch (e) {
     if (_navGen !== gen) return;
     errToast('Kunde inte ladda dashboard', e);
+  }
+}
+
+// ── Dashboard-paneler (admin) ───────────────────────────────────────────────
+
+function _ticketRow(tk) {
+  const sla = tk.sla_breached ? `<span class="sla-breach" style="flex-shrink:0">SLA</span>` : '';
+  return `<div class="drow" onclick="openTicketDetail('${tk.id}')">
+    <div class="drow-pri pri-${tk.priority}"></div>
+    <div class="drow-main">
+      <div class="drow-t">${escapeHtml(tk.title)}</div>
+      <div class="drow-s">${escapeHtml(tk.ticket_number)} · ${escapeHtml(tk.customer_name||'—')} · ${_relTime(tk.created_at)}</div>
+    </div>
+    ${sla}
+    <span class="b ${STATUS_CLS[tk.status]||'b-muted'}" style="font-size:10.5px;flex-shrink:0">${STATUS_LABEL[tk.status]||tk.status}</span>
+  </div>`;
+}
+
+function renderDashTickets(list, total) {
+  const el = document.getElementById('dash-tickets-list');
+  const cnt = document.getElementById('dash-tickets-count');
+  if (cnt) cnt.textContent = total ? `${total} öppna` : '';
+  if (!list.length) {
+    el.innerHTML = `<div class="empty" style="padding:32px 20px"><i class="ti ti-mood-smile"></i>Inga öppna ärenden — allt är hanterat.</div>`;
+    return;
+  }
+  el.innerHTML = list.map(_ticketRow).join('');
+}
+
+function renderDashAttention(customers) {
+  const el = document.getElementById('dash-attention');
+  const items = [];
+  (customers || []).forEach(c => {
+    const u = c.unifi, m = c.microsoft;
+    if (u && u.offline_devices > 0)
+      items.push({ cid: c.id, name: c.name, icon: 'ti-wifi-off', color: 'var(--err)', txt: `${u.offline_devices} enhet(er) offline` });
+    if (u && u.wan_down > 0)
+      items.push({ cid: c.id, name: c.name, icon: 'ti-world-off', color: 'var(--err)', txt: `${u.wan_down} WAN nere` });
+    if (u && u.needs_update > 0)
+      items.push({ cid: c.id, name: c.name, icon: 'ti-refresh-alert', color: 'var(--warn)', txt: `${u.needs_update} behöver uppdatering` });
+    if (m && m.mfa_total > 0) {
+      const pct = Math.round(m.mfa_registered / m.mfa_total * 100);
+      if (pct < 80) items.push({ cid: c.id, name: c.name, icon: 'ti-shield-off', color: 'var(--warn)', txt: `MFA endast ${pct}%` });
+    }
+  });
+  if (!items.length) {
+    el.innerHTML = `<div class="empty" style="padding:28px 20px"><i class="ti ti-circle-check" style="color:var(--ok)"></i>Inga larm just nu.</div>`;
+    return;
+  }
+  el.innerHTML = items.slice(0, 10).map(it => `
+    <div class="att-row" onclick="openCustomer('${it.cid}')">
+      <i class="ti ${it.icon}" style="font-size:17px;color:${it.color};flex-shrink:0"></i>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(it.name)}</div>
+        <div style="font-size:11px;color:var(--muted)">${escapeHtml(it.txt)}</div>
+      </div>
+      <i class="ti ti-chevron-right" style="color:var(--muted);flex-shrink:0"></i>
+    </div>`).join('');
+}
+
+function renderDashAdoption(adoption) {
+  const el = document.getElementById('dash-adoption');
+  if (!adoption.length) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:13px">Inga tjänster i katalogen än.</div>`;
+    return;
+  }
+  const max = Math.max(1, ...adoption.map(a => a.count));
+  el.innerHTML = adoption.map(a => `
+    <div class="adopt-row">
+      <i class="ti ${a.icon}" style="font-size:16px;color:${a.color};width:18px;flex-shrink:0"></i>
+      <span style="width:130px;flex-shrink:0;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(a.name)}</span>
+      <div class="adopt-bar"><div class="adopt-fill" style="width:${Math.round(a.count/max*100)}%;background:${a.color}"></div></div>
+      <span style="width:26px;text-align:right;flex-shrink:0;font-weight:700;color:var(--text)">${a.count}</span>
+    </div>`).join('');
+}
+
+// Inline SVG-trendgraf (skapade vs lösta ärenden) — ingen extern chartlib.
+function renderDashTrend(trend) {
+  const el = document.getElementById('dash-trend');
+  if (!trend.length) { el.innerHTML = `<div class="skel" style="padding:24px">Ingen data</div>`; return; }
+  const W = 640, H = 150, padB = 22, padT = 10, padX = 8;
+  const n = trend.length;
+  const maxV = Math.max(1, ...trend.map(d => Math.max(d.created, d.resolved)));
+  const iw = W - padX * 2;
+  const bw = iw / n;
+  const yOf = v => padT + (H - padT - padB) * (1 - v / maxV);
+  const xOf = i => padX + bw * i + bw / 2;
+  const line = (key, color) => {
+    const pts = trend.map((d, i) => `${xOf(i).toFixed(1)},${yOf(d[key]).toFixed(1)}`).join(' ');
+    const dots = trend.map((d, i) => `<circle cx="${xOf(i).toFixed(1)}" cy="${yOf(d[key]).toFixed(1)}" r="2.5" fill="${color}"/>`).join('');
+    return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
+  };
+  // Nätlinjer (0 och max)
+  const grid = `<line x1="${padX}" y1="${yOf(0)}" x2="${W-padX}" y2="${yOf(0)}" stroke="var(--border)" stroke-width="1"/>`;
+  // X-etiketter (var 3:e dag)
+  const labels = trend.map((d, i) => {
+    if (i % 3 !== 0 && i !== n - 1) return '';
+    const dd = new Date(d.date + 'T00:00:00');
+    const lbl = dd.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+    return `<text x="${xOf(i).toFixed(1)}" y="${H-6}" font-size="9" fill="var(--muted)" text-anchor="middle">${lbl}</text>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="trend-legend"><span><b style="background:var(--blue)"></b>Skapade</span><span><b style="background:var(--ok)"></b>Lösta</span></div>
+    <div class="trend-wrap">
+      <svg class="trend-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Ärendetrend">
+        ${grid}${labels}
+        ${line('created', 'var(--blue)')}
+        ${line('resolved', 'var(--ok)')}
+      </svg>
+    </div>`;
+}
+
+// ── Kund-dashboard ──────────────────────────────────────────────────────────
+
+async function loadCustomerDashboard(gen) {
+  const el = document.getElementById('dash-customer');
+  el.innerHTML = `<div class="skel" style="padding:48px">Laddar din översikt...</div>`;
+  try {
+    const data = await api('/api/dashboard/customer');
+    if (_navGen !== gen) return;
+    const svc = data.services || [];
+    const activeSvc = svc.filter(s => s.status === 'active');
+    const tickets = data.tickets || {};
+    const h = data.health || {};
+
+    // Tjänstekort
+    const svcCards = svc.length ? svc.map(s => {
+      const on = s.status === 'active';
+      const badge = on ? '<span class="b b-ok">Aktiv</span>'
+        : s.status === 'paused' ? '<span class="b b-warn">Pausad</span>'
+        : '<span class="b b-muted">Avslutad</span>';
+      return `<div class="svc-card ${on?'on':'off'}">
+        <div class="svc-ico" style="background:${s.color}"><i class="ti ${s.icon}"></i></div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+            <span style="font-weight:700;font-size:14px">${escapeHtml(s.name)}</span>${badge}
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${escapeHtml(s.description||'')}</div>
+        </div>
+      </div>`;
+    }).join('') : `<div class="empty" style="grid-column:1/-1;padding:28px"><i class="ti ti-package-off"></i>Inga tjänster kopplade än. Kontakta oss för att komma igång.</div>`;
+
+    // Hälsokort
+    const healthCards = [];
+    if (h.unifi) {
+      const ok = h.unifi.offline_devices === 0 && h.unifi.wan_down === 0;
+      healthCards.push(`<div class="card" style="margin:0"><div class="ch"><span class="cht"><i class="ti ti-router" style="margin-right:6px;opacity:.7"></i>Nätverk</span>${ok?'<span class="b b-ok">OK</span>':'<span class="b b-err">Åtgärd krävs</span>'}</div>
+        <div class="cb" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${_aggMetric(h.unifi.total_devices, 'Enheter', 'ti-router', 'var(--text)')}
+          ${_aggMetric(h.unifi.offline_devices, 'Offline', 'ti-wifi-off', h.unifi.offline_devices>0?'var(--err)':'var(--ok)')}
+          ${_aggMetric(h.unifi.wan_total?`${h.unifi.wan_total-h.unifi.wan_down}/${h.unifi.wan_total}`:'—', 'WAN online', 'ti-world', h.unifi.wan_down>0?'var(--err)':'var(--ok)')}
+        </div></div>`);
+    }
+    if (h.microsoft) {
+      const mfa = h.microsoft.mfa_pct;
+      healthCards.push(`<div class="card" style="margin:0"><div class="ch"><span class="cht"><i class="ti ti-brand-windows" style="margin-right:6px;opacity:.7"></i>Microsoft 365</span></div>
+        <div class="cb" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${_aggMetric(h.microsoft.total_users, 'Användare', 'ti-users', 'var(--text)')}
+          ${_aggMetric(mfa!=null?`${mfa}%`:'—', 'MFA-täckning', 'ti-shield-check', mfa!=null?(mfa<80?'var(--err)':mfa<95?'var(--warn)':'var(--ok)'):'var(--muted)')}
+        </div></div>`);
+    }
+
+    // Ärendelista
+    const tlist = (tickets.recent_open || []);
+    const ticketsHtml = tlist.length
+      ? tlist.map(_ticketRow).join('')
+      : `<div class="empty" style="padding:28px"><i class="ti ti-mood-smile"></i>Inga öppna ärenden.</div>`;
+
+    // Rapport
+    const rep = data.last_report;
+    const repHtml = rep
+      ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+           <div><div style="font-weight:600">Rapport ${escapeHtml(rep.period)}</div><div style="font-size:12px;color:var(--muted)">Skickad ${rep.sent_at?new Date(rep.sent_at).toLocaleDateString('sv-SE'):'—'}</div></div>
+           ${rep.has_pdf?`<button class="btn btn-g btn-sm" onclick="downloadReportPdf('${rep.id}','${escapeHtml(data.customer.name)}','${escapeHtml(rep.period)}')"><i class="ti ti-download"></i> Ladda ner</button>`:''}
+         </div>`
+      : `<div style="color:var(--muted);font-size:13px">Ingen rapport skickad än.</div>`;
+
+    el.innerHTML = `
+      <div class="hero" style="background:var(--blue);border-color:var(--blue)">
+        <div class="hero-in" style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+          <div>
+            <div class="hero-ey" style="color:rgba(255,255,255,0.7)">Din översikt</div>
+            <div class="hero-ti" style="color:#fff">${escapeHtml(data.customer.name)}</div>
+            <div class="hero-su" style="color:rgba(255,255,255,0.75);margin-bottom:0">
+              ${activeSvc.length} aktiv${activeSvc.length===1?'':'a'} tjänst${activeSvc.length===1?'':'er'} · ${tickets.open_total||0} öppna ärenden
+            </div>
+          </div>
+          <button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="openCustomer('${data.customer.id}')"><i class="ti ti-layout-grid"></i> Fullständig vy</button>
+        </div>
+      </div>
+
+      <div class="ph" style="margin:4px 0 12px"><div class="ph-title" style="font-size:16px">Dina tjänster</div></div>
+      <div class="svc-grid" style="margin-bottom:20px">${svcCards}</div>
+
+      <div class="dash-grid">
+        <div class="dash-col">
+          <div class="card" style="margin:0">
+            <div class="ch"><span class="cht"><i class="ti ti-ticket" style="margin-right:6px;opacity:.7"></i>Öppna ärenden</span>
+              <button class="btn btn-p btn-sm" onclick="nav('tickets')"><i class="ti ti-plus"></i> Nytt ärende</button></div>
+            <div class="cb0">${ticketsHtml}</div>
+          </div>
+        </div>
+        <div class="dash-col">
+          ${healthCards.join('')}
+          <div class="card" style="margin:0"><div class="ch"><span class="cht"><i class="ti ti-file-description" style="margin-right:6px;opacity:.7"></i>Senaste rapport</span></div><div class="cb">${repHtml}</div></div>
+        </div>
+      </div>`;
+  } catch (e) {
+    if (_navGen !== gen) return;
+    el.innerHTML = `<div class="empty" style="padding:48px"><i class="ti ti-alert-circle"></i>Kunde inte ladda översikten: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -2425,11 +2824,18 @@ async function loadCustomersList() {
         statusBadge = `<span class="b b-ok">Aktiv</span>`;
       }
 
+      const svcs = c.services || [];
+      const svcChips = svcs.length
+        ? svcs.slice(0, 3).map(s => `<span class="svc-mini" style="background:${s.color}18;color:${s.color}"><i class="ti ${s.icon}"></i> ${escapeHtml(s.name.replace(/^Managed\s+/i, ''))}</span>`).join(' ')
+          + (svcs.length > 3 ? ` <span class="svc-mini">+${svcs.length - 3}</span>` : '')
+        : `<span class="b b-muted">—</span>`;
+
       return `
         <tr onclick="openCustomer('${c.id}')">
           <td data-label="Kund"><div class="dn">${escapeHtml(c.name)}</div><div class="ds">${escapeHtml(c.contact_name || '')}</div></td>
           <td data-label="Ort">${escapeHtml(c.city || '—')}</td>
           <td data-label="Integrationer"><div class="int-chips">${chips}</div></td>
+          <td data-label="Tjänster"><div class="int-chips">${svcChips}</div></td>
           <td data-label="Status">${statusBadge}</td>
         </tr>`;
     }).join('');
@@ -3610,10 +4016,124 @@ function switchCdTab(tab) {
   document.querySelectorAll('#v-customer-detail .cd-tab-pane').forEach(el => {
     el.classList.toggle('active', el.id === 'cd-pane-' + tab);
   });
+  if (tab === 'services' && currentCustomerId) loadCustomerServices(currentCustomerId);
   if (tab === 'orders' && currentCustomerId) loadCustomerOrders(currentCustomerId);
   if (tab === 'tickets' && currentCustomerId) loadCustomerTickets(currentCustomerId);
   if (tab === 'reports' && currentCustomerId) loadCustomerReports(currentCustomerId);
   if (tab === 'contacts' && currentCustomerId) loadCustomerContacts(currentCustomerId);
+}
+
+// ── Kundtjänster ──────────────────────────────────────────────────────────────
+
+let _serviceCatalog = [];
+
+const SVC_STATUS = {
+  active: { label: 'Aktiv', cls: 'st-active' },
+  paused: { label: 'Pausad', cls: 'st-paused' },
+  ended:  { label: 'Avslutad', cls: 'st-ended' },
+};
+
+async function loadCustomerServices(customerId) {
+  const el = document.getElementById('cd-services-list');
+  if (!el) return;
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const addBtn = document.getElementById('cd-add-service-btn');
+  if (addBtn) addBtn.style.display = isAdmin ? '' : 'none';
+  el.innerHTML = '<div class="skel" style="padding:24px">Laddar tjänster...</div>';
+  try {
+    const items = await api('/api/services/customer/' + customerId);
+    if (!items.length) {
+      el.innerHTML = `<div class="empty"><i class="ti ti-package-off"></i>Inga tjänster kopplade${isAdmin?' — klicka "Lägg till tjänst".':'.'}</div>`;
+      return;
+    }
+    el.innerHTML = `<div class="svc-grid">` + items.map(s => {
+      const st = SVC_STATUS[s.status] || SVC_STATUS.active;
+      const on = s.status === 'active';
+      const meta = [
+        s.start_date ? `Sedan ${s.start_date}` : '',
+        s.notes ? escapeHtml(s.notes) : '',
+      ].filter(Boolean).join(' · ');
+      const admin = isAdmin ? `<div style="display:flex;gap:6px;margin-top:10px">
+          <button class="btn btn-g btn-sm" onclick="openAssignServiceModal('${s.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="removeCustomerService('${s.id}')"><i class="ti ti-trash"></i></button>
+        </div>` : '';
+      return `<div class="svc-card ${on?'on':'off'}">
+        <div class="svc-ico" style="background:${s.color}"><i class="ti ${s.icon}"></i></div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+            <span style="font-weight:700;font-size:14px">${escapeHtml(s.name)}</span>
+            <span class="svc-chip ${st.cls}">${st.label}</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${escapeHtml(s.description||'')}</div>
+          ${meta?`<div style="font-size:11px;color:var(--sub);margin-top:6px">${meta}</div>`:''}
+          ${admin}
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="empty"><i class="ti ti-alert-circle"></i>${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function openAssignServiceModal(assignmentId) {
+  // Ladda katalog + kundens befintliga tjänster
+  let existing = [];
+  try {
+    [_serviceCatalog, existing] = await Promise.all([
+      api('/api/services'),
+      api('/api/services/customer/' + currentCustomerId),
+    ]);
+  } catch (e) { t(e.message, 'err'); return; }
+
+  const edit = assignmentId ? existing.find(x => x.id === assignmentId) : null;
+  const sel = document.getElementById('ms-service');
+  if (edit) {
+    sel.innerHTML = `<option value="${edit.service_id}">${escapeHtml(edit.name)}</option>`;
+    sel.disabled = true;
+  } else {
+    const takenIds = new Set(existing.map(x => x.service_id));
+    const options = _serviceCatalog.filter(s => !takenIds.has(s.id));
+    if (!options.length) { t('Kunden har redan alla tjänster i katalogen', 'err'); return; }
+    sel.innerHTML = options.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+    sel.disabled = false;
+  }
+  document.getElementById('ms-title').textContent = edit ? 'Redigera tjänst' : 'Lägg till tjänst';
+  document.getElementById('ms-status').value = edit ? edit.status : 'active';
+  document.getElementById('ms-start').value = edit ? (edit.start_date || '') : new Date().toISOString().slice(0, 10);
+  document.getElementById('ms-notes').value = edit ? (edit.notes || '') : '';
+  document.getElementById('ms-assignment-id').value = edit ? assignmentId : '';
+  openModal('modal-service');
+}
+
+async function saveCustomerService() {
+  const assignmentId = document.getElementById('ms-assignment-id').value;
+  const status = document.getElementById('ms-status').value;
+  const start_date = document.getElementById('ms-start').value || null;
+  const notes = document.getElementById('ms-notes').value.trim();
+  try {
+    if (assignmentId) {
+      await api(`/api/services/customer/${currentCustomerId}/${assignmentId}`, {
+        method: 'PUT', body: JSON.stringify({ status, start_date, notes }),
+      });
+    } else {
+      const service_id = document.getElementById('ms-service').value;
+      await api('/api/services/customer/' + currentCustomerId, {
+        method: 'POST', body: JSON.stringify({ service_id, status, start_date, notes }),
+      });
+    }
+    closeModal('modal-service');
+    t('Tjänst sparad');
+    loadCustomerServices(currentCustomerId);
+  } catch (e) { t(e.message, 'err'); }
+}
+
+async function removeCustomerService(assignmentId) {
+  if (!confirm('Ta bort tjänsten från kunden?')) return;
+  try {
+    await api(`/api/services/customer/${currentCustomerId}/${assignmentId}`, { method: 'DELETE' });
+    t('Tjänst borttagen');
+    loadCustomerServices(currentCustomerId);
+  } catch (e) { t(e.message, 'err'); }
 }
 
 // ── Kundkontakter ─────────────────────────────────────────────────────────────
@@ -4563,11 +5083,12 @@ async function loadPhaseTemplates() {
 }
 
 function switchSettingsTab(tab) {
-  ['email','notifications','integrations','reports','orderstatus','tickets','users','audit'].forEach(id => {
+  ['email','notifications','integrations','reports','orderstatus','services','tickets','users','audit'].forEach(id => {
     document.getElementById('stab-' + id).style.display = id === tab ? '' : 'none';
     const el = document.getElementById('ssn-' + id);
     if (el) el.classList.toggle('ssn-active', id === tab);
   });
+  if (tab === 'services') loadServicesSettings();
   if (tab === 'tickets') loadTicketSettings();
   if (tab === 'notifications') loadNotificationSettings();
   if (tab === 'users') loadSettingsUsers();
@@ -5824,6 +6345,55 @@ async function deleteTag(id) {
     await loadTags();
     t('Tagg borttagen');
   } catch(e) { t(e.message, 'err'); }
+}
+
+// ── Tjänstekatalog (inställningar) ─────────────────────────────────────────────
+
+async function loadServicesSettings() {
+  const el = document.getElementById('s-services-list');
+  el.innerHTML = '<div style="color:var(--muted);font-size:13px">Laddar...</div>';
+  try {
+    const items = await api('/api/services');
+    if (!items.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px">Inga tjänster än.</div>';
+      return;
+    }
+    el.innerHTML = items.map(s => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px">
+        <div class="svc-ico" style="width:34px;height:34px;font-size:17px;border-radius:8px;background:${s.color}"><i class="ti ${s.icon}"></i></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px">${escapeHtml(s.name)}</div>
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.description||'')}</div>
+        </div>
+        <button class="btn btn-danger btn-sm btn-ico" onclick="deleteService('${s.id}','${escapeHtml(s.name)}')"><i class="ti ti-trash"></i></button>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = `<div style="color:var(--err);font-size:13px">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function addService() {
+  const name = document.getElementById('svc-name').value.trim();
+  const icon = document.getElementById('svc-icon').value.trim() || 'ti-shield-check';
+  const color = document.getElementById('svc-color').value || '#0047A3';
+  const description = document.getElementById('svc-desc').value.trim();
+  if (!name) { t('Namn krävs', 'err'); return; }
+  try {
+    await api('/api/services', { method: 'POST', body: JSON.stringify({ name, icon, color, description }) });
+    document.getElementById('svc-name').value = '';
+    document.getElementById('svc-desc').value = '';
+    await loadServicesSettings();
+    t('Tjänst tillagd');
+  } catch (e) { t(e.message, 'err'); }
+}
+
+async function deleteService(id, name) {
+  if (!confirm(`Inaktivera tjänsten "${name}"? Befintliga kundkopplingar behålls men den går inte att välja för nya kunder.`)) return;
+  try {
+    await api('/api/services/' + id, { method: 'DELETE' });
+    await loadServicesSettings();
+    t('Tjänst inaktiverad');
+  } catch (e) { t(e.message, 'err'); }
 }
 
 async function loadCannedResponses() {

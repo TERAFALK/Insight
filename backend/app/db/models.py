@@ -53,6 +53,45 @@ class Customer(Base):
     contacts: Mapped[list["CustomerContact"]] = relationship(
         back_populates="customer", cascade="all, delete-orphan"
     )
+    services: Mapped[list["CustomerService"]] = relationship(
+        back_populates="customer", cascade="all, delete-orphan"
+    )
+
+
+class Service(Base):
+    """Katalogpost för en säljbar tjänst (t.ex. Managed Network)."""
+
+    __tablename__ = "services"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    description: Mapped[str] = mapped_column(String, default="", server_default="")
+    icon: Mapped[str] = mapped_column(String, default="ti-shield-check", server_default="ti-shield-check")
+    color: Mapped[str] = mapped_column(String, default="#0047A3", server_default="#0047A3")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class CustomerService(Base):
+    """Tilldelning av en katalogtjänst till en kund (avtalsrad)."""
+
+    __tablename__ = "customer_services"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    customer_id: Mapped[str] = mapped_column(
+        String, ForeignKey("customers.id"), nullable=False, index=True
+    )
+    service_id: Mapped[str] = mapped_column(
+        String, ForeignKey("services.id"), nullable=False, index=True
+    )
+    status: Mapped[str] = mapped_column(String, default="active", server_default="active")  # active|paused|ended
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    customer: Mapped["Customer"] = relationship(back_populates="services")
+    service: Mapped["Service"] = relationship()
 
 
 class CustomerContact(Base):

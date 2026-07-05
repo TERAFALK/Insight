@@ -80,6 +80,7 @@ async def init_db() -> None:
     await _seed_phase_templates()
     await _seed_ticket_defaults()
     await _seed_notification_settings()
+    await _seed_services()
 
 
 async def _seed_phase_templates() -> None:
@@ -156,6 +157,31 @@ async def _seed_ticket_defaults() -> None:
                     id=str(_uuid_mod.uuid4()),
                     name=name, color=color, icon=icon,
                 ))
+        await session.commit()
+
+
+async def _seed_services() -> None:
+    """Seeda tjänstekatalogen med standardtjänster om den är tom."""
+    from app.db.models import Service
+    from sqlalchemy import select, func as sqlfunc
+    import uuid as _uuid_mod
+
+    async with AsyncSessionLocal() as session:
+        count = await session.scalar(select(sqlfunc.count()).select_from(Service))
+        if count and count > 0:
+            return
+        defaults = [
+            # name, description, icon, color
+            ("Managed Network", "Övervakning, patchning och drift av nätverk (UniFi m.m.)", "ti-router", "#0047A3"),
+            ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED"),
+            ("Managed Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9"),
+            ("Managed Endpoint", "Övervakning och säkerhet för klienter/servrar", "ti-device-desktop", "#16A34A"),
+        ]
+        for pos, (name, desc, icon, color) in enumerate(defaults):
+            session.add(Service(
+                id=str(_uuid_mod.uuid4()),
+                name=name, description=desc, icon=icon, color=color, position=pos,
+            ))
         await session.commit()
 
 

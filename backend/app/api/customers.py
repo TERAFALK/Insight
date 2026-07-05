@@ -13,7 +13,7 @@ from app.core.integration_cache import get_cached, refresh_in_background, set_ca
 from app.core.security import encrypt
 from app.core.time_utils import now_stockholm
 from app.db.database import get_db
-from app.db.models import Customer, CustomerContact, IntegrationCredential, Ticket, User
+from app.db.models import Customer, CustomerContact, CustomerService, IntegrationCredential, Ticket, User
 from app.integrations.registry import INTEGRATIONS, get_client
 
 router = APIRouter()
@@ -79,7 +79,17 @@ async def list_customers(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(current_user),
 ):
-    q = select(Customer).where(Customer.is_active == True).options(selectinload(Customer.credentials)).order_by(Customer.name).offset(skip).limit(limit)
+    q = (
+        select(Customer)
+        .where(Customer.is_active == True)
+        .options(
+            selectinload(Customer.credentials),
+            selectinload(Customer.services).selectinload(CustomerService.service),
+        )
+        .order_by(Customer.name)
+        .offset(skip)
+        .limit(limit)
+    )
     if user.role == "customer":
         q = q.where(Customer.id == user.customer_id)
     rows = await db.scalars(q)
@@ -87,6 +97,12 @@ async def list_customers(
     for c in rows.all():
         verified = {cr.integration_type for cr in c.credentials if cr.is_verified}
         configured = {cr.integration_type for cr in c.credentials}
+        active_services = [
+            {"name": cs.service.name, "icon": cs.service.icon, "color": cs.service.color}
+            for cs in c.services
+            if cs.status == "active" and cs.service
+        ]
+        active_services.sort(key=lambda s: s["name"])
         result.append({
             "id": c.id,
             "name": c.name,
@@ -94,6 +110,7 @@ async def list_customers(
             "city": c.city,
             "integrations_configured": list(configured),
             "integrations_verified": list(verified),
+            "services": active_services,
         })
     return result
 
@@ -133,7 +150,11 @@ async def get_customer(
     c = await db.scalar(
         select(Customer)
         .where(Customer.id == customer_id)
-        .options(selectinload(Customer.credentials), selectinload(Customer.reports))
+        .options(
+            selectinload(Customer.credentials),
+            selectinload(Customer.reports),
+            selectinload(Customer.services).selectinload(CustomerService.service),
+        )
     )
     if not c:
         raise HTTPException(404, "Kund hittades inte")
@@ -167,6 +188,20 @@ async def get_customer(
         "report_frequency": c.report_frequency,
         "report_day": c.report_day,
         "integrations": integrations_status,
+        "services": [
+            {
+                "id": cs.id,
+                "service_id": cs.service_id,
+                "name": cs.service.name if cs.service else "—",
+                "icon": cs.service.icon if cs.service else "ti-shield-check",
+                "color": cs.service.color if cs.service else "#0047A3",
+                "description": cs.service.description if cs.service else "",
+                "status": cs.status,
+                "start_date": cs.start_date.isoformat() if cs.start_date else None,
+                "notes": cs.notes,
+            }
+            for cs in sorted(c.services, key=lambda x: (x.status != "active", x.service.name if x.service else ""))
+        ],
         "recent_reports": [
             {
                 "id": r.id,
