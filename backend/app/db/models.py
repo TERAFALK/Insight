@@ -68,8 +68,6 @@ class Service(Base):
     description: Mapped[str] = mapped_column(String, default="", server_default="")
     icon: Mapped[str] = mapped_column(String, default="ti-shield-check", server_default="ti-shield-check")
     color: Mapped[str] = mapped_column(String, default="#0047A3", server_default="#0047A3")
-    # Valfri koppling till en integrationstyp (t.ex. "unifi") → live-hälsa på tjänstekortet.
-    integration_type: Mapped[str | None] = mapped_column(String, nullable=True)
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -90,8 +88,9 @@ class ServiceArticle(Base):
     )
     name: Mapped[str] = mapped_column(String, nullable=False)          # variantnamn, t.ex. "Per Device"
     article_number: Mapped[str] = mapped_column(String, default="", server_default="")  # anges manuellt
-    billing_cycle_months: Mapped[int] = mapped_column(Integer, default=1, server_default="1")  # 1 | 12 ...
-    msrp: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # pris till kund (SEK)
+    billing_cycle_months: Mapped[int] = mapped_column(Integer, default=1, server_default="1")  # fakturering: 1=månadsvis, 12=årsvis
+    binding_months: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # bindningstid: 0|6|12|24|36
+    msrp: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # pris per faktureringsperiod (SEK)
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

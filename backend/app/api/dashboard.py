@@ -362,14 +362,6 @@ async def customer_dashboard(
         )
     ) or 0
 
-    # Verifierade integrationer för kunden (för att koppla tjänst → datakälla)
-    verified_types = set((await db.scalars(
-        select(IntegrationCredential.integration_type).where(
-            IntegrationCredential.customer_id == cid,
-            IntegrationCredential.is_verified == True,
-        )
-    )).all())
-
     # Tjänster grupperade från kundens artiklar. En tjänst är aktiv om den har
     # minst en aktiv artikel.
     art_rows = await db.scalars(
@@ -389,8 +381,6 @@ async def customer_dashboard(
             "icon": svc.icon,
             "color": svc.color,
             "description": svc.description,
-            "integration_type": svc.integration_type,
-            "integration_ok": bool(svc.integration_type and svc.integration_type in verified_types),
             "status": "ended",
             "articles": [],
         })

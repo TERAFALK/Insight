@@ -26,7 +26,6 @@ from app.db.models import (
     ServiceArticle,
     User,
 )
-from app.integrations.registry import INTEGRATIONS
 
 router = APIRouter()
 
@@ -34,14 +33,6 @@ _VALID_STATUS = ("active", "paused", "ended")
 
 
 # ── Hjälpare ──────────────────────────────────────────────────────────────────
-
-def _norm_integration(value: str | None) -> str | None:
-    if not value:
-        return None
-    if value not in INTEGRATIONS:
-        raise HTTPException(400, f"Okänd integrationstyp: {value}")
-    return value
-
 
 def _add_months(d: date, n: int) -> date:
     """Lägg till n månader på ett datum (klamrar dagen mot månadens längd)."""
@@ -70,6 +61,7 @@ def _article_dict(a: ServiceArticle) -> dict:
         "name": a.name,
         "article_number": a.article_number,
         "billing_cycle_months": a.billing_cycle_months,
+        "binding_months": a.binding_months,
         "msrp": a.msrp,
         "position": a.position,
         "is_active": a.is_active,
@@ -86,7 +78,6 @@ def _service_dict(s: Service, include_inactive_articles: bool = False) -> dict:
         "description": s.description,
         "icon": s.icon,
         "color": s.color,
-        "integration_type": s.integration_type,
         "position": s.position,
         "is_active": s.is_active,
         "articles": [_article_dict(a) for a in arts],
@@ -96,16 +87,18 @@ def _service_dict(s: Service, include_inactive_articles: bool = False) -> dict:
 def _assignment_dict(csa: CustomerServiceArticle) -> dict:
     a = csa.article
     svc = a.service if a else None
-    end_date = None
-    if csa.start_date and a and a.billing_cycle_months:
-        end_date = _add_months(csa.start_date, a.billing_cycle_months).isoformat()
+    binding_months = a.binding_months if a else 0
+    binding_end = None
+    if csa.start_date and binding_months:
+        binding_end = _add_months(csa.start_date, binding_months).isoformat()
     return {
         "id": csa.id,
         "article_id": csa.article_id,
         "quantity": csa.quantity,
         "status": csa.status,
         "start_date": csa.start_date.isoformat() if csa.start_date else None,
-        "end_date": end_date,
+        "binding_months": binding_months,
+        "binding_end": binding_end,
         "notes": csa.notes,
         "monthly_value": _monthly_value(a, csa.quantity),
         # Artikel-/tjänstinfo
@@ -117,7 +110,6 @@ def _assignment_dict(csa: CustomerServiceArticle) -> dict:
         "service_name": svc.name if svc else "—",
         "icon": svc.icon if svc else "ti-shield-check",
         "color": svc.color if svc else "#0047A3",
-        "integration_type": svc.integration_type if svc else None,
     }
 
 
@@ -141,7 +133,6 @@ class ServiceBody(BaseModel):
     description: str = ""
     icon: str = "ti-shield-check"
     color: str = "#0047A3"
-    integration_type: str | None = None
     position: int = 0
     is_active: bool = True
 
@@ -155,7 +146,6 @@ async def create_service(
     name = body.name.strip()
     if not name:
         raise HTTPException(400, "Namn krävs")
-    itype = _norm_integration(body.integration_type)
     exists = await db.scalar(
         select(Service).where(Service.name == name).options(selectinload(Service.articles))
     )
@@ -166,7 +156,6 @@ async def create_service(
         exists.description = body.description
         exists.icon = body.icon
         exists.color = body.color
-        exists.integration_type = itype
         exists.is_active = True
         await log_action(db, admin, "service.create", "service", exists.id, f"Återaktiverade tjänst {name}")
         await db.commit()
@@ -174,7 +163,7 @@ async def create_service(
         return _service_dict(exists)
     s = Service(
         name=name, description=body.description, icon=body.icon, color=body.color,
-        integration_type=itype, position=body.position, is_active=body.is_active,
+        position=body.position, is_active=body.is_active,
     )
     db.add(s)
     await db.flush()
@@ -191,7 +180,6 @@ class ServiceUpdate(BaseModel):
     description: str | None = None
     icon: str | None = None
     color: str | None = None
-    integration_type: str | None = None
     position: int | None = None
     is_active: bool | None = None
 
@@ -208,11 +196,7 @@ async def update_service(
     )
     if not s:
         raise HTTPException(404, "Tjänst hittades inte")
-    data = body.model_dump(exclude_none=True)
-    if "integration_type" in body.model_fields_set:
-        s.integration_type = _norm_integration(body.integration_type)
-        data.pop("integration_type", None)
-    for field, value in data.items():
+    for field, value in body.model_dump(exclude_none=True).items():
         setattr(s, field, value)
     await log_action(db, admin, "service.update", "service", s.id, f"Uppdaterade tjänst {s.name}")
     await db.commit()
@@ -240,6 +224,7 @@ class ArticleBody(BaseModel):
     name: str
     article_number: str = ""
     billing_cycle_months: int = 1
+    binding_months: int = 0
     msrp: int = 0
     position: int = 0
 
@@ -263,6 +248,7 @@ async def create_article(
         name=body.name.strip(),
         article_number=body.article_number.strip(),
         billing_cycle_months=body.billing_cycle_months,
+        binding_months=max(0, body.binding_months),
         msrp=body.msrp,
         position=body.position,
     )
@@ -279,6 +265,7 @@ class ArticleUpdate(BaseModel):
     name: str | None = None
     article_number: str | None = None
     billing_cycle_months: int | None = None
+    binding_months: int | None = None
     msrp: int | None = None
     position: int | None = None
     is_active: bool | None = None

@@ -58,10 +58,8 @@ async def init_db() -> None:
             # Per-kund rapportschema
             "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_frequency VARCHAR NOT NULL DEFAULT 'monthly'",
             "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_day INTEGER NOT NULL DEFAULT 0",
-            # Tjänster: pris (MRR) + valfri integrationskoppling + prisöverskrivning per kund
-            "ALTER TABLE services ADD COLUMN IF NOT EXISTS monthly_price INTEGER NOT NULL DEFAULT 0",
-            "ALTER TABLE services ADD COLUMN IF NOT EXISTS integration_type VARCHAR",
-            "ALTER TABLE customer_services ADD COLUMN IF NOT EXISTS price INTEGER",
+            # Tjänsteartiklar: bindningstid (utöver faktureringscykel)
+            "ALTER TABLE service_articles ADD COLUMN IF NOT EXISTS binding_months INTEGER NOT NULL DEFAULT 0",
             # En äldre audit_logs-design hade extra NOT NULL-kolumner (t.ex. user_email)
             # som blockerar inserts från den nya modellen. Droppa alla kolumner som
             # inte tillhör den nuvarande modellen (no-op på fräscha installationer).
@@ -174,29 +172,29 @@ async def _seed_services() -> None:
         count = await session.scalar(select(sqlfunc.count()).select_from(Service))
         if count and count > 0:
             return
-        # (name, description, icon, color, integration_type, [artiklar])
-        # artikel = (variantnamn, artikelnr, cykel_månader, msrp)
+        # (name, description, icon, color, [artiklar])
+        # artikel = (variantnamn, artikelnr, faktureringscykel_mån, bindning_mån, msrp)
         defaults = [
-            ("Managed Network", "Övervakning, patchning och drift av nätverk (UniFi m.m.)", "ti-router", "#0047A3", "unifi", [
-                ("Small Site", "TFS-000006", 1, 890),
-                ("Per Device", "TFS-000007", 1, 89),
-                ("Small Site", "TFS-000008", 12, 10680),
-                ("Per Device", "TFS-000009", 12, 1068),
+            ("Managed Network", "Övervakning, patchning och drift av nätverk", "ti-router", "#0047A3", [
+                ("Small Site", "TFS-000006", 1, 0, 890),
+                ("Per Device", "TFS-000007", 1, 0, 89),
+                ("Small Site (årsbindning)", "TFS-000008", 12, 12, 10680),
+                ("Per Device (årsbindning)", "TFS-000009", 12, 12, 1068),
             ]),
-            ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED", None, []),
-            ("Managed Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9", "microsoft", []),
-            ("Managed Endpoint", "Övervakning och säkerhet för klienter/servrar", "ti-device-desktop", "#16A34A", None, []),
+            ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED", []),
+            ("Managed Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9", []),
+            ("Managed Endpoint", "Övervakning och säkerhet för klienter/servrar", "ti-device-desktop", "#16A34A", []),
         ]
-        for pos, (name, desc, icon, color, itype, articles) in enumerate(defaults):
+        for pos, (name, desc, icon, color, articles) in enumerate(defaults):
             sid = str(_uuid_mod.uuid4())
             session.add(Service(
                 id=sid, name=name, description=desc, icon=icon, color=color, position=pos,
-                integration_type=itype,
             ))
-            for apos, (aname, anum, cycle, msrp) in enumerate(articles):
+            for apos, (aname, anum, cycle, binding, msrp) in enumerate(articles):
                 session.add(ServiceArticle(
                     id=str(_uuid_mod.uuid4()), service_id=sid, name=aname,
-                    article_number=anum, billing_cycle_months=cycle, msrp=msrp, position=apos,
+                    article_number=anum, billing_cycle_months=cycle, binding_months=binding,
+                    msrp=msrp, position=apos,
                 ))
         await session.commit()
 
