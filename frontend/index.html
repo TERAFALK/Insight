@@ -2039,13 +2039,23 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="fr" style="margin:0"><label class="fl">Startdatum</label>
         <input class="fi" id="ms-start" type="date" oninput="onMsArticleChange()"></div>
     </div>
-    <div id="ms-term-preview" style="font-size:12px;color:var(--sub);margin-top:10px;padding:8px 12px;background:var(--tint);border-radius:var(--r);display:none"></div>
-    <div class="fr" style="margin-top:14px"><label class="fl">Status</label>
-      <select class="fi" id="ms-status">
-        <option value="active">Aktiv</option>
-        <option value="paused">Pausad</option>
-        <option value="ended">Avslutad</option>
-      </select></div>
+    <div class="f2" style="margin-top:14px">
+      <div class="fr" style="margin:0"><label class="fl">Bindningstid</label>
+        <select class="fi" id="ms-binding" onchange="onMsArticleChange()">
+          <option value="0">Ingen (löpande)</option>
+          <option value="6">6 månader</option>
+          <option value="12">12 månader</option>
+          <option value="24">24 månader</option>
+          <option value="36">36 månader</option>
+        </select></div>
+      <div class="fr" style="margin:0"><label class="fl">Status</label>
+        <select class="fi" id="ms-status">
+          <option value="active">Aktiv</option>
+          <option value="paused">Pausad</option>
+          <option value="ended">Avslutad</option>
+        </select></div>
+    </div>
+    <div id="ms-term-preview" style="font-size:12px;color:var(--sub);margin-top:12px;padding:8px 12px;background:var(--tint);border-radius:var(--r);display:none"></div>
     <div class="fr" style="margin-top:14px"><label class="fl">Notering</label>
       <textarea class="fi" id="ms-notes" rows="2" placeholder="Valfri intern notering"></textarea></div>
     <input type="hidden" id="ms-assignment-id">
@@ -2074,16 +2084,9 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <option value="1">Månadsvis</option>
           <option value="12">Årsvis</option>
         </select></div>
-      <div class="fr" style="margin:0"><label class="fl">Bindningstid</label>
-        <select class="fi" id="ma-binding">
-          <option value="0">Ingen (löpande)</option>
-          <option value="6">6 månader</option>
-          <option value="12">12 månader</option>
-          <option value="24">24 månader</option>
-          <option value="36">36 månader</option>
-        </select></div>
+      <div class="fr" style="margin:0"><label class="fl">MSRP (kr) <span style="font-weight:400;color:var(--muted)">per period</span></label><input class="fi" id="ma-msrp" type="number" min="0" step="10" value="0"></div>
     </div>
-    <div class="fr" style="margin-top:14px"><label class="fl">MSRP (kr) <span style="font-weight:400;color:var(--muted)" id="ma-msrp-hint">per period</span></label><input class="fi" id="ma-msrp" type="number" min="0" step="10" value="0"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px"><i class="ti ti-info-circle"></i> Bindningstid avtalas per kund och sätts när du lägger artikeln på kunden.</div>
     <input type="hidden" id="ma-edit-id">
     <input type="hidden" id="ma-service-id">
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
@@ -4505,13 +4508,15 @@ function onMsArticleChange() {
   const prev = document.getElementById('ms-term-preview');
   if (!art) { prev.style.display = 'none'; return; }
   const qty = parseInt(document.getElementById('ms-qty').value, 10) || 1;
+  const binding = parseInt(document.getElementById('ms-binding').value, 10) || 0;
   const val = Math.round(art.msrp / art.billing_cycle_months) * qty;
   let bindTxt = 'Ingen bindning (löpande)';
-  if (art.binding_months && start) {
-    const end = new Date(start + 'T00:00:00'); end.setMonth(end.getMonth() + art.binding_months);
-    bindTxt = `Bunden till <strong>${end.toISOString().slice(0, 10)}</strong> (${art.binding_months} mån)`;
-  } else if (art.binding_months) {
-    bindTxt = `Bindningstid ${art.binding_months} mån`;
+  if (binding && start) {
+    const end = new Date(start + 'T00:00:00'); end.setMonth(end.getMonth() + binding);
+    const endISO = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+    bindTxt = `Bunden till <strong>${endISO}</strong> (${binding} mån)`;
+  } else if (binding) {
+    bindTxt = `Bindningstid ${binding} mån`;
   }
   prev.style.display = '';
   prev.innerHTML = `<i class="ti ti-calendar-event"></i> ${_billingLabel(art.billing_cycle_months)} fakturering · ${bindTxt} · ~${fmtSek(val)}/mån (informativt)`;
@@ -4545,6 +4550,7 @@ async function openAssignServiceModal(assignmentId) {
   document.getElementById('ms-qty').value = edit ? edit.quantity : 1;
   document.getElementById('ms-status').value = edit ? edit.status : 'active';
   document.getElementById('ms-start').value = edit ? (edit.start_date || '') : new Date().toISOString().slice(0, 10);
+  document.getElementById('ms-binding').value = edit ? (edit.binding_months || 0) : '0';
   document.getElementById('ms-notes').value = edit ? (edit.notes || '') : '';
   if (!edit) onMsServiceChange(); else onMsArticleChange();
   openModal('modal-service');
@@ -4555,17 +4561,18 @@ async function saveCustomerService() {
   const quantity = parseInt(document.getElementById('ms-qty').value, 10) || 1;
   const status = document.getElementById('ms-status').value;
   const start_date = document.getElementById('ms-start').value || null;
+  const binding_months = parseInt(document.getElementById('ms-binding').value, 10) || 0;
   const notes = document.getElementById('ms-notes').value.trim();
   try {
     if (assignmentId) {
       await api(`/api/services/customer/${currentCustomerId}/${assignmentId}`, {
-        method: 'PUT', body: JSON.stringify({ quantity, status, start_date, notes }),
+        method: 'PUT', body: JSON.stringify({ quantity, status, start_date, binding_months, notes }),
       });
     } else {
       const article_id = document.getElementById('ms-article').value;
       if (!article_id) { t('Välj en artikel', 'err'); return; }
       await api('/api/services/customer/' + currentCustomerId, {
-        method: 'POST', body: JSON.stringify({ article_id, quantity, status, start_date, notes }),
+        method: 'POST', body: JSON.stringify({ article_id, quantity, status, start_date, binding_months, notes }),
       });
     }
     closeModal('modal-service');
@@ -6809,7 +6816,6 @@ async function deleteTag(id) {
 let _servicesCatalogCache = [];
 
 function _billingLabel(m) { return m === 12 ? 'Årsvis' : m === 1 ? 'Månadsvis' : m + ' mån'; }
-function _bindingLabel(m) { return !m ? 'Löpande' : m + ' mån'; }
 
 // Föreslår nästa artikelnummer (TFS-000NNN) utifrån befintliga.
 function _suggestArticleNumber() {
@@ -6838,14 +6844,13 @@ async function loadServicesSettings() {
           <td data-label="Artikel">${escapeHtml(a.name)}</td>
           <td data-label="Artikelnr" style="font-family:monospace;font-size:12px;color:var(--sub)">${escapeHtml(a.article_number || '—')}</td>
           <td data-label="Fakturering">${_billingLabel(a.billing_cycle_months)}</td>
-          <td data-label="Bindning">${_bindingLabel(a.binding_months)}</td>
           <td data-label="MSRP" style="text-align:right;font-weight:600">${fmtSek(a.msrp)}</td>
           <td data-label="" style="text-align:right;white-space:nowrap">
             <button class="btn btn-g btn-sm btn-ico" onclick="openArticleModal('${s.id}','${a.id}')" title="Redigera"><i class="ti ti-edit"></i></button>
             <button class="btn btn-danger btn-sm btn-ico" onclick="deleteArticle('${a.id}','${escapeHtml(a.name)}')" title="Ta bort"><i class="ti ti-trash"></i></button>
           </td>
         </tr>`).join('')
-        : `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:14px;font-size:12px">Inga artiklar än.</td></tr>`;
+        : `<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:14px;font-size:12px">Inga artiklar än.</td></tr>`;
       return `
       <div class="card" style="margin-bottom:14px">
         <div class="ch">
@@ -6861,7 +6866,7 @@ async function loadServicesSettings() {
         </div>
         <div class="cb0">
           <table class="tbl svc-cat-tbl">
-            <thead><tr><th>Item</th><th>Item #</th><th>Fakturering</th><th>Bindning</th><th style="text-align:right">MSRP</th><th style="width:90px"></th></tr></thead>
+            <thead><tr><th>Item</th><th>Item #</th><th>Fakturering</th><th style="text-align:right">MSRP</th><th style="width:90px"></th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
@@ -6948,7 +6953,6 @@ function openArticleModal(serviceId, articleId) {
   document.getElementById('ma-name').value = art ? art.name : '';
   document.getElementById('ma-number').value = art ? (art.article_number || '') : _suggestArticleNumber();
   document.getElementById('ma-cycle').value = art ? art.billing_cycle_months : '1';
-  document.getElementById('ma-binding').value = art ? (art.binding_months || 0) : '0';
   document.getElementById('ma-msrp').value = art ? art.msrp : 0;
   openModal('modal-article');
 }
@@ -6959,10 +6963,9 @@ async function saveArticle() {
   const name = document.getElementById('ma-name').value.trim();
   const article_number = document.getElementById('ma-number').value.trim();
   const billing_cycle_months = parseInt(document.getElementById('ma-cycle').value, 10) || 1;
-  const binding_months = parseInt(document.getElementById('ma-binding').value, 10) || 0;
   const msrp = parseInt(document.getElementById('ma-msrp').value, 10) || 0;
   if (!name) { t('Artikelnamn krävs', 'err'); return; }
-  const body = { name, article_number, billing_cycle_months, binding_months, msrp };
+  const body = { name, article_number, billing_cycle_months, msrp };
   try {
     if (editId) {
       await api('/api/services/articles/' + editId, { method: 'PUT', body: JSON.stringify(body) });

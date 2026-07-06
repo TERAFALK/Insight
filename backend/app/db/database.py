@@ -58,8 +58,8 @@ async def init_db() -> None:
             # Per-kund rapportschema
             "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_frequency VARCHAR NOT NULL DEFAULT 'monthly'",
             "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_day INTEGER NOT NULL DEFAULT 0",
-            # Tjänsteartiklar: bindningstid (utöver faktureringscykel)
-            "ALTER TABLE service_articles ADD COLUMN IF NOT EXISTS binding_months INTEGER NOT NULL DEFAULT 0",
+            # Bindningstid avtalas per kund → på tilldelningen, inte artikeln
+            "ALTER TABLE customer_service_articles ADD COLUMN IF NOT EXISTS binding_months INTEGER NOT NULL DEFAULT 0",
             # En äldre audit_logs-design hade extra NOT NULL-kolumner (t.ex. user_email)
             # som blockerar inserts från den nya modellen. Droppa alla kolumner som
             # inte tillhör den nuvarande modellen (no-op på fräscha installationer).
@@ -173,13 +173,13 @@ async def _seed_services() -> None:
         if count and count > 0:
             return
         # (name, description, icon, color, [artiklar])
-        # artikel = (variantnamn, artikelnr, faktureringscykel_mån, bindning_mån, msrp)
+        # artikel = (variantnamn, artikelnr, faktureringscykel_mån, msrp)
         defaults = [
             ("Managed Network", "Övervakning, patchning och drift av nätverk", "ti-router", "#0047A3", [
-                ("Small Site", "TFS-000006", 1, 0, 890),
-                ("Per Device", "TFS-000007", 1, 0, 89),
-                ("Small Site (årsbindning)", "TFS-000008", 12, 12, 10680),
-                ("Per Device (årsbindning)", "TFS-000009", 12, 12, 1068),
+                ("Small Site", "TFS-000006", 1, 890),
+                ("Per Device", "TFS-000007", 1, 89),
+                ("Small Site", "TFS-000008", 12, 10680),
+                ("Per Device", "TFS-000009", 12, 1068),
             ]),
             ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED", []),
             ("Managed Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9", []),
@@ -190,11 +190,10 @@ async def _seed_services() -> None:
             session.add(Service(
                 id=sid, name=name, description=desc, icon=icon, color=color, position=pos,
             ))
-            for apos, (aname, anum, cycle, binding, msrp) in enumerate(articles):
+            for apos, (aname, anum, cycle, msrp) in enumerate(articles):
                 session.add(ServiceArticle(
                     id=str(_uuid_mod.uuid4()), service_id=sid, name=aname,
-                    article_number=anum, billing_cycle_months=cycle, binding_months=binding,
-                    msrp=msrp, position=apos,
+                    article_number=anum, billing_cycle_months=cycle, msrp=msrp, position=apos,
                 ))
         await session.commit()
 

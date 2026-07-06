@@ -89,7 +89,6 @@ class ServiceArticle(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)          # variantnamn, t.ex. "Per Device"
     article_number: Mapped[str] = mapped_column(String, default="", server_default="")  # anges manuellt
     billing_cycle_months: Mapped[int] = mapped_column(Integer, default=1, server_default="1")  # fakturering: 1=månadsvis, 12=årsvis
-    binding_months: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # bindningstid: 0|6|12|24|36
     msrp: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # pris per faktureringsperiod (SEK)
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -113,6 +112,7 @@ class CustomerServiceArticle(Base):
     quantity: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     status: Mapped[str] = mapped_column(String, default="active", server_default="active")  # active|paused|ended
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    binding_months: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # bindningstid: 0|6|12|24|36 (avtalas per kund)
     notes: Mapped[str] = mapped_column(Text, default="", server_default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

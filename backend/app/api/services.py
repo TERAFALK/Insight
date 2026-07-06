@@ -61,7 +61,6 @@ def _article_dict(a: ServiceArticle) -> dict:
         "name": a.name,
         "article_number": a.article_number,
         "billing_cycle_months": a.billing_cycle_months,
-        "binding_months": a.binding_months,
         "msrp": a.msrp,
         "position": a.position,
         "is_active": a.is_active,
@@ -87,7 +86,7 @@ def _service_dict(s: Service, include_inactive_articles: bool = False) -> dict:
 def _assignment_dict(csa: CustomerServiceArticle) -> dict:
     a = csa.article
     svc = a.service if a else None
-    binding_months = a.binding_months if a else 0
+    binding_months = csa.binding_months
     binding_end = None
     if csa.start_date and binding_months:
         binding_end = _add_months(csa.start_date, binding_months).isoformat()
@@ -224,7 +223,6 @@ class ArticleBody(BaseModel):
     name: str
     article_number: str = ""
     billing_cycle_months: int = 1
-    binding_months: int = 0
     msrp: int = 0
     position: int = 0
 
@@ -248,7 +246,6 @@ async def create_article(
         name=body.name.strip(),
         article_number=body.article_number.strip(),
         billing_cycle_months=body.billing_cycle_months,
-        binding_months=max(0, body.binding_months),
         msrp=body.msrp,
         position=body.position,
     )
@@ -265,7 +262,6 @@ class ArticleUpdate(BaseModel):
     name: str | None = None
     article_number: str | None = None
     billing_cycle_months: int | None = None
-    binding_months: int | None = None
     msrp: int | None = None
     position: int | None = None
     is_active: bool | None = None
@@ -336,6 +332,7 @@ class AssignBody(BaseModel):
     quantity: int = 1
     status: str = "active"
     start_date: date | None = None
+    binding_months: int = 0
     notes: str = ""
 
 
@@ -370,6 +367,7 @@ async def assign_article(
         quantity=body.quantity,
         status=body.status,
         start_date=body.start_date,
+        binding_months=max(0, body.binding_months),
         notes=body.notes,
     )
     db.add(csa)
@@ -388,6 +386,7 @@ class AssignUpdate(BaseModel):
     quantity: int | None = None
     status: str | None = None
     start_date: date | None = None
+    binding_months: int | None = None
     notes: str | None = None
 
 
