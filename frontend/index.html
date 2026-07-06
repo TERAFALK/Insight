@@ -1233,16 +1233,15 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <button class="btn btn-g btn-sm" onclick="exportBillingCsv()"><i class="ti ti-download"></i> <span class="btn-label">CSV</span></button>
         </div>
       </div>
-      <div class="stats" id="billing-stats" style="grid-template-columns:repeat(3,1fr)">
-        <div class="stat"><div class="sl">Debiterbar tid</div><div class="sv" id="bill-hours">—</div><div class="sh">Timmar denna månad</div></div>
-        <div class="stat"><div class="sl">Återkommande (MRR)</div><div class="sv" id="bill-mrr">—</div><div class="sh">Aktiva tjänsteavtal</div></div>
-        <div class="stat accent"><div class="sl">Kunder att fakturera</div><div class="sv" id="bill-count">—</div><div class="sh">Med tid eller avtal</div></div>
+      <div class="stats" id="billing-stats" style="grid-template-columns:repeat(2,1fr)">
+        <div class="stat accent"><div class="sl">Debiterbar tid</div><div class="sv" id="bill-hours">—</div><div class="sh">Timmar denna månad</div></div>
+        <div class="stat"><div class="sl">Kunder att fakturera</div><div class="sv" id="bill-count">—</div><div class="sh">Med debiterbar tid</div></div>
       </div>
       <div class="card">
         <div class="cb0">
           <table class="tbl hov">
-            <thead><tr><th>Kund</th><th style="text-align:right">Ärendetid</th><th style="text-align:right">Projekttid</th><th style="text-align:right">Total tid</th><th style="text-align:right">MRR</th></tr></thead>
-            <tbody id="billing-tbody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Laddar...</td></tr></tbody>
+            <thead><tr><th>Kund</th><th style="text-align:right">Ärendetid</th><th style="text-align:right">Projekttid</th><th style="text-align:right">Total tid</th></tr></thead>
+            <tbody id="billing-tbody"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">Laddar...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1458,7 +1457,8 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
             <div class="fsec" style="margin-top:0">Tjänstekatalog</div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Tjänster du säljer (t.ex. Managed Network). Koppla dem sedan på varje kund under Kund → Tjänster.</div>
             <div id="s-services-list" style="margin-bottom:16px"></div>
-            <div class="fsec">Ny tjänst</div>
+            <div class="fsec" id="svc-form-title">Ny tjänst</div>
+            <input type="hidden" id="svc-edit-id">
             <div class="f2">
               <div class="fr" style="margin:0"><label class="fl">Namn</label><input class="fi" id="svc-name" placeholder="t.ex. Managed Firewall"></div>
               <div class="fr" style="margin:0"><label class="fl">Ikon (Tabler)</label><input class="fi" id="svc-icon" placeholder="ti-shield-check" value="ti-shield-check"></div>
@@ -1473,7 +1473,10 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
               </div>
               <div class="fr" style="margin:0"><label class="fl">Beskrivning</label><input class="fi" id="svc-desc" placeholder="Kort beskrivning"></div>
             </div>
-            <button class="btn btn-p btn-sm" onclick="addService()" style="margin-top:14px"><i class="ti ti-plus"></i> Lägg till tjänst</button>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button class="btn btn-p btn-sm" id="svc-save-btn" onclick="saveService()"><i class="ti ti-plus"></i> Lägg till tjänst</button>
+              <button class="btn btn-g btn-sm" id="svc-cancel-btn" onclick="cancelEditService()" style="display:none">Avbryt</button>
+            </div>
           </div>
 
           <!-- Ärenden -->
@@ -3064,10 +3067,9 @@ async function loadBilling() {
     _billingData = data;
     const tot = data.totals;
     document.getElementById('bill-hours').textContent = _minToH(tot.billed_minutes) + ' h';
-    document.getElementById('bill-mrr').textContent = fmtSek(tot.mrr);
     document.getElementById('bill-count').textContent = data.rows.length;
     if (!data.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">Ingen debiterbar tid eller aktiva avtal för ${data.period}.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:28px">Ingen debiterbar tid för ${data.period}.</td></tr>`;
       return;
     }
     tbody.innerHTML = data.rows.map(r => `
@@ -3076,24 +3078,22 @@ async function loadBilling() {
         <td data-label="Ärendetid" style="text-align:right">${_minToH(r.ticket_minutes)} h</td>
         <td data-label="Projekttid" style="text-align:right">${_minToH(r.order_minutes)} h</td>
         <td data-label="Total tid" style="text-align:right;font-weight:700">${_minToH(r.billed_minutes)} h</td>
-        <td data-label="MRR" style="text-align:right">${r.mrr ? fmtSek(r.mrr) : '—'}</td>
       </tr>`).join('')
       + `<tr style="font-weight:700;background:var(--tint)">
           <td data-label="Kund">Totalt</td>
           <td data-label="Ärendetid" style="text-align:right">${_minToH(tot.ticket_minutes)} h</td>
           <td data-label="Projekttid" style="text-align:right">${_minToH(tot.order_minutes)} h</td>
           <td data-label="Total tid" style="text-align:right">${_minToH(tot.billed_minutes)} h</td>
-          <td data-label="MRR" style="text-align:right">${fmtSek(tot.mrr)}</td>
         </tr>`;
   } catch (e) {
     if (_navGen !== gen) return;
-    tbody.innerHTML = `<tr><td colspan="5"><div class="alert al-e" style="margin:10px"><i class="ti ti-alert-circle"></i><span>${escapeHtml(e.message)}</span></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4"><div class="alert al-e" style="margin:10px"><i class="ti ti-alert-circle"></i><span>${escapeHtml(e.message)}</span></div></td></tr>`;
   }
 }
 
 function exportBillingCsv() {
   if (!_billingData || !_billingData.rows.length) { t('Ingen data att exportera', 'err'); return; }
-  const head = ['Kund', 'Ärendetid (h)', 'Projekttid (h)', 'Total tid (h)', 'MRR (kr)'];
+  const head = ['Kund', 'Ärendetid (h)', 'Projekttid (h)', 'Total tid (h)'];
   const lines = [head.join(';')];
   _billingData.rows.forEach(r => {
     lines.push([
@@ -3101,7 +3101,6 @@ function exportBillingCsv() {
       (r.ticket_minutes / 60).toFixed(2),
       (r.order_minutes / 60).toFixed(2),
       (r.billed_minutes / 60).toFixed(2),
-      r.mrr,
     ].join(';'));
   });
   const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
@@ -6728,12 +6727,15 @@ function _intName(key) {
   return i ? i.display_name : key;
 }
 
+let _servicesCatalogCache = [];
+
 async function loadServicesSettings() {
   const el = document.getElementById('s-services-list');
   el.innerHTML = '<div style="color:var(--muted);font-size:13px">Laddar...</div>';
-  await _ensureIntegrationOptions(document.getElementById('svc-integration'), '');
+  await _ensureIntegrationOptions(document.getElementById('svc-integration'), document.getElementById('svc-integration').value);
   try {
     const items = await api('/api/services');
+    _servicesCatalogCache = items;
     if (!items.length) {
       el.innerHTML = '<div style="color:var(--muted);font-size:13px">Inga tjänster än.</div>';
       return;
@@ -6750,7 +6752,8 @@ async function loadServicesSettings() {
           <div style="font-weight:700;font-size:13px">${escapeHtml(s.name)}</div>
           <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div>
         </div>
-        <button class="btn btn-danger btn-sm btn-ico" onclick="deleteService('${s.id}','${escapeHtml(s.name)}')"><i class="ti ti-trash"></i></button>
+        <button class="btn btn-g btn-sm btn-ico" onclick="editServiceForm('${s.id}')" title="Redigera"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-danger btn-sm btn-ico" onclick="deleteService('${s.id}','${escapeHtml(s.name)}')" title="Ta bort"><i class="ti ti-trash"></i></button>
       </div>`;
     }).join('');
   } catch (e) {
@@ -6758,7 +6761,39 @@ async function loadServicesSettings() {
   }
 }
 
-async function addService() {
+function _resetServiceForm() {
+  document.getElementById('svc-edit-id').value = '';
+  document.getElementById('svc-name').value = '';
+  document.getElementById('svc-icon').value = 'ti-shield-check';
+  document.getElementById('svc-color').value = '#0047A3';
+  document.getElementById('svc-price').value = '0';
+  document.getElementById('svc-desc').value = '';
+  document.getElementById('svc-integration').value = '';
+  document.getElementById('svc-form-title').textContent = 'Ny tjänst';
+  document.getElementById('svc-save-btn').innerHTML = '<i class="ti ti-plus"></i> Lägg till tjänst';
+  document.getElementById('svc-cancel-btn').style.display = 'none';
+}
+
+function cancelEditService() { _resetServiceForm(); }
+
+function editServiceForm(id) {
+  const s = _servicesCatalogCache.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('svc-edit-id').value = s.id;
+  document.getElementById('svc-name').value = s.name;
+  document.getElementById('svc-icon').value = s.icon || 'ti-shield-check';
+  document.getElementById('svc-color').value = s.color || '#0047A3';
+  document.getElementById('svc-price').value = s.monthly_price || 0;
+  document.getElementById('svc-desc').value = s.description || '';
+  document.getElementById('svc-integration').value = s.integration_type || '';
+  document.getElementById('svc-form-title').textContent = 'Redigera ' + s.name;
+  document.getElementById('svc-save-btn').innerHTML = '<i class="ti ti-check"></i> Spara ändringar';
+  document.getElementById('svc-cancel-btn').style.display = '';
+  document.getElementById('svc-form-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function saveService() {
+  const editId = document.getElementById('svc-edit-id').value;
   const name = document.getElementById('svc-name').value.trim();
   const icon = document.getElementById('svc-icon').value.trim() || 'ti-shield-check';
   const color = document.getElementById('svc-color').value || '#0047A3';
@@ -6766,14 +6801,17 @@ async function addService() {
   const monthly_price = parseInt(document.getElementById('svc-price').value, 10) || 0;
   const integration_type = document.getElementById('svc-integration').value || null;
   if (!name) { t('Namn krävs', 'err'); return; }
+  const body = { name, icon, color, description, monthly_price, integration_type };
   try {
-    await api('/api/services', { method: 'POST', body: JSON.stringify({ name, icon, color, description, monthly_price, integration_type }) });
-    document.getElementById('svc-name').value = '';
-    document.getElementById('svc-desc').value = '';
-    document.getElementById('svc-price').value = '0';
-    document.getElementById('svc-integration').value = '';
+    if (editId) {
+      await api('/api/services/' + editId, { method: 'PUT', body: JSON.stringify(body) });
+      t('Tjänst uppdaterad');
+    } else {
+      await api('/api/services', { method: 'POST', body: JSON.stringify(body) });
+      t('Tjänst tillagd');
+    }
+    _resetServiceForm();
     await loadServicesSettings();
-    t('Tjänst tillagd');
   } catch (e) { t(e.message, 'err'); }
 }
 

@@ -10,9 +10,7 @@ from app.api.auth import require_admin
 from app.db.database import get_db
 from app.db.models import (
     Customer,
-    CustomerService,
     Order,
-    Service,
     Ticket,
     TicketTimeEntry,
     TimeEntry,
@@ -44,7 +42,7 @@ async def billing_summary(
     _: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Debiterbar tid per kund för en månad, plus återkommande MRR."""
+    """Debiterbar tid per kund för en månad. (Avtal/MRR faktureras separat.)"""
     start, end, period = _month_bounds(month)
 
     # Debiterbar tid från ärenden
@@ -65,36 +63,24 @@ async def billing_summary(
         .group_by(Order.customer_id)
     )).all()
 
-    # Återkommande MRR per kund (aktiva tjänster)
-    eff_price = func.coalesce(CustomerService.price, Service.monthly_price)
-    mrr_rows = (await db.execute(
-        select(CustomerService.customer_id, func.coalesce(func.sum(eff_price), 0))
-        .select_from(CustomerService)
-        .join(Service, Service.id == CustomerService.service_id)
-        .where(CustomerService.status == "active")
-        .group_by(CustomerService.customer_id)
-    )).all()
-
     ticket_min = {cid: int(m or 0) for cid, m in ticket_rows}
     order_min = {cid: int(m or 0) for cid, m in order_rows}
-    mrr_by = {cid: int(m or 0) for cid, m in mrr_rows}
 
-    # Alla aktiva kunder (så även de utan tid men med MRR kommer med)
+    # Endast kunder med debiterbar tid denna månad
+    customer_ids = set(ticket_min) | set(order_min)
     customers = (await db.scalars(
-        select(Customer).where(Customer.is_active == True).order_by(Customer.name)
-    )).all()
+        select(Customer).where(Customer.id.in_(customer_ids)).order_by(Customer.name)
+    )).all() if customer_ids else []
 
     rows = []
-    tot_ticket = tot_order = tot_mrr = 0
+    tot_ticket = tot_order = 0
     for c in customers:
         tmin = ticket_min.get(c.id, 0)
         omin = order_min.get(c.id, 0)
-        mrr = mrr_by.get(c.id, 0)
-        if not (tmin or omin or mrr):
+        if not (tmin or omin):
             continue
         tot_ticket += tmin
         tot_order += omin
-        tot_mrr += mrr
         rows.append({
             "customer_id": c.id,
             "customer_name": c.name,
@@ -102,7 +88,6 @@ async def billing_summary(
             "order_minutes": omin,
             "billed_minutes": tmin + omin,
             "billed_hours": round((tmin + omin) / 60, 2),
-            "mrr": mrr,
         })
 
     return {
@@ -113,6 +98,5 @@ async def billing_summary(
             "order_minutes": tot_order,
             "billed_minutes": tot_ticket + tot_order,
             "billed_hours": round((tot_ticket + tot_order) / 60, 2),
-            "mrr": tot_mrr,
         },
     }

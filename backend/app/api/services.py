@@ -96,14 +96,29 @@ async def create_service(
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    if not body.name.strip():
+    name = body.name.strip()
+    if not name:
         raise HTTPException(400, "Namn krävs")
-    exists = await db.scalar(select(Service).where(Service.name == body.name.strip()))
+    itype = _norm_integration(body.integration_type)
+    exists = await db.scalar(select(Service).where(Service.name == name))
     if exists:
-        raise HTTPException(400, "En tjänst med det namnet finns redan")
+        # En tidigare borttagen (inaktiverad) tjänst med samma namn återaktiveras
+        # och uppdateras — annars blockerar unik-nyckeln att man skapar den igen.
+        if exists.is_active:
+            raise HTTPException(400, "En tjänst med det namnet finns redan")
+        exists.description = body.description
+        exists.icon = body.icon
+        exists.color = body.color
+        exists.monthly_price = body.monthly_price
+        exists.integration_type = itype
+        exists.is_active = True
+        await log_action(db, admin, "service.create", "service", exists.id, f"Återaktiverade tjänst {name}")
+        await db.commit()
+        await db.refresh(exists)
+        return _service_dict(exists)
     s = Service(**body.model_dump())
-    s.name = body.name.strip()
-    s.integration_type = _norm_integration(body.integration_type)
+    s.name = name
+    s.integration_type = itype
     db.add(s)
     await db.flush()
     await log_action(db, admin, "service.create", "service", s.id, f"Skapade tjänst {s.name}")
