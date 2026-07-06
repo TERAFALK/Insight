@@ -18,13 +18,14 @@ from app.core.time_utils import now_stockholm
 from app.db.database import get_db
 from app.db.models import (
     Customer,
-    CustomerService,
+    CustomerServiceArticle,
     IntegrationCredential,
     Report,
-    Service,
+    ServiceArticle,
     Ticket,
     User,
 )
+from app.api.services import _monthly_value
 from app.integrations.registry import get_client
 
 router = APIRouter()
@@ -270,55 +271,48 @@ async def admin_dashboard(
         )
     ) or 0
 
-    # Effektivt pris = kundens override om satt, annars katalogpris
-    eff_price = func.coalesce(CustomerService.price, Service.monthly_price)
-
-    # Tjänsteadoption + intäkt per tjänst (endast aktiva tilldelningar)
-    svc_rows = (await db.execute(
-        select(
-            Service.name, Service.icon, Service.color,
-            func.count(CustomerService.id),
-            func.coalesce(func.sum(eff_price), 0),
+    # Artikelbaserad MRR (informativt): normaliserat månadsvärde per aktiv avtalsrad.
+    # Aggregeras i Python för att matcha _monthly_value (MSRP ÷ cykel × antal).
+    assign_rows = await db.scalars(
+        select(CustomerServiceArticle)
+        .where(CustomerServiceArticle.status == "active")
+        .options(
+            selectinload(CustomerServiceArticle.article).selectinload(ServiceArticle.service),
+            selectinload(CustomerServiceArticle.customer),
         )
-        .select_from(Service)
-        .join(
-            CustomerService,
-            (CustomerService.service_id == Service.id) & (CustomerService.status == "active"),
-            isouter=True,
-        )
-        .where(Service.is_active == True)
-        .group_by(Service.id, Service.name, Service.icon, Service.color)
-        .order_by(Service.position, Service.name)
-    )).all()
-    service_adoption = [
-        {"name": name, "icon": icon, "color": color, "count": count, "mrr": int(mrr or 0)}
-        for name, icon, color, count, mrr in svc_rows
-    ]
+    )
+    assignments = assign_rows.all()
 
-    active_services_total = await db.scalar(
-        select(func.count()).select_from(CustomerService).where(CustomerService.status == "active")
-    ) or 0
+    per_service: dict[str, dict] = {}
+    per_customer: dict[str, dict] = {}
+    mrr_total = 0
+    for a in assignments:
+        art = a.article
+        svc = art.service if art else None
+        if not svc:
+            continue
+        val = _monthly_value(art, a.quantity)
+        mrr_total += val
+        ps = per_service.setdefault(svc.id, {
+            "name": svc.name, "icon": svc.icon, "color": svc.color, "customers": set(), "mrr": 0,
+        })
+        ps["customers"].add(a.customer_id)
+        ps["mrr"] += val
+        pc = per_customer.setdefault(a.customer_id, {
+            "name": a.customer.name if a.customer else "—", "mrr": 0,
+        })
+        pc["mrr"] += val
 
-    # Total MRR
-    mrr_total = await db.scalar(
-        select(func.coalesce(func.sum(eff_price), 0))
-        .select_from(CustomerService)
-        .join(Service, Service.id == CustomerService.service_id)
-        .where(CustomerService.status == "active")
-    ) or 0
-
-    # Topp-kunder efter MRR
-    top_rows = (await db.execute(
-        select(Customer.id, Customer.name, func.coalesce(func.sum(eff_price), 0).label("mrr"))
-        .select_from(CustomerService)
-        .join(Service, Service.id == CustomerService.service_id)
-        .join(Customer, Customer.id == CustomerService.customer_id)
-        .where(CustomerService.status == "active")
-        .group_by(Customer.id, Customer.name)
-        .order_by(func.coalesce(func.sum(eff_price), 0).desc())
-        .limit(6)
-    )).all()
-    top_customers = [{"id": cid, "name": name, "mrr": int(mrr or 0)} for cid, name, mrr in top_rows]
+    service_adoption = sorted(
+        [{"name": v["name"], "icon": v["icon"], "color": v["color"],
+          "count": len(v["customers"]), "mrr": v["mrr"]} for v in per_service.values()],
+        key=lambda x: (-x["mrr"], x["name"]),
+    )
+    active_services_total = len(assignments)
+    top_customers = sorted(
+        [{"id": cid, "name": v["name"], "mrr": v["mrr"]} for cid, v in per_customer.items()],
+        key=lambda x: -x["mrr"],
+    )[:6]
 
     return {
         "tickets": {
@@ -376,28 +370,40 @@ async def customer_dashboard(
         )
     )).all())
 
-    # Tjänster (alla tilldelade, med status)
-    svc_rows = await db.scalars(
-        select(CustomerService)
-        .where(CustomerService.customer_id == cid)
-        .options(selectinload(CustomerService.service))
+    # Tjänster grupperade från kundens artiklar. En tjänst är aktiv om den har
+    # minst en aktiv artikel.
+    art_rows = await db.scalars(
+        select(CustomerServiceArticle)
+        .where(CustomerServiceArticle.customer_id == cid)
+        .options(selectinload(CustomerServiceArticle.article).selectinload(ServiceArticle.service))
     )
-    services = []
-    for cs in svc_rows.all():
-        svc = cs.service
-        itype = svc.integration_type if svc else None
-        services.append({
-            "id": cs.id,
-            "name": svc.name if svc else "—",
-            "icon": svc.icon if svc else "ti-shield-check",
-            "color": svc.color if svc else "#0047A3",
-            "description": svc.description if svc else "",
-            "status": cs.status,
-            "integration_type": itype,
-            # True om tjänsten har en datakälla som är verifierad för kunden
-            "integration_ok": bool(itype and itype in verified_types),
+    svc_map: dict[str, dict] = {}
+    for csa in art_rows.all():
+        art = csa.article
+        svc = art.service if art else None
+        if not svc:
+            continue
+        entry = svc_map.setdefault(svc.id, {
+            "id": svc.id,
+            "name": svc.name,
+            "icon": svc.icon,
+            "color": svc.color,
+            "description": svc.description,
+            "integration_type": svc.integration_type,
+            "integration_ok": bool(svc.integration_type and svc.integration_type in verified_types),
+            "status": "ended",
+            "articles": [],
         })
-    services.sort(key=lambda s: (s["status"] != "active", s["name"]))
+        entry["articles"].append({
+            "name": art.name,
+            "quantity": csa.quantity,
+            "status": csa.status,
+        })
+        if csa.status == "active":
+            entry["status"] = "active"
+        elif csa.status == "paused" and entry["status"] != "active":
+            entry["status"] = "paused"
+    services = sorted(svc_map.values(), key=lambda s: (s["status"] != "active", s["name"]))
 
     # Drift-hälsa från cache (ingen live-hämtning här)
     health = {}

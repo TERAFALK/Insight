@@ -165,8 +165,8 @@ async def _seed_ticket_defaults() -> None:
 
 
 async def _seed_services() -> None:
-    """Seeda tjänstekatalogen med standardtjänster om den är tom."""
-    from app.db.models import Service
+    """Seeda tjänstekatalogen med kategorier + exempelartiklar om den är tom."""
+    from app.db.models import Service, ServiceArticle
     from sqlalchemy import select, func as sqlfunc
     import uuid as _uuid_mod
 
@@ -174,19 +174,30 @@ async def _seed_services() -> None:
         count = await session.scalar(select(sqlfunc.count()).select_from(Service))
         if count and count > 0:
             return
+        # (name, description, icon, color, integration_type, [artiklar])
+        # artikel = (variantnamn, artikelnr, cykel_månader, msrp)
         defaults = [
-            # name, description, icon, color, monthly_price, integration_type
-            ("Managed Network", "Övervakning, patchning och drift av nätverk (UniFi m.m.)", "ti-router", "#0047A3", 2500, "unifi"),
-            ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED", 1500, None),
-            ("Managed Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9", 1900, "microsoft"),
-            ("Managed Endpoint", "Övervakning och säkerhet för klienter/servrar", "ti-device-desktop", "#16A34A", 1200, None),
+            ("Managed Network", "Övervakning, patchning och drift av nätverk (UniFi m.m.)", "ti-router", "#0047A3", "unifi", [
+                ("Small Site", "TFS-000006", 1, 890),
+                ("Per Device", "TFS-000007", 1, 89),
+                ("Small Site", "TFS-000008", 12, 10680),
+                ("Per Device", "TFS-000009", 12, 1068),
+            ]),
+            ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED", None, []),
+            ("Managed Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9", "microsoft", []),
+            ("Managed Endpoint", "Övervakning och säkerhet för klienter/servrar", "ti-device-desktop", "#16A34A", None, []),
         ]
-        for pos, (name, desc, icon, color, price, itype) in enumerate(defaults):
+        for pos, (name, desc, icon, color, itype, articles) in enumerate(defaults):
+            sid = str(_uuid_mod.uuid4())
             session.add(Service(
-                id=str(_uuid_mod.uuid4()),
-                name=name, description=desc, icon=icon, color=color, position=pos,
-                monthly_price=price, integration_type=itype,
+                id=sid, name=name, description=desc, icon=icon, color=color, position=pos,
+                integration_type=itype,
             ))
+            for apos, (aname, anum, cycle, msrp) in enumerate(articles):
+                session.add(ServiceArticle(
+                    id=str(_uuid_mod.uuid4()), service_id=sid, name=aname,
+                    article_number=anum, billing_cycle_months=cycle, msrp=msrp, position=apos,
+                ))
         await session.commit()
 
 

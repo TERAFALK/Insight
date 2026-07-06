@@ -13,7 +13,8 @@ from app.core.integration_cache import get_cached, refresh_in_background, set_ca
 from app.core.security import encrypt
 from app.core.time_utils import now_stockholm
 from app.db.database import get_db
-from app.db.models import Customer, CustomerContact, CustomerService, IntegrationCredential, Ticket, User
+from app.db.models import Customer, CustomerContact, CustomerServiceArticle, IntegrationCredential, ServiceArticle, Ticket, User
+from app.api.services import _monthly_value
 from app.integrations.registry import INTEGRATIONS, get_client
 
 router = APIRouter()
@@ -55,6 +56,16 @@ class ContactUpdate(BaseModel):
     password: str | None = None  # set to change portal password
 
 
+def _active_service_summary(service_articles) -> list[dict]:
+    """Distinkta tjänster (kategorier) där kunden har minst en aktiv artikel."""
+    seen = {}
+    for csa in service_articles:
+        svc = csa.article.service if csa.article else None
+        if csa.status == "active" and svc and svc.id not in seen:
+            seen[svc.id] = {"id": svc.id, "name": svc.name, "icon": svc.icon, "color": svc.color}
+    return sorted(seen.values(), key=lambda s: s["name"])
+
+
 def _contact_dict(c: "CustomerContact") -> dict:
     return {
         "id": c.id, "name": c.name, "email": c.email, "phone": c.phone, "title": c.title,
@@ -84,7 +95,7 @@ async def list_customers(
         .where(Customer.is_active == True)
         .options(
             selectinload(Customer.credentials),
-            selectinload(Customer.services).selectinload(CustomerService.service),
+            selectinload(Customer.service_articles).selectinload(CustomerServiceArticle.article).selectinload(ServiceArticle.service),
         )
         .order_by(Customer.name)
         .offset(skip)
@@ -97,12 +108,13 @@ async def list_customers(
     for c in rows.all():
         verified = {cr.integration_type for cr in c.credentials if cr.is_verified}
         configured = {cr.integration_type for cr in c.credentials}
-        active_services = [
-            {"name": cs.service.name, "icon": cs.service.icon, "color": cs.service.color}
-            for cs in c.services
-            if cs.status == "active" and cs.service
-        ]
-        active_services.sort(key=lambda s: s["name"])
+        # Distinkta aktiva tjänster (härledda ur artiklarna kunden har)
+        active_svc_map = {}
+        for csa in c.service_articles:
+            svc = csa.article.service if csa.article else None
+            if csa.status == "active" and svc:
+                active_svc_map[svc.id] = {"name": svc.name, "icon": svc.icon, "color": svc.color}
+        active_services = sorted(active_svc_map.values(), key=lambda s: s["name"])
         result.append({
             "id": c.id,
             "name": c.name,
@@ -153,7 +165,7 @@ async def get_customer(
         .options(
             selectinload(Customer.credentials),
             selectinload(Customer.reports),
-            selectinload(Customer.services).selectinload(CustomerService.service),
+            selectinload(Customer.service_articles).selectinload(CustomerServiceArticle.article).selectinload(ServiceArticle.service),
         )
     )
     if not c:
@@ -188,26 +200,12 @@ async def get_customer(
         "report_frequency": c.report_frequency,
         "report_day": c.report_day,
         "integrations": integrations_status,
-        "services": [
-            {
-                "id": cs.id,
-                "service_id": cs.service_id,
-                "name": cs.service.name if cs.service else "—",
-                "icon": cs.service.icon if cs.service else "ti-shield-check",
-                "color": cs.service.color if cs.service else "#0047A3",
-                "description": cs.service.description if cs.service else "",
-                "status": cs.status,
-                "start_date": cs.start_date.isoformat() if cs.start_date else None,
-                "notes": cs.notes,
-                "price": cs.price,
-                "effective_price": cs.price if cs.price is not None else (cs.service.monthly_price if cs.service else 0),
-                "integration_type": cs.service.integration_type if cs.service else None,
-            }
-            for cs in sorted(c.services, key=lambda x: (x.status != "active", x.service.name if x.service else ""))
-        ],
+        # Sammanfattning av aktiva tjänster (härledda ur artiklarna) för hero/underrubrik.
+        # Full artikel-lista hämtas separat via /api/services/customer/{id}.
+        "services": _active_service_summary(c.service_articles),
         "mrr": sum(
-            (cs.price if cs.price is not None else (cs.service.monthly_price if cs.service else 0))
-            for cs in c.services if cs.status == "active"
+            _monthly_value(csa.article, csa.quantity)
+            for csa in c.service_articles if csa.status == "active" and csa.article
         ),
         "recent_reports": [
             {

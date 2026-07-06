@@ -53,13 +53,13 @@ class Customer(Base):
     contacts: Mapped[list["CustomerContact"]] = relationship(
         back_populates="customer", cascade="all, delete-orphan"
     )
-    services: Mapped[list["CustomerService"]] = relationship(
+    service_articles: Mapped[list["CustomerServiceArticle"]] = relationship(
         back_populates="customer", cascade="all, delete-orphan"
     )
 
 
 class Service(Base):
-    """Katalogpost för en säljbar tjänst (t.ex. Managed Network)."""
+    """Tjänstekategori (t.ex. Managed Network) — innehåller säljbara artiklar."""
 
     __tablename__ = "services"
 
@@ -68,36 +68,57 @@ class Service(Base):
     description: Mapped[str] = mapped_column(String, default="", server_default="")
     icon: Mapped[str] = mapped_column(String, default="ti-shield-check", server_default="ti-shield-check")
     color: Mapped[str] = mapped_column(String, default="#0047A3", server_default="#0047A3")
-    # Standardpris per månad (SEK). Kan överskridas per kund i CustomerService.price.
-    monthly_price: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # Valfri koppling till en integrationstyp (t.ex. "unifi") → live-hälsa på tjänstekortet.
     integration_type: Mapped[str | None] = mapped_column(String, nullable=True)
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
+    articles: Mapped[list["ServiceArticle"]] = relationship(
+        back_populates="service", cascade="all, delete-orphan"
+    )
 
-class CustomerService(Base):
-    """Tilldelning av en katalogtjänst till en kund (avtalsrad)."""
 
-    __tablename__ = "customer_services"
+class ServiceArticle(Base):
+    """Säljbar artikel/rad under en tjänst (t.ex. Small Site / Per Device)."""
+
+    __tablename__ = "service_articles"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    service_id: Mapped[str] = mapped_column(
+        String, ForeignKey("services.id"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String, nullable=False)          # variantnamn, t.ex. "Per Device"
+    article_number: Mapped[str] = mapped_column(String, default="", server_default="")  # anges manuellt
+    billing_cycle_months: Mapped[int] = mapped_column(Integer, default=1, server_default="1")  # 1 | 12 ...
+    msrp: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # pris till kund (SEK)
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    service: Mapped["Service"] = relationship(back_populates="articles")
+
+
+class CustomerServiceArticle(Base):
+    """En artikel tilldelad en kund (avtalsrad) — antal, startdatum, status."""
+
+    __tablename__ = "customer_service_articles"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     customer_id: Mapped[str] = mapped_column(
         String, ForeignKey("customers.id"), nullable=False, index=True
     )
-    service_id: Mapped[str] = mapped_column(
-        String, ForeignKey("services.id"), nullable=False, index=True
+    article_id: Mapped[str] = mapped_column(
+        String, ForeignKey("service_articles.id"), nullable=False, index=True
     )
+    quantity: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     status: Mapped[str] = mapped_column(String, default="active", server_default="active")  # active|paused|ended
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="", server_default="")
-    # Prisöverskrivning per kund (SEK/mån). NULL = använd Service.monthly_price.
-    price: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
-    customer: Mapped["Customer"] = relationship(back_populates="services")
-    service: Mapped["Service"] = relationship()
+    customer: Mapped["Customer"] = relationship(back_populates="service_articles")
+    article: Mapped["ServiceArticle"] = relationship()
 
 
 class CustomerContact(Base):

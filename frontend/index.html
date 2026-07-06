@@ -301,6 +301,9 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 .svc-mini i{font-size:12px}
 .svc-price{font-size:12px;font-weight:700;color:var(--text)}
 .svc-price small{font-weight:500;color:var(--muted)}
+.svc-cat-tbl thead th{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.svc-cust-card.off{opacity:.72}
+.svc-cust-card .ch{background:var(--tint)}
 
 /* ── Notiser (klocka) ── */
 .notif-wrap{position:relative}
@@ -1140,7 +1143,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="cd-tab-pane" id="cd-pane-services">
         <div class="ph" style="margin-bottom:16px">
           <div><div class="ph-title" style="font-size:16px">Tjänster på avtal</div><div class="ph-sub">Managed-tjänster kunden har hos oss</div></div>
-          <button class="btn btn-p btn-sm" id="cd-add-service-btn" style="display:none" onclick="openAssignServiceModal()"><i class="ti ti-plus"></i> Lägg till tjänst</button>
+          <button class="btn btn-p btn-sm" id="cd-add-service-btn" style="display:none" onclick="openAssignServiceModal()"><i class="ti ti-plus"></i> Lägg till artikel</button>
         </div>
         <div id="cd-services-list"><div class="skel" style="padding:32px">Laddar tjänster...</div></div>
       </div>
@@ -1452,31 +1455,36 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
             </div>
           </div>
 
-          <!-- Tjänster (katalog) -->
+          <!-- Tjänster (katalog: tjänst → artiklar) -->
           <div id="stab-services" style="display:none">
-            <div class="fsec" style="margin-top:0">Tjänstekatalog</div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Tjänster du säljer (t.ex. Managed Network). Koppla dem sedan på varje kund under Kund → Tjänster.</div>
-            <div id="s-services-list" style="margin-bottom:16px"></div>
-            <div class="fsec" id="svc-form-title">Ny tjänst</div>
-            <input type="hidden" id="svc-edit-id">
-            <div class="f2">
-              <div class="fr" style="margin:0"><label class="fl">Namn</label><input class="fi" id="svc-name" placeholder="t.ex. Managed Firewall"></div>
-              <div class="fr" style="margin:0"><label class="fl">Ikon (Tabler)</label><input class="fi" id="svc-icon" placeholder="ti-shield-check" value="ti-shield-check"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px">
+              <div class="fsec" style="margin:0">Tjänstekatalog</div>
+              <button class="btn btn-p btn-sm" onclick="openServiceForm()"><i class="ti ti-plus"></i> Ny tjänst</button>
             </div>
-            <div class="f2" style="margin-top:12px">
-              <div class="fr" style="margin:0"><label class="fl">Färg</label><input class="fi" id="svc-color" type="color" value="#0047A3" style="height:40px;padding:4px"></div>
-              <div class="fr" style="margin:0"><label class="fl">Pris (kr/mån)</label><input class="fi" id="svc-price" type="number" min="0" step="100" value="0"></div>
-            </div>
-            <div class="f2" style="margin-top:12px">
-              <div class="fr" style="margin:0"><label class="fl">Datakälla (integration)</label>
-                <select class="fi" id="svc-integration"><option value="">— ingen —</option></select>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:14px">En tjänst (t.ex. Managed Network) innehåller artiklar (Small Site, Per Device …) som du lägger på kunder. Tjänsten aktiveras när kunden får minst en artikel.</div>
+
+            <!-- Skapa/redigera tjänst (kategori) -->
+            <div id="svc-form" style="display:none;border:1px solid var(--border-s);border-radius:var(--rl);padding:16px;margin-bottom:18px;background:var(--tint)">
+              <div class="fsec" id="svc-form-title" style="margin-top:0">Ny tjänst</div>
+              <input type="hidden" id="svc-edit-id">
+              <div class="f2">
+                <div class="fr" style="margin:0"><label class="fl">Namn</label><input class="fi" id="svc-name" placeholder="t.ex. Managed Network"></div>
+                <div class="fr" style="margin:0"><label class="fl">Ikon (Tabler)</label><input class="fi" id="svc-icon" placeholder="ti-shield-check" value="ti-shield-check"></div>
               </div>
-              <div class="fr" style="margin:0"><label class="fl">Beskrivning</label><input class="fi" id="svc-desc" placeholder="Kort beskrivning"></div>
+              <div class="f2" style="margin-top:12px">
+                <div class="fr" style="margin:0"><label class="fl">Färg</label><input class="fi" id="svc-color" type="color" value="#0047A3" style="height:40px;padding:4px"></div>
+                <div class="fr" style="margin:0"><label class="fl">Datakälla (integration)</label>
+                  <select class="fi" id="svc-integration"><option value="">— ingen —</option></select>
+                </div>
+              </div>
+              <div class="fr" style="margin-top:12px"><label class="fl">Beskrivning</label><input class="fi" id="svc-desc" placeholder="Kort beskrivning"></div>
+              <div style="display:flex;gap:8px;margin-top:14px">
+                <button class="btn btn-p btn-sm" id="svc-save-btn" onclick="saveService()"><i class="ti ti-check"></i> Spara tjänst</button>
+                <button class="btn btn-g btn-sm" onclick="cancelEditService()">Avbryt</button>
+              </div>
             </div>
-            <div style="display:flex;gap:8px;margin-top:14px">
-              <button class="btn btn-p btn-sm" id="svc-save-btn" onclick="saveService()"><i class="ti ti-plus"></i> Lägg till tjänst</button>
-              <button class="btn btn-g btn-sm" id="svc-cancel-btn" onclick="cancelEditService()" style="display:none">Avbryt</button>
-            </div>
+
+            <div id="s-services-list"></div>
           </div>
 
           <!-- Ärenden -->
@@ -2013,33 +2021,70 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
   </div>
 </div>
 
-<!-- Modal: Tjänst på kund -->
+<!-- Modal: Artikel på kund (avtalsrad) -->
 <div id="modal-service" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-service')">
-  <div style="background:#fff;border-radius:12px;padding:28px;width:440px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="font-size:16px;font-weight:700" id="ms-title">Lägg till tjänst</div>
+      <div style="font-size:16px;font-weight:700" id="ms-title">Lägg till artikel</div>
       <button class="btn btn-g btn-sm btn-ico" onclick="closeModal('modal-service')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="fr" style="margin:0 0 14px"><label class="fl">Tjänst</label>
-      <select class="fi" id="ms-service"></select></div>
     <div class="f2">
-      <div class="fr" style="margin:0"><label class="fl">Status</label>
-        <select class="fi" id="ms-status">
-          <option value="active">Aktiv</option>
-          <option value="paused">Pausad</option>
-          <option value="ended">Avslutad</option>
-        </select></div>
-      <div class="fr" style="margin:0"><label class="fl">Startdatum</label>
-        <input class="fi" id="ms-start" type="date"></div>
+      <div class="fr" style="margin:0"><label class="fl">Tjänst</label>
+        <select class="fi" id="ms-service" onchange="onMsServiceChange()"></select></div>
+      <div class="fr" style="margin:0"><label class="fl">Artikel</label>
+        <select class="fi" id="ms-article" onchange="onMsArticleChange()"></select></div>
     </div>
-    <div class="fr" style="margin-top:14px"><label class="fl">Pris (kr/mån) <span style="font-weight:400;color:var(--muted)">— tomt = standardpris</span></label>
-      <input class="fi" id="ms-price" type="number" min="0" step="100" placeholder="Standardpris"></div>
+    <div class="f2" style="margin-top:14px">
+      <div class="fr" style="margin:0"><label class="fl">Antal</label>
+        <input class="fi" id="ms-qty" type="number" min="1" value="1" oninput="onMsArticleChange()"></div>
+      <div class="fr" style="margin:0"><label class="fl">Startdatum</label>
+        <input class="fi" id="ms-start" type="date" oninput="onMsArticleChange()"></div>
+    </div>
+    <div id="ms-term-preview" style="font-size:12px;color:var(--sub);margin-top:10px;padding:8px 12px;background:var(--tint);border-radius:var(--r);display:none"></div>
+    <div class="fr" style="margin-top:14px"><label class="fl">Status</label>
+      <select class="fi" id="ms-status">
+        <option value="active">Aktiv</option>
+        <option value="paused">Pausad</option>
+        <option value="ended">Avslutad</option>
+      </select></div>
     <div class="fr" style="margin-top:14px"><label class="fl">Notering</label>
       <textarea class="fi" id="ms-notes" rows="2" placeholder="Valfri intern notering"></textarea></div>
     <input type="hidden" id="ms-assignment-id">
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
       <button class="btn btn-g" onclick="closeModal('modal-service')">Avbryt</button>
       <button class="btn btn-p" onclick="saveCustomerService()"><i class="ti ti-check"></i> Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Artikel i katalog (skapa/redigera) -->
+<div id="modal-article" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-article')">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:440px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:16px;font-weight:700" id="ma-title">Ny artikel</div>
+      <button class="btn btn-g btn-sm btn-ico" onclick="closeModal('modal-article')"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="ma-service-label"></div>
+    <div class="f2">
+      <div class="fr" style="margin:0"><label class="fl">Artikelnamn</label><input class="fi" id="ma-name" placeholder="t.ex. Per Device"></div>
+      <div class="fr" style="margin:0"><label class="fl">Artikelnummer</label><input class="fi" id="ma-number" placeholder="TFS-000001"></div>
+    </div>
+    <div class="f2" style="margin-top:14px">
+      <div class="fr" style="margin:0"><label class="fl">Faktureringscykel</label>
+        <select class="fi" id="ma-cycle">
+          <option value="1">1 månad</option>
+          <option value="3">3 månader</option>
+          <option value="12">12 månader</option>
+          <option value="24">24 månader</option>
+          <option value="36">36 månader</option>
+        </select></div>
+      <div class="fr" style="margin:0"><label class="fl">MSRP (kr)</label><input class="fi" id="ma-msrp" type="number" min="0" step="10" value="0"></div>
+    </div>
+    <input type="hidden" id="ma-edit-id">
+    <input type="hidden" id="ma-service-id">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-g" onclick="closeModal('modal-article')">Avbryt</button>
+      <button class="btn btn-p" onclick="saveArticle()"><i class="ti ti-check"></i> Spara</button>
     </div>
   </div>
 </div>
@@ -2873,6 +2918,9 @@ async function loadCustomerDashboard(gen) {
       const badge = on ? '<span class="b b-ok">Aktiv</span>'
         : s.status === 'paused' ? '<span class="b b-warn">Pausad</span>'
         : '<span class="b b-muted">Avslutad</span>';
+      const arts = (s.articles || []).filter(a => a.status === 'active');
+      const artLine = arts.length
+        ? `<div style="font-size:11px;color:var(--sub);margin-top:6px">${arts.map(a => `${a.quantity}× ${escapeHtml(a.name)}`).join(' · ')}</div>` : '';
       return `<div class="svc-card ${on?'on':'off'}">
         <div class="svc-ico" style="background:${s.color}"><i class="ti ${s.icon}"></i></div>
         <div style="flex:1;min-width:0">
@@ -2880,6 +2928,7 @@ async function loadCustomerDashboard(gen) {
             <span style="font-weight:700;font-size:14px">${escapeHtml(s.name)}</span>${badge}
           </div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${escapeHtml(s.description||'')}</div>
+          ${artLine}
           ${_svcHealthLine(s)}
         </div>
       </div>`;
@@ -4367,6 +4416,22 @@ const SVC_STATUS = {
   ended:  { label: 'Avslutad', cls: 'st-ended' },
 };
 
+let _custArticlesCache = [];
+
+// Beräknar avtalstid/förnyelse-text + badge från start/slut.
+function _termInfo(startISO, endISO) {
+  if (!startISO) return { text: '', badge: '' };
+  let text = 'Start ' + startISO;
+  let badge = '';
+  if (endISO) {
+    text += ' · förnyas ' + endISO;
+    const days = Math.ceil((new Date(endISO + 'T00:00:00') - new Date()) / 86400000);
+    if (days < 0) badge = '<span class="b b-err" style="margin-left:6px">Utgången</span>';
+    else if (days <= 30) badge = `<span class="b b-warn" style="margin-left:6px">Förnyas om ${days} d</span>`;
+  }
+  return { text, badge };
+}
+
 async function loadCustomerServices(customerId) {
   const el = document.getElementById('cd-services-list');
   if (!el) return;
@@ -4377,108 +4442,161 @@ async function loadCustomerServices(customerId) {
   try {
     await _ensureIntegrations();
     const items = await api('/api/services/customer/' + customerId);
+    _custArticlesCache = items;
     if (!items.length) {
-      el.innerHTML = `<div class="empty"><i class="ti ti-package-off"></i>Inga tjänster kopplade${isAdmin?' — klicka "Lägg till tjänst".':'.'}</div>`;
+      el.innerHTML = `<div class="empty"><i class="ti ti-package-off"></i>Inga tjänster kopplade${isAdmin?' — klicka "Lägg till artikel".':'.'}</div>`;
       return;
     }
-    el.innerHTML = `<div class="svc-grid">` + items.map(s => {
-      const st = SVC_STATUS[s.status] || SVC_STATUS.active;
-      const on = s.status === 'active';
-      const meta = [
-        s.start_date ? `Sedan ${s.start_date}` : '',
-        s.notes ? escapeHtml(s.notes) : '',
-      ].filter(Boolean).join(' · ');
-      const price = s.effective_price
-        ? `<span class="svc-price">${fmtSek(s.effective_price)}<small>/mån</small>${s.price!=null?' <i class="ti ti-pencil" style="font-size:11px" title="Anpassat pris"></i>':''}</span>`
-        : '';
+    // Gruppera artiklar per tjänst
+    const groups = {};
+    items.forEach(it => {
+      const g = groups[it.service_id] || (groups[it.service_id] = { svc: it, articles: [], active: false });
+      g.articles.push(it);
+      if (it.status === 'active') g.active = true;
+    });
+    el.innerHTML = Object.values(groups).map(g => {
+      const s = g.svc;
       const intg = s.integration_type
-        ? `<div style="font-size:11px;color:var(--muted);margin-top:4px"><i class="ti ti-plug" style="font-size:12px"></i> Datakälla: ${escapeHtml(_intName(s.integration_type))}</div>` : '';
-      const admin = isAdmin ? `<div style="display:flex;gap:6px;margin-top:10px">
-          <button class="btn btn-g btn-sm" onclick="openAssignServiceModal('${s.id}')"><i class="ti ti-edit"></i></button>
-          <button class="btn btn-danger btn-sm" onclick="removeCustomerService('${s.id}')"><i class="ti ti-trash"></i></button>
-        </div>` : '';
-      return `<div class="svc-card ${on?'on':'off'}">
-        <div class="svc-ico" style="background:${s.color}"><i class="ti ${s.icon}"></i></div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-            <span style="font-weight:700;font-size:14px">${escapeHtml(s.name)}</span>
-            <span class="svc-chip ${st.cls}">${st.label}</span>
-          </div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${escapeHtml(s.description||'')}</div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap">${price}${meta?`<span style="font-size:11px;color:var(--sub)">${meta}</span>`:''}</div>
-          ${intg}
-          ${admin}
+        ? `<span class="b b-muted" style="font-weight:500"><i class="ti ti-plug" style="font-size:11px"></i> ${escapeHtml(_intName(s.integration_type))}</span>` : '';
+      const rows = g.articles.map(a => {
+        const st = SVC_STATUS[a.status] || SVC_STATUS.active;
+        const term = _termInfo(a.start_date, a.end_date);
+        return `<tr>
+          <td data-label="Artikel"><strong>${escapeHtml(a.article_name)}</strong>${a.article_number?` <span style="font-family:monospace;font-size:11px;color:var(--muted)">${escapeHtml(a.article_number)}</span>`:''}</td>
+          <td data-label="Antal" style="text-align:right">${a.quantity}×</td>
+          <td data-label="Cykel">${_cycleLabel(a.billing_cycle_months)}</td>
+          <td data-label="Avtalstid" style="font-size:12px">${term.text || '—'}${term.badge}</td>
+          <td data-label="Status"><span class="svc-chip ${st.cls}">${st.label}</span></td>
+          ${isAdmin ? `<td data-label="" style="text-align:right;white-space:nowrap">
+            <button class="btn btn-g btn-sm btn-ico" onclick="openAssignServiceModal('${a.id}')" title="Ändra"><i class="ti ti-edit"></i></button>
+            <button class="btn btn-danger btn-sm btn-ico" onclick="removeCustomerService('${a.id}')" title="Ta bort"><i class="ti ti-trash"></i></button>
+          </td>` : ''}
+        </tr>`;
+      }).join('');
+      return `<div class="card svc-cust-card ${g.active ? 'on' : 'off'}">
+        <div class="ch">
+          <span class="cht" style="display:flex;align-items:center;gap:10px">
+            <span class="svc-ico" style="width:30px;height:30px;font-size:15px;border-radius:7px;background:${s.color}"><i class="ti ${s.icon}"></i></span>
+            ${escapeHtml(s.service_name)}
+            ${g.active ? '<span class="b b-ok">Aktiv</span>' : '<span class="b b-muted">Inaktiv</span>'}
+            ${intg}
+          </span>
+        </div>
+        <div class="cb0">
+          <table class="tbl">
+            <thead><tr><th>Artikel</th><th style="text-align:right">Antal</th><th>Cykel</th><th>Avtalstid</th><th>Status</th>${isAdmin?'<th style="width:90px"></th>':''}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
         </div>
       </div>`;
-    }).join('') + `</div>`;
+    }).join('');
   } catch (e) {
     el.innerHTML = `<div class="empty"><i class="ti ti-alert-circle"></i>${escapeHtml(e.message)}</div>`;
   }
 }
 
+// Fyll tjänst→artikel-kaskaden i modalen
+function onMsServiceChange() {
+  const svcSel = document.getElementById('ms-service');
+  const artSel = document.getElementById('ms-article');
+  const svc = _serviceCatalog.find(s => s.id === svcSel.value);
+  const takenIds = new Set(_custArticlesCache.map(x => x.article_id));
+  const arts = (svc?.articles || []).filter(a => !takenIds.has(a.id));
+  if (!arts.length) {
+    artSel.innerHTML = `<option value="">— inga lediga artiklar —</option>`;
+  } else {
+    artSel.innerHTML = arts.map(a => `<option value="${a.id}">${escapeHtml(a.name)} · ${_cycleLabel(a.billing_cycle_months)} · ${fmtSek(a.msrp)}</option>`).join('');
+  }
+  onMsArticleChange();
+}
+
+function _articleById(id) {
+  for (const s of _serviceCatalog) {
+    const a = (s.articles || []).find(x => x.id === id);
+    if (a) return a;
+  }
+  return null;
+}
+
+function onMsArticleChange() {
+  const art = _articleById(document.getElementById('ms-article').value);
+  const start = document.getElementById('ms-start').value;
+  const prev = document.getElementById('ms-term-preview');
+  if (art && start) {
+    const d = new Date(start + 'T00:00:00');
+    const end = new Date(d); end.setMonth(end.getMonth() + art.billing_cycle_months);
+    const endISO = end.toISOString().slice(0, 10);
+    const qty = parseInt(document.getElementById('ms-qty').value, 10) || 1;
+    const val = Math.round(art.msrp / art.billing_cycle_months) * qty;
+    prev.style.display = '';
+    prev.innerHTML = `<i class="ti ti-calendar-event"></i> Avtal ${start} → <strong>förnyas ${endISO}</strong> · ~${fmtSek(val)}/mån (informativt)`;
+  } else {
+    prev.style.display = 'none';
+  }
+}
+
 async function openAssignServiceModal(assignmentId) {
-  // Ladda katalog + kundens befintliga tjänster
-  let existing = [];
   try {
-    [_serviceCatalog, existing] = await Promise.all([
+    [_serviceCatalog, _custArticlesCache] = await Promise.all([
       api('/api/services'),
       api('/api/services/customer/' + currentCustomerId),
     ]);
   } catch (e) { t(e.message, 'err'); return; }
 
-  const edit = assignmentId ? existing.find(x => x.id === assignmentId) : null;
-  const sel = document.getElementById('ms-service');
+  const edit = assignmentId ? _custArticlesCache.find(x => x.id === assignmentId) : null;
+  const svcSel = document.getElementById('ms-service');
+  const artSel = document.getElementById('ms-article');
+  document.getElementById('ms-assignment-id').value = edit ? assignmentId : '';
+  document.getElementById('ms-title').textContent = edit ? 'Ändra artikel' : 'Lägg till artikel';
+
   if (edit) {
-    sel.innerHTML = `<option value="${edit.service_id}">${escapeHtml(edit.name)}</option>`;
-    sel.disabled = true;
+    svcSel.innerHTML = `<option>${escapeHtml(edit.service_name)}</option>`;
+    svcSel.disabled = true;
+    artSel.innerHTML = `<option>${escapeHtml(edit.article_name)}</option>`;
+    artSel.disabled = true;
   } else {
-    const takenIds = new Set(existing.map(x => x.service_id));
-    const options = _serviceCatalog.filter(s => !takenIds.has(s.id));
-    if (!options.length) { t('Kunden har redan alla tjänster i katalogen', 'err'); return; }
-    sel.innerHTML = options.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-    sel.disabled = false;
+    svcSel.disabled = false; artSel.disabled = false;
+    const withArticles = _serviceCatalog.filter(s => (s.articles || []).length);
+    if (!withArticles.length) { t('Skapa minst en artikel i katalogen först (Inställningar → Tjänster)', 'err'); return; }
+    svcSel.innerHTML = withArticles.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
   }
-  document.getElementById('ms-title').textContent = edit ? 'Redigera tjänst' : 'Lägg till tjänst';
+  document.getElementById('ms-qty').value = edit ? edit.quantity : 1;
   document.getElementById('ms-status').value = edit ? edit.status : 'active';
   document.getElementById('ms-start').value = edit ? (edit.start_date || '') : new Date().toISOString().slice(0, 10);
   document.getElementById('ms-notes').value = edit ? (edit.notes || '') : '';
-  document.getElementById('ms-price').value = (edit && edit.price != null) ? edit.price : '';
-  // Visa katalogpris som placeholder
-  const catPrice = edit ? edit.catalog_price : (_serviceCatalog.find(s => s.id === sel.value)?.monthly_price ?? 0);
-  document.getElementById('ms-price').placeholder = 'Standard: ' + fmtSek(catPrice || 0);
-  document.getElementById('ms-assignment-id').value = edit ? assignmentId : '';
+  if (!edit) onMsServiceChange(); else onMsArticleChange();
   openModal('modal-service');
 }
 
 async function saveCustomerService() {
   const assignmentId = document.getElementById('ms-assignment-id').value;
+  const quantity = parseInt(document.getElementById('ms-qty').value, 10) || 1;
   const status = document.getElementById('ms-status').value;
   const start_date = document.getElementById('ms-start').value || null;
   const notes = document.getElementById('ms-notes').value.trim();
-  const priceRaw = document.getElementById('ms-price').value;
-  const price = priceRaw === '' ? null : (parseInt(priceRaw, 10) || 0);
   try {
     if (assignmentId) {
       await api(`/api/services/customer/${currentCustomerId}/${assignmentId}`, {
-        method: 'PUT', body: JSON.stringify({ status, start_date, notes, price }),
+        method: 'PUT', body: JSON.stringify({ quantity, status, start_date, notes }),
       });
     } else {
-      const service_id = document.getElementById('ms-service').value;
+      const article_id = document.getElementById('ms-article').value;
+      if (!article_id) { t('Välj en artikel', 'err'); return; }
       await api('/api/services/customer/' + currentCustomerId, {
-        method: 'POST', body: JSON.stringify({ service_id, status, start_date, notes, price }),
+        method: 'POST', body: JSON.stringify({ article_id, quantity, status, start_date, notes }),
       });
     }
     closeModal('modal-service');
-    t('Tjänst sparad');
+    t('Sparat');
     loadCustomerServices(currentCustomerId);
   } catch (e) { t(e.message, 'err'); }
 }
 
 async function removeCustomerService(assignmentId) {
-  if (!confirm('Ta bort tjänsten från kunden?')) return;
+  if (!confirm('Ta bort artikeln från kunden?')) return;
   try {
     await api(`/api/services/customer/${currentCustomerId}/${assignmentId}`, { method: 'DELETE' });
-    t('Tjänst borttagen');
+    t('Borttagen');
     loadCustomerServices(currentCustomerId);
   } catch (e) { t(e.message, 'err'); }
 }
@@ -6729,6 +6847,18 @@ function _intName(key) {
 
 let _servicesCatalogCache = [];
 
+function _cycleLabel(m) { return m + ' mo'; }
+
+// Föreslår nästa artikelnummer (TFS-000NNN) utifrån befintliga.
+function _suggestArticleNumber() {
+  let max = 0;
+  (_servicesCatalogCache || []).forEach(s => (s.articles || []).forEach(a => {
+    const m = (a.article_number || '').match(/(\d+)\s*$/);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }));
+  return 'TFS-' + String(max + 1).padStart(6, '0');
+}
+
 async function loadServicesSettings() {
   const el = document.getElementById('s-services-list');
   el.innerHTML = '<div style="color:var(--muted);font-size:13px">Laddar...</div>';
@@ -6737,23 +6867,43 @@ async function loadServicesSettings() {
     const items = await api('/api/services');
     _servicesCatalogCache = items;
     if (!items.length) {
-      el.innerHTML = '<div style="color:var(--muted);font-size:13px">Inga tjänster än.</div>';
+      el.innerHTML = '<div class="empty" style="padding:28px"><i class="ti ti-package"></i>Inga tjänster än — klicka "Ny tjänst".</div>';
       return;
     }
     el.innerHTML = items.map(s => {
-      const meta = [
-        s.monthly_price ? fmtSek(s.monthly_price) + '/mån' : 'Inget pris',
-        s.integration_type ? `<i class="ti ti-plug" style="font-size:11px"></i> ${escapeHtml(_intName(s.integration_type))}` : '',
-      ].filter(Boolean).join(' · ');
+      const arts = s.articles || [];
+      const rows = arts.length ? arts.map(a => `
+        <tr>
+          <td data-label="Artikel">${escapeHtml(s.name)} – ${escapeHtml(a.name)}</td>
+          <td data-label="Artikelnr" style="font-family:monospace;font-size:12px;color:var(--sub)">${escapeHtml(a.article_number || '—')}</td>
+          <td data-label="Cykel">${_cycleLabel(a.billing_cycle_months)}</td>
+          <td data-label="MSRP" style="text-align:right;font-weight:600">${fmtSek(a.msrp)}</td>
+          <td data-label="" style="text-align:right;white-space:nowrap">
+            <button class="btn btn-g btn-sm btn-ico" onclick="openArticleModal('${s.id}','${a.id}')" title="Redigera"><i class="ti ti-edit"></i></button>
+            <button class="btn btn-danger btn-sm btn-ico" onclick="deleteArticle('${a.id}','${escapeHtml(a.name)}')" title="Ta bort"><i class="ti ti-trash"></i></button>
+          </td>
+        </tr>`).join('')
+        : `<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:14px;font-size:12px">Inga artiklar än.</td></tr>`;
       return `
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px">
-        <div class="svc-ico" style="width:34px;height:34px;font-size:17px;border-radius:8px;background:${s.color}"><i class="ti ${s.icon}"></i></div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:13px">${escapeHtml(s.name)}</div>
-          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch">
+          <span class="cht" style="display:flex;align-items:center;gap:10px">
+            <span class="svc-ico" style="width:30px;height:30px;font-size:15px;border-radius:7px;background:${s.color}"><i class="ti ${s.icon}"></i></span>
+            ${escapeHtml(s.name)}
+            ${s.integration_type ? `<span class="b b-muted" style="font-weight:500"><i class="ti ti-plug" style="font-size:11px"></i> ${escapeHtml(_intName(s.integration_type))}</span>` : ''}
+          </span>
+          <span style="display:flex;gap:6px">
+            <button class="btn btn-g btn-sm" onclick="openArticleModal('${s.id}')"><i class="ti ti-plus"></i> Artikel</button>
+            <button class="btn btn-g btn-sm btn-ico" onclick="editServiceForm('${s.id}')" title="Redigera tjänst"><i class="ti ti-settings"></i></button>
+            <button class="btn btn-danger btn-sm btn-ico" onclick="deleteService('${s.id}','${escapeHtml(s.name)}')" title="Ta bort tjänst"><i class="ti ti-trash"></i></button>
+          </span>
         </div>
-        <button class="btn btn-g btn-sm btn-ico" onclick="editServiceForm('${s.id}')" title="Redigera"><i class="ti ti-edit"></i></button>
-        <button class="btn btn-danger btn-sm btn-ico" onclick="deleteService('${s.id}','${escapeHtml(s.name)}')" title="Ta bort"><i class="ti ti-trash"></i></button>
+        <div class="cb0">
+          <table class="tbl svc-cat-tbl">
+            <thead><tr><th>Item</th><th>Item #</th><th>Billing cycle</th><th style="text-align:right">MSRP</th><th style="width:90px"></th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
       </div>`;
     }).join('');
   } catch (e) {
@@ -6766,15 +6916,21 @@ function _resetServiceForm() {
   document.getElementById('svc-name').value = '';
   document.getElementById('svc-icon').value = 'ti-shield-check';
   document.getElementById('svc-color').value = '#0047A3';
-  document.getElementById('svc-price').value = '0';
   document.getElementById('svc-desc').value = '';
   document.getElementById('svc-integration').value = '';
   document.getElementById('svc-form-title').textContent = 'Ny tjänst';
-  document.getElementById('svc-save-btn').innerHTML = '<i class="ti ti-plus"></i> Lägg till tjänst';
-  document.getElementById('svc-cancel-btn').style.display = 'none';
 }
 
-function cancelEditService() { _resetServiceForm(); }
+function openServiceForm() {
+  _resetServiceForm();
+  document.getElementById('svc-form').style.display = '';
+  document.getElementById('svc-name').focus();
+}
+
+function cancelEditService() {
+  _resetServiceForm();
+  document.getElementById('svc-form').style.display = 'none';
+}
 
 function editServiceForm(id) {
   const s = _servicesCatalogCache.find(x => x.id === id);
@@ -6783,13 +6939,11 @@ function editServiceForm(id) {
   document.getElementById('svc-name').value = s.name;
   document.getElementById('svc-icon').value = s.icon || 'ti-shield-check';
   document.getElementById('svc-color').value = s.color || '#0047A3';
-  document.getElementById('svc-price').value = s.monthly_price || 0;
   document.getElementById('svc-desc').value = s.description || '';
   document.getElementById('svc-integration').value = s.integration_type || '';
   document.getElementById('svc-form-title').textContent = 'Redigera ' + s.name;
-  document.getElementById('svc-save-btn').innerHTML = '<i class="ti ti-check"></i> Spara ändringar';
-  document.getElementById('svc-cancel-btn').style.display = '';
-  document.getElementById('svc-form-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('svc-form').style.display = '';
+  document.getElementById('svc-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function saveService() {
@@ -6798,10 +6952,9 @@ async function saveService() {
   const icon = document.getElementById('svc-icon').value.trim() || 'ti-shield-check';
   const color = document.getElementById('svc-color').value || '#0047A3';
   const description = document.getElementById('svc-desc').value.trim();
-  const monthly_price = parseInt(document.getElementById('svc-price').value, 10) || 0;
   const integration_type = document.getElementById('svc-integration').value || null;
   if (!name) { t('Namn krävs', 'err'); return; }
-  const body = { name, icon, color, description, monthly_price, integration_type };
+  const body = { name, icon, color, description, integration_type };
   try {
     if (editId) {
       await api('/api/services/' + editId, { method: 'PUT', body: JSON.stringify(body) });
@@ -6810,17 +6963,65 @@ async function saveService() {
       await api('/api/services', { method: 'POST', body: JSON.stringify(body) });
       t('Tjänst tillagd');
     }
-    _resetServiceForm();
+    cancelEditService();
     await loadServicesSettings();
   } catch (e) { t(e.message, 'err'); }
 }
 
 async function deleteService(id, name) {
-  if (!confirm(`Inaktivera tjänsten "${name}"? Befintliga kundkopplingar behålls men den går inte att välja för nya kunder.`)) return;
+  if (!confirm(`Ta bort tjänsten "${name}" med alla dess artiklar? Befintliga kundtilldelningar behålls historiskt.`)) return;
   try {
     await api('/api/services/' + id, { method: 'DELETE' });
     await loadServicesSettings();
-    t('Tjänst inaktiverad');
+    t('Tjänst borttagen');
+  } catch (e) { t(e.message, 'err'); }
+}
+
+// ── Artiklar (katalog) ─────────────────────────────────────────────────────
+
+function openArticleModal(serviceId, articleId) {
+  const svc = _servicesCatalogCache.find(x => x.id === serviceId);
+  if (!svc) return;
+  const art = articleId ? (svc.articles || []).find(a => a.id === articleId) : null;
+  document.getElementById('ma-title').textContent = art ? 'Redigera artikel' : 'Ny artikel';
+  document.getElementById('ma-service-label').innerHTML = `Under <strong>${escapeHtml(svc.name)}</strong>`;
+  document.getElementById('ma-service-id').value = serviceId;
+  document.getElementById('ma-edit-id').value = art ? art.id : '';
+  document.getElementById('ma-name').value = art ? art.name : '';
+  document.getElementById('ma-number').value = art ? (art.article_number || '') : _suggestArticleNumber();
+  document.getElementById('ma-cycle').value = art ? art.billing_cycle_months : '1';
+  document.getElementById('ma-msrp').value = art ? art.msrp : 0;
+  openModal('modal-article');
+}
+
+async function saveArticle() {
+  const editId = document.getElementById('ma-edit-id').value;
+  const serviceId = document.getElementById('ma-service-id').value;
+  const name = document.getElementById('ma-name').value.trim();
+  const article_number = document.getElementById('ma-number').value.trim();
+  const billing_cycle_months = parseInt(document.getElementById('ma-cycle').value, 10) || 1;
+  const msrp = parseInt(document.getElementById('ma-msrp').value, 10) || 0;
+  if (!name) { t('Artikelnamn krävs', 'err'); return; }
+  const body = { name, article_number, billing_cycle_months, msrp };
+  try {
+    if (editId) {
+      await api('/api/services/articles/' + editId, { method: 'PUT', body: JSON.stringify(body) });
+      t('Artikel uppdaterad');
+    } else {
+      await api('/api/services/' + serviceId + '/articles', { method: 'POST', body: JSON.stringify(body) });
+      t('Artikel tillagd');
+    }
+    closeModal('modal-article');
+    await loadServicesSettings();
+  } catch (e) { t(e.message, 'err'); }
+}
+
+async function deleteArticle(id, name) {
+  if (!confirm(`Ta bort artikeln "${name}"?`)) return;
+  try {
+    await api('/api/services/articles/' + id, { method: 'DELETE' });
+    await loadServicesSettings();
+    t('Artikel borttagen');
   } catch (e) { t(e.message, 'err'); }
 }
 
