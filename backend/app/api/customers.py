@@ -199,9 +199,16 @@ async def get_customer(
                 "status": cs.status,
                 "start_date": cs.start_date.isoformat() if cs.start_date else None,
                 "notes": cs.notes,
+                "price": cs.price,
+                "effective_price": cs.price if cs.price is not None else (cs.service.monthly_price if cs.service else 0),
+                "integration_type": cs.service.integration_type if cs.service else None,
             }
             for cs in sorted(c.services, key=lambda x: (x.status != "active", x.service.name if x.service else ""))
         ],
+        "mrr": sum(
+            (cs.price if cs.price is not None else (cs.service.monthly_price if cs.service else 0))
+            for cs in c.services if cs.status == "active"
+        ),
         "recent_reports": [
             {
                 "id": r.id,

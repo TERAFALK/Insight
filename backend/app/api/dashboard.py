@@ -202,7 +202,7 @@ def _open_ticket_dict(t: Ticket) -> dict:
 @router.get("/admin")
 async def admin_dashboard(
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
+    admin: User = Depends(require_admin),
 ):
     """Lättviktiga aggregat för admin-översikten: ärenden, trend, tjänster."""
     # Ärenden per status
@@ -255,9 +255,31 @@ async def admin_dashboard(
     )
     recent_open = [_open_ticket_dict(t) for t in rows.all()]
 
-    # Tjänsteadoption: antal aktiva tilldelningar per tjänst
+    # "Mina ärenden" — öppna ärenden tilldelade den inloggade admin, SLA-sorterade
+    my_rows = await db.scalars(
+        select(Ticket)
+        .where(Ticket.status.in_(OPEN_TICKET_STATUSES), Ticket.assigned_to_user_id == admin.id)
+        .options(selectinload(Ticket.customer))
+        .order_by(Ticket.sla_due_at.asc().nulls_last())
+        .limit(8)
+    )
+    my_open = [_open_ticket_dict(t) for t in my_rows.all()]
+    my_open_total = await db.scalar(
+        select(func.count()).select_from(Ticket).where(
+            Ticket.status.in_(OPEN_TICKET_STATUSES), Ticket.assigned_to_user_id == admin.id
+        )
+    ) or 0
+
+    # Effektivt pris = kundens override om satt, annars katalogpris
+    eff_price = func.coalesce(CustomerService.price, Service.monthly_price)
+
+    # Tjänsteadoption + intäkt per tjänst (endast aktiva tilldelningar)
     svc_rows = (await db.execute(
-        select(Service.name, Service.icon, Service.color, func.count(CustomerService.id))
+        select(
+            Service.name, Service.icon, Service.color,
+            func.count(CustomerService.id),
+            func.coalesce(func.sum(eff_price), 0),
+        )
         .select_from(Service)
         .join(
             CustomerService,
@@ -269,13 +291,34 @@ async def admin_dashboard(
         .order_by(Service.position, Service.name)
     )).all()
     service_adoption = [
-        {"name": name, "icon": icon, "color": color, "count": count}
-        for name, icon, color, count in svc_rows
+        {"name": name, "icon": icon, "color": color, "count": count, "mrr": int(mrr or 0)}
+        for name, icon, color, count, mrr in svc_rows
     ]
 
     active_services_total = await db.scalar(
         select(func.count()).select_from(CustomerService).where(CustomerService.status == "active")
     ) or 0
+
+    # Total MRR
+    mrr_total = await db.scalar(
+        select(func.coalesce(func.sum(eff_price), 0))
+        .select_from(CustomerService)
+        .join(Service, Service.id == CustomerService.service_id)
+        .where(CustomerService.status == "active")
+    ) or 0
+
+    # Topp-kunder efter MRR
+    top_rows = (await db.execute(
+        select(Customer.id, Customer.name, func.coalesce(func.sum(eff_price), 0).label("mrr"))
+        .select_from(CustomerService)
+        .join(Service, Service.id == CustomerService.service_id)
+        .join(Customer, Customer.id == CustomerService.customer_id)
+        .where(CustomerService.status == "active")
+        .group_by(Customer.id, Customer.name)
+        .order_by(func.coalesce(func.sum(eff_price), 0).desc())
+        .limit(6)
+    )).all()
+    top_customers = [{"id": cid, "name": name, "mrr": int(mrr or 0)} for cid, name, mrr in top_rows]
 
     return {
         "tickets": {
@@ -284,10 +327,14 @@ async def admin_dashboard(
             "by_status": status_counts,
             "trend": trend,
             "recent_open": recent_open,
+            "my_open_total": int(my_open_total),
+            "my_open": my_open,
         },
         "services": {
             "active_total": int(active_services_total),
+            "mrr_total": int(mrr_total),
             "adoption": service_adoption,
+            "top_customers": top_customers,
         },
     }
 
@@ -321,6 +368,14 @@ async def customer_dashboard(
         )
     ) or 0
 
+    # Verifierade integrationer för kunden (för att koppla tjänst → datakälla)
+    verified_types = set((await db.scalars(
+        select(IntegrationCredential.integration_type).where(
+            IntegrationCredential.customer_id == cid,
+            IntegrationCredential.is_verified == True,
+        )
+    )).all())
+
     # Tjänster (alla tilldelade, med status)
     svc_rows = await db.scalars(
         select(CustomerService)
@@ -330,6 +385,7 @@ async def customer_dashboard(
     services = []
     for cs in svc_rows.all():
         svc = cs.service
+        itype = svc.integration_type if svc else None
         services.append({
             "id": cs.id,
             "name": svc.name if svc else "—",
@@ -337,6 +393,9 @@ async def customer_dashboard(
             "color": svc.color if svc else "#0047A3",
             "description": svc.description if svc else "",
             "status": cs.status,
+            "integration_type": itype,
+            # True om tjänsten har en datakälla som är verifierad för kunden
+            "integration_ok": bool(itype and itype in verified_types),
         })
     services.sort(key=lambda s: (s["status"] != "active", s["name"]))
 

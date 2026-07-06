@@ -68,6 +68,10 @@ class Service(Base):
     description: Mapped[str] = mapped_column(String, default="", server_default="")
     icon: Mapped[str] = mapped_column(String, default="ti-shield-check", server_default="ti-shield-check")
     color: Mapped[str] = mapped_column(String, default="#0047A3", server_default="#0047A3")
+    # Standardpris per månad (SEK). Kan överskridas per kund i CustomerService.price.
+    monthly_price: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Valfri koppling till en integrationstyp (t.ex. "unifi") → live-hälsa på tjänstekortet.
+    integration_type: Mapped[str | None] = mapped_column(String, nullable=True)
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -88,6 +92,8 @@ class CustomerService(Base):
     status: Mapped[str] = mapped_column(String, default="active", server_default="active")  # active|paused|ended
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    # Prisöverskrivning per kund (SEK/mån). NULL = använd Service.monthly_price.
+    price: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     customer: Mapped["Customer"] = relationship(back_populates="services")
@@ -607,6 +613,23 @@ class AuditLog(Base):
     entity_type: Mapped[str] = mapped_column(String, default="")
     entity_id: Mapped[str | None] = mapped_column(String, nullable=True)
     summary: Mapped[str] = mapped_column(String, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class Notification(Base):
+    """In-app-notis för en användare (klockan i topbaren)."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False, index=True)
+    type: Mapped[str] = mapped_column(String, default="")  # ticket_created|ticket_assigned|ticket_mention|ticket_sla
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    body: Mapped[str] = mapped_column(String, default="")
+    # Länk-mål: ärende-id (frontend öppnar #/ticket/<id>)
+    link_ticket_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    icon: Mapped[str] = mapped_column(String, default="ti-bell")
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
 
 

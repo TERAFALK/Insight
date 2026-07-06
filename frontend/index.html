@@ -299,6 +299,29 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 /* Kundlist-tjänstchips */
 .svc-mini{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:12px;font-size:10.5px;font-weight:600;background:var(--tint2);color:var(--blue)}
 .svc-mini i{font-size:12px}
+.svc-price{font-size:12px;font-weight:700;color:var(--text)}
+.svc-price small{font-weight:500;color:var(--muted)}
+
+/* ── Notiser (klocka) ── */
+.notif-wrap{position:relative}
+.notif-btn{position:relative;width:36px;height:36px;border-radius:var(--r);border:1px solid var(--border-s);background:var(--surface);cursor:pointer;color:var(--sub);display:flex;align-items:center;justify-content:center;transition:all .12s}
+.notif-btn:hover{background:var(--tint);color:var(--text)}
+.notif-btn i{font-size:18px}
+.notif-badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--err);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1}
+.notif-panel{position:absolute;top:44px;right:0;width:340px;max-width:calc(100vw - 24px);background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--shadow-l);z-index:400;overflow:hidden}
+.notif-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+.notif-readall{background:none;border:none;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.notif-readall:hover{text-decoration:underline}
+#notif-list{max-height:min(420px,70vh);overflow-y:auto}
+.notif-item{display:flex;gap:11px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--tint)}
+.notif-item.unread{background:var(--tint2)}
+.notif-item.unread:hover{background:#dfe9fb}
+.notif-ico{width:30px;height:30px;border-radius:8px;background:var(--tint);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--blue);flex-shrink:0}
+.notif-t{font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
+.notif-b{font-size:12px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notif-ago{font-size:11px;color:var(--muted);margin-top:3px}
 
 
 /* ── Responsive ── */
@@ -528,6 +551,45 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
 
   /* Stat-kort: ikon + värde kompakt */
   .stat{padding:14px 15px}
+
+  /* ── Inställningar → stapla, subnav blir horisontell chip-rad ── */
+  .settings-layout{flex-direction:column;gap:16px!important}
+  .settings-nav-col{width:100%!important}
+  .settings-nav-col .settings-subnav{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;gap:6px;position:static;top:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .settings-nav-col .settings-subnav::-webkit-scrollbar{display:none}
+  .settings-nav-col .ssn-item{flex-shrink:0;white-space:nowrap;border:1px solid var(--border);padding:8px 13px}
+  .settings-nav-col .ssn-item.ssn-active{border-color:var(--blue)}
+  #v-settings .content, #stab-email, #stab-notifications, #stab-integrations,
+  #stab-reports, #stab-orderstatus, #stab-services, #stab-tickets, #stab-users, #stab-audit{max-width:100%!important}
+  #v-settings > div[style*="display:flex"] > div[style*="max-width:560px"]{max-width:100%!important}
+
+  /* ── Ärendedetalj → en kolumn, sidebar under konversationen ── */
+  .td-grid{grid-template-columns:1fr!important}
+
+  /* ── Breda tabeller → kort-rader (tickets/orders/billing) ── */
+  #tickets-tbody tr, #orders-tbody tr, #billing-tbody tr{display:block;padding:12px 14px;border-bottom:1px solid var(--border)}
+  #tickets-tbody tr:last-child, #orders-tbody tr:last-child, #billing-tbody tr:last-child{border-bottom:none}
+  #tickets-tbody td, #orders-tbody td, #billing-tbody td{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:3px 0;border:none;font-size:13px;text-align:right}
+  #tickets-tbody td:before, #orders-tbody td:before, #billing-tbody td:before{content:attr(data-label);font-size:11px;font-weight:600;color:var(--muted);text-align:left;flex-shrink:0}
+  #tickets-tbody td[data-label="Ärende"]:before, #orders-tbody td[data-label="Titel"]:before, #billing-tbody td[data-label="Kund"]:before{display:none}
+  #tickets-tbody td[data-label="Ärende"], #orders-tbody td[data-label="Titel"], #billing-tbody td[data-label="Kund"]{font-size:14px;font-weight:600;display:block;text-align:left;margin-bottom:2px;max-width:100%!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+  table:has(#tickets-tbody) thead, table:has(#orders-tbody) thead, table:has(#billing-tbody) thead{display:none}
+  #billing-stats{grid-template-columns:1fr!important}
+
+  /* Övriga breda tabeller → horisontell scroll som fallback */
+  .cb0{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* ── Modaler → mindre padding, full bredd ── */
+  div[id^="modal-"] > div{padding:20px!important;width:100%!important;max-width:calc(100vw - 24px)!important;max-height:90vh;overflow-y:auto}
+
+  /* SLA-inställningsrader → stapla snyggt */
+  #s-sla-list > div{display:flex!important;flex-wrap:wrap;gap:8px 12px}
+  #s-sla-list > div label{font-size:12px}
+
+  /* Dashboard: hero-knapp full bredd, adoptionsnamn kortare */
+  #dash-customer .hero-in button{width:100%;justify-content:center}
+  .adopt-row span:nth-child(2){width:84px}
+  .trend-svg{min-width:0}
 }
 
 /* ── Integration pills ── */
@@ -769,6 +831,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
   <div class="nav active" data-v="dashboard" id="nav-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i><span class="nav-label"> Översikt</span></div>
   <div class="nav" data-v="customers" id="nav-customers" onclick="nav('customers')"><i class="ti ti-building-store"></i><span class="nav-label"> Kunder</span></div>
   <div class="nav" data-v="reports" id="nav-reports" onclick="nav('reports')"><i class="ti ti-file-description"></i><span class="nav-label"> Rapporter</span></div>
+  <div class="nav" data-v="billing" id="nav-billing" onclick="nav('billing')"><i class="ti ti-receipt"></i><span class="nav-label"> Fakturaunderlag</span></div>
   <div class="nav" data-v="orders" id="nav-orders" onclick="nav('orders')"><i class="ti ti-clipboard-list"></i><span class="nav-label"> Order & Projekt</span></div>
   <div class="nav" data-v="tickets" id="nav-tickets" onclick="nav('tickets')"><i class="ti ti-ticket"></i><span class="nav-label"> Ärenden</span></div>
   <div class="sb-section" id="nav-section-config">Konfiguration</div>
@@ -798,7 +861,20 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <span class="page-title" id="pt">Översikt</span>
     </div>
     <div class="tb-right">
-      <button class="btn btn-g btn-sm" onclick="refreshCurrent()"><i class="ti ti-refresh"></i> Uppdatera</button>
+      <div class="notif-wrap" id="notif-wrap">
+        <button class="notif-btn" id="notif-btn" onclick="toggleNotifPanel(event)" title="Notiser">
+          <i class="ti ti-bell"></i>
+          <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+        </button>
+        <div class="notif-panel" id="notif-panel" style="display:none">
+          <div class="notif-head">
+            <span style="font-weight:700;font-size:13px">Notiser</span>
+            <button class="notif-readall" onclick="markAllNotifsRead()">Markera alla lästa</button>
+          </div>
+          <div id="notif-list"><div class="skel" style="padding:24px">Laddar...</div></div>
+        </div>
+      </div>
+      <button class="btn btn-g btn-sm" onclick="refreshCurrent()"><i class="ti ti-refresh"></i> <span class="btn-label">Uppdatera</span></button>
     </div>
   </div>
 
@@ -828,15 +904,19 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <div class="stat-hd"><div class="stat-ico" style="background:#FDECEC;color:var(--err)"><i class="ti ti-alarm"></i></div><div class="sl">SLA-brott</div></div>
           <div class="sv" id="stat-sla"><span class="skel-box" style="display:inline-block;width:24px;height:28px;vertical-align:middle"></span></div><div class="sh">Öppna med brutet SLA</div>
         </div>
-        <div class="stat">
-          <div class="stat-hd"><div class="stat-ico" style="background:#EAF7EF;color:var(--ok)"><i class="ti ti-shield-check"></i></div><div class="sl">Aktiva tjänster</div></div>
-          <div class="sv" id="stat-services"><span class="skel-box" style="display:inline-block;width:24px;height:28px;vertical-align:middle"></span></div><div class="sh">Sålda tjänsteavtal</div>
+        <div class="stat clk" onclick="nav('billing')">
+          <div class="stat-hd"><div class="stat-ico" style="background:#EAF7EF;color:var(--ok)"><i class="ti ti-cash"></i></div><div class="sl">MRR</div></div>
+          <div class="sv" id="stat-mrr"><span class="skel-box" style="display:inline-block;width:60px;height:28px;vertical-align:middle"></span></div><div class="sh" id="stat-mrr-sub">Återkommande intäkt</div>
         </div>
       </div>
 
       <!-- Två kolumner: ärenden/trend + åtgärd/tjänster -->
       <div class="dash-grid">
         <div class="dash-col">
+          <div class="card" style="margin-bottom:0">
+            <div class="ch"><span class="cht"><i class="ti ti-user-check" style="margin-right:6px;opacity:.7"></i>Mina ärenden</span><span class="b b-muted" id="dash-my-count"></span></div>
+            <div class="cb0" id="dash-my-tickets"><div class="skel" style="padding:24px">Laddar...</div></div>
+          </div>
           <div class="card" style="margin-bottom:0">
             <div class="ch"><span class="cht"><i class="ti ti-inbox" style="margin-right:6px;opacity:.7"></i>Senaste öppna ärenden</span><span class="b b-muted" id="dash-tickets-count"></span></div>
             <div class="cb0" id="dash-tickets-list">
@@ -854,8 +934,12 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
             <div class="cb0" id="dash-attention"><div class="skel" style="padding:28px">Laddar...</div></div>
           </div>
           <div class="card" style="margin-bottom:0">
-            <div class="ch"><span class="cht"><i class="ti ti-shield-check" style="margin-right:6px;opacity:.7"></i>Tjänsteadoption</span></div>
+            <div class="ch"><span class="cht"><i class="ti ti-shield-check" style="margin-right:6px;opacity:.7"></i>Tjänster &amp; intäkt</span><span class="b b-info" id="dash-mrr-badge"></span></div>
             <div class="cb" id="dash-adoption"><div class="skel" style="padding:18px">Laddar...</div></div>
+          </div>
+          <div class="card" style="margin-bottom:0">
+            <div class="ch"><span class="cht"><i class="ti ti-trophy" style="margin-right:6px;opacity:.7"></i>Topp-kunder (MRR)</span></div>
+            <div class="cb0" id="dash-top-customers"><div class="skel" style="padding:18px">Laddar...</div></div>
           </div>
         </div>
       </div>
@@ -1140,6 +1224,30 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       </div>
     </div>
 
+    <!-- ══ FAKTURAUNDERLAG ══ -->
+    <div class="view" id="v-billing">
+      <div class="ph">
+        <div><div class="ph-title">Fakturaunderlag</div><div class="ph-sub">Debiterbar tid och återkommande avtal per kund</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="fi" type="month" id="billing-month" style="width:160px" onchange="loadBilling()">
+          <button class="btn btn-g btn-sm" onclick="exportBillingCsv()"><i class="ti ti-download"></i> <span class="btn-label">CSV</span></button>
+        </div>
+      </div>
+      <div class="stats" id="billing-stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><div class="sl">Debiterbar tid</div><div class="sv" id="bill-hours">—</div><div class="sh">Timmar denna månad</div></div>
+        <div class="stat"><div class="sl">Återkommande (MRR)</div><div class="sv" id="bill-mrr">—</div><div class="sh">Aktiva tjänsteavtal</div></div>
+        <div class="stat accent"><div class="sl">Kunder att fakturera</div><div class="sv" id="bill-count">—</div><div class="sh">Med tid eller avtal</div></div>
+      </div>
+      <div class="card">
+        <div class="cb0">
+          <table class="tbl hov">
+            <thead><tr><th>Kund</th><th style="text-align:right">Ärendetid</th><th style="text-align:right">Projekttid</th><th style="text-align:right">Total tid</th><th style="text-align:right">MRR</th></tr></thead>
+            <tbody id="billing-tbody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Laddar...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ INTEGRATIONS CONFIG (generisk för alla typer — samma flöde för unifi/microsoft/acronis/cloudfactory) ══ -->
     <div class="view" id="v-integrations">
       <div class="back" onclick="nav('customers')"><i class="ti ti-arrow-left"></i> Tillbaka</div>
@@ -1259,9 +1367,9 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
     <div class="view" id="v-settings">
       <div class="ph"><div class="ph-title">Inställningar</div></div>
       <div id="settings-error" class="alert al-e" style="display:none;margin-bottom:14px"><i class="ti ti-alert-circle"></i><span id="settings-error-msg"></span></div>
-      <div style="display:flex;gap:24px;align-items:flex-start">
+      <div style="display:flex;gap:24px;align-items:flex-start" class="settings-layout">
         <!-- Undermeny -->
-        <div style="width:180px;flex-shrink:0">
+        <div style="width:180px;flex-shrink:0" class="settings-nav-col">
           <div class="settings-subnav">
             <div class="ssn-item ssn-active" id="ssn-email" onclick="switchSettingsTab('email')"><i class="ti ti-mail"></i> E-post</div>
             <div class="ssn-item" id="ssn-notifications" onclick="switchSettingsTab('notifications')"><i class="ti ti-bell"></i> Notifieringar</div>
@@ -1357,6 +1465,12 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
             </div>
             <div class="f2" style="margin-top:12px">
               <div class="fr" style="margin:0"><label class="fl">Färg</label><input class="fi" id="svc-color" type="color" value="#0047A3" style="height:40px;padding:4px"></div>
+              <div class="fr" style="margin:0"><label class="fl">Pris (kr/mån)</label><input class="fi" id="svc-price" type="number" min="0" step="100" value="0"></div>
+            </div>
+            <div class="f2" style="margin-top:12px">
+              <div class="fr" style="margin:0"><label class="fl">Datakälla (integration)</label>
+                <select class="fi" id="svc-integration"><option value="">— ingen —</option></select>
+              </div>
               <div class="fr" style="margin:0"><label class="fl">Beskrivning</label><input class="fi" id="svc-desc" placeholder="Kort beskrivning"></div>
             </div>
             <button class="btn btn-p btn-sm" onclick="addService()" style="margin-top:14px"><i class="ti ti-plus"></i> Lägg till tjänst</button>
@@ -1505,7 +1619,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div id="td-csat" style="margin-bottom:16px"></div>
 
       <!-- 2-kolumn: konversation + sidebar -->
-      <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start">
+      <div class="td-grid" style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start">
 
         <!-- Konversation -->
         <div>
@@ -1915,6 +2029,8 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="fr" style="margin:0"><label class="fl">Startdatum</label>
         <input class="fi" id="ms-start" type="date"></div>
     </div>
+    <div class="fr" style="margin-top:14px"><label class="fl">Pris (kr/mån) <span style="font-weight:400;color:var(--muted)">— tomt = standardpris</span></label>
+      <input class="fi" id="ms-price" type="number" min="0" step="100" placeholder="Standardpris"></div>
     <div class="fr" style="margin-top:14px"><label class="fl">Notering</label>
       <textarea class="fi" id="ms-notes" rows="2" placeholder="Valfri intern notering"></textarea></div>
     <input type="hidden" id="ms-assignment-id">
@@ -2101,6 +2217,7 @@ async function showApp() {
     currentUser = { role: 'admin', full_name: '', email: '' };
   }
   applyRoleUI();
+  startNotifPolling();
 
   if (currentUser.role === 'customer') {
     currentCustomerId = currentUser.customer_id;
@@ -2149,6 +2266,8 @@ function applyRoleUI() {
   // Reports-länken i sidebar bara för admin (kunder når rapporter via fliken)
   const navReports = document.getElementById('nav-reports');
   if (navReports) navReports.style.display = isStaff ? '' : 'none';
+  const navBilling = document.getElementById('nav-billing');
+  if (navBilling) navBilling.style.display = isStaff ? '' : 'none';
   // Dölj admin-knappar för skapande av ordrar
   const ordersNewBtn = document.getElementById('orders-new-btn');
   if (ordersNewBtn) ordersNewBtn.style.display = isStaff ? '' : 'none';
@@ -2346,8 +2465,8 @@ document.addEventListener('keydown', e => {
 
 // ── Navigation ────────────────────────────────────────────────────────────
 
-const titles = { dashboard: 'Översikt', customers: 'Kunder', 'customer-detail': 'Kund', 'edit-customer': 'Redigera kund', reports: 'Rapporter', 'add-customer': 'Ny kund', settings: 'Inställningar', integrations: 'Integrationer', users: 'Användare', orders: 'Order & Projekt', 'order-detail': 'Order', tickets: 'Ärenden', 'ticket-detail': 'Ärende' };
-const parents = { dashboard: 'dashboard', customers: 'customers', 'customer-detail': 'customers', 'edit-customer': 'customers', reports: 'reports', 'add-customer': 'add-customer', settings: 'settings', integrations: 'customers', users: 'users', orders: 'orders', 'order-detail': 'orders', tickets: 'tickets', 'ticket-detail': 'tickets' };
+const titles = { dashboard: 'Översikt', customers: 'Kunder', 'customer-detail': 'Kund', 'edit-customer': 'Redigera kund', reports: 'Rapporter', billing: 'Fakturaunderlag', 'add-customer': 'Ny kund', settings: 'Inställningar', integrations: 'Integrationer', users: 'Användare', orders: 'Order & Projekt', 'order-detail': 'Order', tickets: 'Ärenden', 'ticket-detail': 'Ärende' };
+const parents = { dashboard: 'dashboard', customers: 'customers', 'customer-detail': 'customers', 'edit-customer': 'customers', reports: 'reports', billing: 'billing', 'add-customer': 'add-customer', settings: 'settings', integrations: 'customers', users: 'users', orders: 'orders', 'order-detail': 'orders', tickets: 'tickets', 'ticket-detail': 'tickets' };
 
 let _currentView = 'dashboard';
 
@@ -2365,7 +2484,7 @@ function refreshCurrent() {
 
 // Enkla vyer routas som #/<vy>. Detaljvyer (customer/ticket/order/integrations)
 // sätter sin egen hash med id i respektive open-funktion.
-const SIMPLE_ROUTES = new Set(['dashboard', 'customers', 'tickets', 'orders', 'reports', 'users', 'settings', 'add-customer']);
+const SIMPLE_ROUTES = new Set(['dashboard', 'customers', 'tickets', 'orders', 'reports', 'billing', 'users', 'settings', 'add-customer']);
 let _suppressHashRoute = false;
 
 function _setHash(path) {
@@ -2391,6 +2510,7 @@ function nav(id) {
   if (id === 'dashboard') loadDashboard();
   if (id === 'customers') loadCustomersList();
   if (id === 'reports') loadReports();
+  if (id === 'billing') loadBilling();
   if (id === 'add-customer') resetAddCustomerForm();
   if (id === 'integrations' && currentCustomerId) loadIntegrationsView(currentCustomerId);
   if (id === 'users') loadUsers();
@@ -2484,7 +2604,7 @@ async function loadDashboard() {
 
   document.getElementById('dash-updated').textContent = 'Laddar...';
   dashboardSkeletons();
-  statSkel('stat-customers'); statSkel('stat-open-tickets'); statSkel('stat-sla'); statSkel('stat-services');
+  statSkel('stat-customers'); statSkel('stat-open-tickets'); statSkel('stat-sla'); statSkel('stat-mrr');
 
   try {
     const [summary, adm] = await Promise.all([
@@ -2513,13 +2633,18 @@ async function loadDashboard() {
     const slaN = adm?.tickets?.sla_breached ?? 0;
     slaEl.textContent = slaN;
     slaEl.style.color = slaN > 0 ? 'var(--err)' : 'var(--text)';
-    document.getElementById('stat-services').textContent = adm?.services?.active_total ?? '—';
+    const mrrTotal = adm?.services?.mrr_total ?? 0;
+    document.getElementById('stat-mrr').textContent = fmtSek(mrrTotal);
+    document.getElementById('stat-mrr-sub').textContent =
+      `${adm?.services?.active_total ?? 0} aktiva tjänster · kr/mån`;
 
     // Nya paneler
+    renderDashMyTickets(adm?.tickets?.my_open || [], adm?.tickets?.my_open_total || 0);
     renderDashTickets(adm?.tickets?.recent_open || [], adm?.tickets?.open_total || 0);
     renderDashTrend(adm?.tickets?.trend || []);
     renderDashAttention(customers);
-    renderDashAdoption(adm?.services?.adoption || []);
+    renderDashAdoption(adm?.services?.adoption || [], mrrTotal);
+    renderDashTopCustomers(adm?.services?.top_customers || []);
 
     // UniFi aggregat-panel
     const u = summary.unifi || {};
@@ -2582,6 +2707,24 @@ function _ticketRow(tk) {
   </div>`;
 }
 
+function fmtSek(n) {
+  n = Number(n) || 0;
+  return n.toLocaleString('sv-SE') + ' kr';
+}
+
+function renderDashMyTickets(list, total) {
+  const el = document.getElementById('dash-my-tickets');
+  const cnt = document.getElementById('dash-my-count');
+  if (cnt) cnt.textContent = total ? `${total} st` : '';
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = `<div class="empty" style="padding:24px 20px"><i class="ti ti-checklist"></i>Inga ärenden tilldelade dig.</div>`;
+    return;
+  }
+  el.innerHTML = list.map(_ticketRow).join('')
+    + `<div style="padding:9px 16px;text-align:center;border-top:1px solid var(--border)"><a href="#" onclick="showMyTickets();return false" style="font-size:12px;font-weight:600;color:var(--blue)">Visa alla mina ärenden →</a></div>`;
+}
+
 function renderDashTickets(list, total) {
   const el = document.getElementById('dash-tickets-list');
   const cnt = document.getElementById('dash-tickets-count');
@@ -2591,6 +2734,20 @@ function renderDashTickets(list, total) {
     return;
   }
   el.innerHTML = list.map(_ticketRow).join('');
+}
+
+function renderDashTopCustomers(list) {
+  const el = document.getElementById('dash-top-customers');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = `<div class="empty" style="padding:20px"><i class="ti ti-users"></i>Inga tjänsteavtal än.</div>`;
+    return;
+  }
+  el.innerHTML = list.map(c => `
+    <div class="att-row" onclick="openCustomer('${c.id}')">
+      <div style="flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.name)}</div>
+      <span class="svc-price">${fmtSek(c.mrr)}<small>/mån</small></span>
+    </div>`).join('');
 }
 
 function renderDashAttention(customers) {
@@ -2624,8 +2781,10 @@ function renderDashAttention(customers) {
     </div>`).join('');
 }
 
-function renderDashAdoption(adoption) {
+function renderDashAdoption(adoption, mrrTotal) {
   const el = document.getElementById('dash-adoption');
+  const badge = document.getElementById('dash-mrr-badge');
+  if (badge) badge.textContent = mrrTotal != null ? `${fmtSek(mrrTotal)}/mån` : '';
   if (!adoption.length) {
     el.innerHTML = `<div style="color:var(--muted);font-size:13px">Inga tjänster i katalogen än.</div>`;
     return;
@@ -2634,9 +2793,10 @@ function renderDashAdoption(adoption) {
   el.innerHTML = adoption.map(a => `
     <div class="adopt-row">
       <i class="ti ${a.icon}" style="font-size:16px;color:${a.color};width:18px;flex-shrink:0"></i>
-      <span style="width:130px;flex-shrink:0;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(a.name)}</span>
+      <span style="width:118px;flex-shrink:0;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(a.name)}</span>
       <div class="adopt-bar"><div class="adopt-fill" style="width:${Math.round(a.count/max*100)}%;background:${a.color}"></div></div>
-      <span style="width:26px;text-align:right;flex-shrink:0;font-weight:700;color:var(--text)">${a.count}</span>
+      <span style="width:24px;text-align:right;flex-shrink:0;font-weight:700;color:var(--text)">${a.count}</span>
+      <span style="width:66px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted)">${a.mrr!=null?fmtSek(a.mrr):''}</span>
     </div>`).join('');
 }
 
@@ -2689,6 +2849,21 @@ async function loadCustomerDashboard(gen) {
     const tickets = data.tickets || {};
     const h = data.health || {};
 
+    // Live hälsorad per tjänst utifrån dess datakälla
+    function _svcHealthLine(s) {
+      if (!s.integration_type) return '';
+      if (s.status === 'active' && !s.integration_ok)
+        return `<div style="font-size:11px;color:var(--warn);margin-top:6px"><i class="ti ti-plug-x" style="font-size:12px"></i> Datakälla ej ansluten</div>`;
+      if (s.integration_type === 'unifi' && h.unifi) {
+        const u = h.unifi, ok = u.offline_devices === 0 && u.wan_down === 0;
+        return `<div style="font-size:11px;margin-top:6px;color:${ok?'var(--ok)':'var(--err)'}"><i class="ti ${ok?'ti-circle-check':'ti-alert-triangle'}" style="font-size:12px"></i> ${u.total_devices} enheter · ${u.offline_devices} offline${u.wan_total?` · ${u.wan_total-u.wan_down}/${u.wan_total} WAN`:''}</div>`;
+      }
+      if (s.integration_type === 'microsoft' && h.microsoft) {
+        const m = h.microsoft, mfa = m.mfa_pct;
+        return `<div style="font-size:11px;margin-top:6px;color:${mfa==null?'var(--muted)':(mfa<80?'var(--warn)':'var(--ok)')}"><i class="ti ti-shield-check" style="font-size:12px"></i> ${m.total_users} användare${mfa!=null?` · MFA ${mfa}%`:''}</div>`;
+      }
+      return '';
+    }
     // Tjänstekort
     const svcCards = svc.length ? svc.map(s => {
       const on = s.status === 'active';
@@ -2702,6 +2877,7 @@ async function loadCustomerDashboard(gen) {
             <span style="font-weight:700;font-size:14px">${escapeHtml(s.name)}</span>${badge}
           </div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${escapeHtml(s.description||'')}</div>
+          ${_svcHealthLine(s)}
         </div>
       </div>`;
     }).join('') : `<div class="empty" style="grid-column:1/-1;padding:28px"><i class="ti ti-package-off"></i>Inga tjänster kopplade än. Kontakta oss för att komma igång.</div>`;
@@ -2775,6 +2951,165 @@ async function loadCustomerDashboard(gen) {
     if (_navGen !== gen) return;
     el.innerHTML = `<div class="empty" style="padding:48px"><i class="ti ti-alert-circle"></i>Kunde inte ladda översikten: ${escapeHtml(e.message)}</div>`;
   }
+}
+
+// ── Notiser (klocka) ────────────────────────────────────────────────────────
+
+let _notifTimer = null;
+let _notifOpen = false;
+
+function _fmtAgo(iso) {
+  if (!iso) return '';
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return 'nyss';
+  if (s < 3600) return Math.floor(s / 60) + ' min sedan';
+  if (s < 86400) return Math.floor(s / 3600) + ' h sedan';
+  return Math.floor(s / 86400) + ' d sedan';
+}
+
+async function refreshNotifBadge() {
+  if (!currentUser) return;
+  try {
+    const r = await api('/api/inbox/unread-count');
+    const badge = document.getElementById('notif-badge');
+    if (!badge) return;
+    if (r.unread > 0) { badge.textContent = r.unread > 99 ? '99+' : r.unread; badge.style.display = ''; }
+    else badge.style.display = 'none';
+  } catch (e) { /* tyst */ }
+}
+
+function startNotifPolling() {
+  refreshNotifBadge();
+  if (_notifTimer) clearInterval(_notifTimer);
+  _notifTimer = setInterval(refreshNotifBadge, 60000);
+}
+
+async function toggleNotifPanel(ev) {
+  if (ev) ev.stopPropagation();
+  const panel = document.getElementById('notif-panel');
+  _notifOpen = !_notifOpen;
+  panel.style.display = _notifOpen ? '' : 'none';
+  if (_notifOpen) await loadNotifs();
+}
+
+document.addEventListener('click', (e) => {
+  if (!_notifOpen) return;
+  const wrap = document.getElementById('notif-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    _notifOpen = false;
+    document.getElementById('notif-panel').style.display = 'none';
+  }
+});
+
+async function loadNotifs() {
+  const el = document.getElementById('notif-list');
+  el.innerHTML = '<div class="skel" style="padding:24px">Laddar...</div>';
+  try {
+    const r = await api('/api/inbox?limit=30');
+    if (!r.items.length) {
+      el.innerHTML = `<div class="empty" style="padding:28px 20px"><i class="ti ti-bell-off"></i>Inga notiser.</div>`;
+    } else {
+      el.innerHTML = r.items.map(n => `
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="openNotif('${n.id}','${n.link_ticket_id || ''}')">
+          <div class="notif-ico"><i class="ti ${n.icon || 'ti-bell'}"></i></div>
+          <div style="flex:1;min-width:0">
+            <div class="notif-t">${escapeHtml(n.title)}</div>
+            ${n.body ? `<div class="notif-b">${escapeHtml(n.body)}</div>` : ''}
+            <div class="notif-ago">${_fmtAgo(n.created_at)}</div>
+          </div>
+        </div>`).join('');
+    }
+    // Uppdatera badge (räkna om oläst)
+    const badge = document.getElementById('notif-badge');
+    if (badge) {
+      if (r.unread > 0) { badge.textContent = r.unread > 99 ? '99+' : r.unread; badge.style.display = ''; }
+      else badge.style.display = 'none';
+    }
+  } catch (e) {
+    el.innerHTML = `<div class="empty" style="padding:24px"><i class="ti ti-alert-circle"></i>${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function openNotif(id, ticketId) {
+  try { await api('/api/inbox/' + id + '/read', { method: 'POST' }); } catch (e) {}
+  _notifOpen = false;
+  document.getElementById('notif-panel').style.display = 'none';
+  refreshNotifBadge();
+  if (ticketId) openTicketDetail(ticketId);
+}
+
+async function markAllNotifsRead() {
+  try {
+    await api('/api/inbox/read-all', { method: 'POST' });
+    await loadNotifs();
+    refreshNotifBadge();
+  } catch (e) { t(e.message, 'err'); }
+}
+
+// ── Fakturaunderlag ─────────────────────────────────────────────────────────
+
+let _billingData = null;
+
+function _minToH(min) { return (min / 60).toLocaleString('sv-SE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+
+async function loadBilling() {
+  const gen = _navGen;
+  const monthEl = document.getElementById('billing-month');
+  if (monthEl && !monthEl.value) monthEl.value = new Date().toISOString().slice(0, 7);
+  const tbody = document.getElementById('billing-tbody');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Laddar...</td></tr>`;
+  try {
+    const data = await api('/api/billing?month=' + (monthEl ? monthEl.value : ''));
+    if (_navGen !== gen) return;
+    _billingData = data;
+    const tot = data.totals;
+    document.getElementById('bill-hours').textContent = _minToH(tot.billed_minutes) + ' h';
+    document.getElementById('bill-mrr').textContent = fmtSek(tot.mrr);
+    document.getElementById('bill-count').textContent = data.rows.length;
+    if (!data.rows.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">Ingen debiterbar tid eller aktiva avtal för ${data.period}.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.rows.map(r => `
+      <tr style="cursor:pointer" onclick="openCustomer('${r.customer_id}')">
+        <td data-label="Kund"><span class="dn">${escapeHtml(r.customer_name)}</span></td>
+        <td data-label="Ärendetid" style="text-align:right">${_minToH(r.ticket_minutes)} h</td>
+        <td data-label="Projekttid" style="text-align:right">${_minToH(r.order_minutes)} h</td>
+        <td data-label="Total tid" style="text-align:right;font-weight:700">${_minToH(r.billed_minutes)} h</td>
+        <td data-label="MRR" style="text-align:right">${r.mrr ? fmtSek(r.mrr) : '—'}</td>
+      </tr>`).join('')
+      + `<tr style="font-weight:700;background:var(--tint)">
+          <td data-label="Kund">Totalt</td>
+          <td data-label="Ärendetid" style="text-align:right">${_minToH(tot.ticket_minutes)} h</td>
+          <td data-label="Projekttid" style="text-align:right">${_minToH(tot.order_minutes)} h</td>
+          <td data-label="Total tid" style="text-align:right">${_minToH(tot.billed_minutes)} h</td>
+          <td data-label="MRR" style="text-align:right">${fmtSek(tot.mrr)}</td>
+        </tr>`;
+  } catch (e) {
+    if (_navGen !== gen) return;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="alert al-e" style="margin:10px"><i class="ti ti-alert-circle"></i><span>${escapeHtml(e.message)}</span></div></td></tr>`;
+  }
+}
+
+function exportBillingCsv() {
+  if (!_billingData || !_billingData.rows.length) { t('Ingen data att exportera', 'err'); return; }
+  const head = ['Kund', 'Ärendetid (h)', 'Projekttid (h)', 'Total tid (h)', 'MRR (kr)'];
+  const lines = [head.join(';')];
+  _billingData.rows.forEach(r => {
+    lines.push([
+      '"' + r.customer_name.replace(/"/g, '""') + '"',
+      (r.ticket_minutes / 60).toFixed(2),
+      (r.order_minutes / 60).toFixed(2),
+      (r.billed_minutes / 60).toFixed(2),
+      r.mrr,
+    ].join(';'));
+  });
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `fakturaunderlag_${_billingData.period}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // ── Kundlista ─────────────────────────────────────────────────────────────
@@ -4041,6 +4376,7 @@ async function loadCustomerServices(customerId) {
   if (addBtn) addBtn.style.display = isAdmin ? '' : 'none';
   el.innerHTML = '<div class="skel" style="padding:24px">Laddar tjänster...</div>';
   try {
+    await _ensureIntegrations();
     const items = await api('/api/services/customer/' + customerId);
     if (!items.length) {
       el.innerHTML = `<div class="empty"><i class="ti ti-package-off"></i>Inga tjänster kopplade${isAdmin?' — klicka "Lägg till tjänst".':'.'}</div>`;
@@ -4053,6 +4389,11 @@ async function loadCustomerServices(customerId) {
         s.start_date ? `Sedan ${s.start_date}` : '',
         s.notes ? escapeHtml(s.notes) : '',
       ].filter(Boolean).join(' · ');
+      const price = s.effective_price
+        ? `<span class="svc-price">${fmtSek(s.effective_price)}<small>/mån</small>${s.price!=null?' <i class="ti ti-pencil" style="font-size:11px" title="Anpassat pris"></i>':''}</span>`
+        : '';
+      const intg = s.integration_type
+        ? `<div style="font-size:11px;color:var(--muted);margin-top:4px"><i class="ti ti-plug" style="font-size:12px"></i> Datakälla: ${escapeHtml(_intName(s.integration_type))}</div>` : '';
       const admin = isAdmin ? `<div style="display:flex;gap:6px;margin-top:10px">
           <button class="btn btn-g btn-sm" onclick="openAssignServiceModal('${s.id}')"><i class="ti ti-edit"></i></button>
           <button class="btn btn-danger btn-sm" onclick="removeCustomerService('${s.id}')"><i class="ti ti-trash"></i></button>
@@ -4065,7 +4406,8 @@ async function loadCustomerServices(customerId) {
             <span class="svc-chip ${st.cls}">${st.label}</span>
           </div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${escapeHtml(s.description||'')}</div>
-          ${meta?`<div style="font-size:11px;color:var(--sub);margin-top:6px">${meta}</div>`:''}
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap">${price}${meta?`<span style="font-size:11px;color:var(--sub)">${meta}</span>`:''}</div>
+          ${intg}
           ${admin}
         </div>
       </div>`;
@@ -4101,6 +4443,10 @@ async function openAssignServiceModal(assignmentId) {
   document.getElementById('ms-status').value = edit ? edit.status : 'active';
   document.getElementById('ms-start').value = edit ? (edit.start_date || '') : new Date().toISOString().slice(0, 10);
   document.getElementById('ms-notes').value = edit ? (edit.notes || '') : '';
+  document.getElementById('ms-price').value = (edit && edit.price != null) ? edit.price : '';
+  // Visa katalogpris som placeholder
+  const catPrice = edit ? edit.catalog_price : (_serviceCatalog.find(s => s.id === sel.value)?.monthly_price ?? 0);
+  document.getElementById('ms-price').placeholder = 'Standard: ' + fmtSek(catPrice || 0);
   document.getElementById('ms-assignment-id').value = edit ? assignmentId : '';
   openModal('modal-service');
 }
@@ -4110,15 +4456,17 @@ async function saveCustomerService() {
   const status = document.getElementById('ms-status').value;
   const start_date = document.getElementById('ms-start').value || null;
   const notes = document.getElementById('ms-notes').value.trim();
+  const priceRaw = document.getElementById('ms-price').value;
+  const price = priceRaw === '' ? null : (parseInt(priceRaw, 10) || 0);
   try {
     if (assignmentId) {
       await api(`/api/services/customer/${currentCustomerId}/${assignmentId}`, {
-        method: 'PUT', body: JSON.stringify({ status, start_date, notes }),
+        method: 'PUT', body: JSON.stringify({ status, start_date, notes, price }),
       });
     } else {
       const service_id = document.getElementById('ms-service').value;
       await api('/api/services/customer/' + currentCustomerId, {
-        method: 'POST', body: JSON.stringify({ service_id, status, start_date, notes }),
+        method: 'POST', body: JSON.stringify({ service_id, status, start_date, notes, price }),
       });
     }
     closeModal('modal-service');
@@ -4377,12 +4725,12 @@ function renderOrdersTable() {
   }
   tbody.innerHTML = list.map(o => `
     <tr onclick="openOrderDetail('${o.id}','orders')" style="cursor:pointer">
-      <td><span class="dn">${escapeHtml(o.customer_name||'—')}</span></td>
-      <td><span class="dn">${escapeHtml(o.title)}</span></td>
-      <td><span class="b ${o.type==='project'?'b-info':'b-muted'}">${o.type==='project'?'Projekt':'Order'}</span></td>
-      <td>${o.current_phase ? escapeHtml(o.current_phase.name) : '<span style="color:var(--muted)">—</span>'}</td>
-      <td><span class="b ${o.status==='completed'?'b-ok':o.status==='cancelled'?'b-err':'b-muted'}">${statusLabel(o.status)}</span></td>
-      <td style="color:var(--muted)">${new Date(o.created_at).toLocaleDateString('sv-SE')}</td>
+      <td data-label="Kund"><span class="dn">${escapeHtml(o.customer_name||'—')}</span></td>
+      <td data-label="Titel"><span class="dn">${escapeHtml(o.title)}</span></td>
+      <td data-label="Typ"><span class="b ${o.type==='project'?'b-info':'b-muted'}">${o.type==='project'?'Projekt':'Order'}</span></td>
+      <td data-label="Status nu">${o.current_phase ? escapeHtml(o.current_phase.name) : '<span style="color:var(--muted)">—</span>'}</td>
+      <td data-label="Status"><span class="b ${o.status==='completed'?'b-ok':o.status==='cancelled'?'b-err':'b-muted'}">${statusLabel(o.status)}</span></td>
+      <td data-label="Skapad" style="color:var(--muted)">${new Date(o.created_at).toLocaleDateString('sv-SE')}</td>
     </tr>`).join('');
 }
 
@@ -5483,6 +5831,16 @@ function toggleTicketMine() {
   renderTicketsTable();
 }
 
+// Från dashboarden: öppna ärendelistan filtrerad på "mina"
+function showMyTickets() {
+  nav('tickets');
+  if (!_ticketFilter.mine) {
+    _ticketFilter.mine = true;
+    const btn = document.getElementById('ticket-mine-btn');
+    if (btn) { btn.style.background = 'var(--blue)'; btn.style.color = '#fff'; }
+  }
+}
+
 let _bulkMode = false;
 
 function toggleBulkMode() {
@@ -5530,15 +5888,15 @@ function renderTicketsTable() {
     const sla = _slaDisplay(tk);
     const chk = (isStaff && _bulkMode) ? `<input type="checkbox" class="tk-check" onclick="event.stopPropagation()" onchange="toggleBulk('${tk.id}',this.checked)" ${_bulkSelected.has(tk.id)?'checked':''} style="margin-right:6px;vertical-align:middle">` : '';
     return `<tr style="cursor:pointer" onclick="openTicketDetail('${tk.id}')">
-      <td style="white-space:nowrap">${chk}<span style="font-family:monospace;font-weight:700;color:var(--blue);font-size:12px">${escapeHtml(tk.ticket_number)}</span></td>
-      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(tk.title)}</td>
-      <td style="font-size:12px;white-space:nowrap">${escapeHtml(tk.customer_name||'—')}</td>
-      <td style="white-space:nowrap"><span class="b b-muted" style="font-size:11px">${TYPE_LABEL[tk.type]||tk.type}</span></td>
-      <td style="white-space:nowrap"><span class="b ${PRIO_CLS[tk.priority]||''}" style="font-size:11px">${PRIO_LABEL[tk.priority]||tk.priority}</span></td>
-      <td style="white-space:nowrap"><span class="b ${STATUS_CLS[tk.status]||''}" style="font-size:11px">${STATUS_LABEL[tk.status]||tk.status}</span></td>
-      <td style="font-size:12px;white-space:nowrap">${escapeHtml(tk.assigned_to?.name||'—')}</td>
-      <td style="white-space:nowrap">${sla}</td>
-      <td style="font-size:12px;color:var(--muted)">${_relTime(tk.updated_at||tk.created_at)}</td>
+      <td data-label="Nr" style="white-space:nowrap">${chk}<span style="font-family:monospace;font-weight:700;color:var(--blue);font-size:12px">${escapeHtml(tk.ticket_number)}</span></td>
+      <td data-label="Ärende" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(tk.title)}</td>
+      <td data-label="Kund" style="font-size:12px;white-space:nowrap">${escapeHtml(tk.customer_name||'—')}</td>
+      <td data-label="Typ" style="white-space:nowrap"><span class="b b-muted" style="font-size:11px">${TYPE_LABEL[tk.type]||tk.type}</span></td>
+      <td data-label="Prioritet" style="white-space:nowrap"><span class="b ${PRIO_CLS[tk.priority]||''}" style="font-size:11px">${PRIO_LABEL[tk.priority]||tk.priority}</span></td>
+      <td data-label="Status" style="white-space:nowrap"><span class="b ${STATUS_CLS[tk.status]||''}" style="font-size:11px">${STATUS_LABEL[tk.status]||tk.status}</span></td>
+      <td data-label="Tilldelad" style="font-size:12px;white-space:nowrap">${escapeHtml(tk.assigned_to?.name||'—')}</td>
+      <td data-label="SLA" style="white-space:nowrap">${sla}</td>
+      <td data-label="Uppdaterad" style="font-size:12px;color:var(--muted)">${_relTime(tk.updated_at||tk.created_at)}</td>
     </tr>`;
   }).join('');
 }
@@ -6349,24 +6707,52 @@ async function deleteTag(id) {
 
 // ── Tjänstekatalog (inställningar) ─────────────────────────────────────────────
 
+let _availableIntegrations = null;
+
+async function _ensureIntegrations() {
+  if (!_availableIntegrations) {
+    try { _availableIntegrations = await api('/api/customers/integrations/available'); }
+    catch (e) { _availableIntegrations = []; }
+  }
+  return _availableIntegrations;
+}
+
+async function _ensureIntegrationOptions(selectEl, selected) {
+  await _ensureIntegrations();
+  selectEl.innerHTML = '<option value="">— ingen —</option>' +
+    _availableIntegrations.map(i => `<option value="${i.key}"${i.key===selected?' selected':''}>${escapeHtml(i.display_name)}</option>`).join('');
+}
+
+function _intName(key) {
+  const i = (_availableIntegrations || []).find(x => x.key === key);
+  return i ? i.display_name : key;
+}
+
 async function loadServicesSettings() {
   const el = document.getElementById('s-services-list');
   el.innerHTML = '<div style="color:var(--muted);font-size:13px">Laddar...</div>';
+  await _ensureIntegrationOptions(document.getElementById('svc-integration'), '');
   try {
     const items = await api('/api/services');
     if (!items.length) {
       el.innerHTML = '<div style="color:var(--muted);font-size:13px">Inga tjänster än.</div>';
       return;
     }
-    el.innerHTML = items.map(s => `
+    el.innerHTML = items.map(s => {
+      const meta = [
+        s.monthly_price ? fmtSek(s.monthly_price) + '/mån' : 'Inget pris',
+        s.integration_type ? `<i class="ti ti-plug" style="font-size:11px"></i> ${escapeHtml(_intName(s.integration_type))}` : '',
+      ].filter(Boolean).join(' · ');
+      return `
       <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px">
         <div class="svc-ico" style="width:34px;height:34px;font-size:17px;border-radius:8px;background:${s.color}"><i class="ti ${s.icon}"></i></div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:13px">${escapeHtml(s.name)}</div>
-          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.description||'')}</div>
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div>
         </div>
         <button class="btn btn-danger btn-sm btn-ico" onclick="deleteService('${s.id}','${escapeHtml(s.name)}')"><i class="ti ti-trash"></i></button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch (e) {
     el.innerHTML = `<div style="color:var(--err);font-size:13px">${escapeHtml(e.message)}</div>`;
   }
@@ -6377,11 +6763,15 @@ async function addService() {
   const icon = document.getElementById('svc-icon').value.trim() || 'ti-shield-check';
   const color = document.getElementById('svc-color').value || '#0047A3';
   const description = document.getElementById('svc-desc').value.trim();
+  const monthly_price = parseInt(document.getElementById('svc-price').value, 10) || 0;
+  const integration_type = document.getElementById('svc-integration').value || null;
   if (!name) { t('Namn krävs', 'err'); return; }
   try {
-    await api('/api/services', { method: 'POST', body: JSON.stringify({ name, icon, color, description }) });
+    await api('/api/services', { method: 'POST', body: JSON.stringify({ name, icon, color, description, monthly_price, integration_type }) });
     document.getElementById('svc-name').value = '';
     document.getElementById('svc-desc').value = '';
+    document.getElementById('svc-price').value = '0';
+    document.getElementById('svc-integration').value = '';
     await loadServicesSettings();
     t('Tjänst tillagd');
   } catch (e) { t(e.message, 'err'); }

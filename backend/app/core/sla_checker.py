@@ -43,8 +43,10 @@ async def check_sla_breaches() -> None:
         esc_id = app_settings.get("escalation_user_id") or None
         esc_user = await db.get(User, esc_id) if esc_id else None
 
+        from app.core.notify import notify_user
         for ticket in breached:
             ticket.sla_breached = True
+            _owner_id = ticket.assigned_to_user_id
             if esc_user and ticket.assigned_to_user_id != esc_user.id:
                 db.add(_TH(
                     id=str(_uuid.uuid4()), ticket_id=ticket.id, user_id=None,
@@ -52,7 +54,13 @@ async def check_sla_breaches() -> None:
                     old_value=ticket.assigned_to_user_id, new_value=esc_user.id,
                 ))
                 ticket.assigned_to = esc_user  # sätter både FK och relation för notisen
+                _owner_id = esc_user.id
                 logger.info("Eskalerade %s till %s vid SLA-brott", ticket.ticket_number, esc_user.email)
+            if _owner_id:
+                _cn = ticket.customer.name if ticket.customer else ""
+                await notify_user(db, _owner_id, "ticket_sla",
+                                  f"SLA brutet · {ticket.ticket_number}", f"{_cn}: {ticket.title}",
+                                  link_ticket_id=ticket.id, icon="ti-alarm")
             try:
                 from app.graph.ticket_mailer import send_sla_breach_warning
                 await send_sla_breach_warning(ticket, kind="resolution")
@@ -74,6 +82,11 @@ async def check_sla_breaches() -> None:
         resp_breached = resp_tickets.all()
         for ticket in resp_breached:
             ticket.response_sla_breached = True
+            if ticket.assigned_to_user_id:
+                _cn = ticket.customer.name if ticket.customer else ""
+                await notify_user(db, ticket.assigned_to_user_id, "ticket_sla",
+                                  f"Svars-SLA brutet · {ticket.ticket_number}", f"{_cn}: {ticket.title}",
+                                  link_ticket_id=ticket.id, icon="ti-alarm")
             try:
                 from app.graph.ticket_mailer import send_sla_breach_warning
                 await send_sla_breach_warning(ticket, kind="response")

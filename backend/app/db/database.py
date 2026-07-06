@@ -58,6 +58,10 @@ async def init_db() -> None:
             # Per-kund rapportschema
             "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_frequency VARCHAR NOT NULL DEFAULT 'monthly'",
             "ALTER TABLE customers ADD COLUMN IF NOT EXISTS report_day INTEGER NOT NULL DEFAULT 0",
+            # Tjänster: pris (MRR) + valfri integrationskoppling + prisöverskrivning per kund
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS monthly_price INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS integration_type VARCHAR",
+            "ALTER TABLE customer_services ADD COLUMN IF NOT EXISTS price INTEGER",
             # En äldre audit_logs-design hade extra NOT NULL-kolumner (t.ex. user_email)
             # som blockerar inserts från den nya modellen. Droppa alla kolumner som
             # inte tillhör den nuvarande modellen (no-op på fräscha installationer).
@@ -171,16 +175,17 @@ async def _seed_services() -> None:
         if count and count > 0:
             return
         defaults = [
-            # name, description, icon, color
-            ("Managed Network", "Övervakning, patchning och drift av nätverk (UniFi m.m.)", "ti-router", "#0047A3"),
-            ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED"),
-            ("Managed Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9"),
-            ("Managed Endpoint", "Övervakning och säkerhet för klienter/servrar", "ti-device-desktop", "#16A34A"),
+            # name, description, icon, color, monthly_price, integration_type
+            ("Managed Network", "Övervakning, patchning och drift av nätverk (UniFi m.m.)", "ti-router", "#0047A3", 2500, "unifi"),
+            ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED", 1500, None),
+            ("Managed Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9", 1900, "microsoft"),
+            ("Managed Endpoint", "Övervakning och säkerhet för klienter/servrar", "ti-device-desktop", "#16A34A", 1200, None),
         ]
-        for pos, (name, desc, icon, color) in enumerate(defaults):
+        for pos, (name, desc, icon, color, price, itype) in enumerate(defaults):
             session.add(Service(
                 id=str(_uuid_mod.uuid4()),
                 name=name, description=desc, icon=icon, color=color, position=pos,
+                monthly_price=price, integration_type=itype,
             ))
         await session.commit()
 

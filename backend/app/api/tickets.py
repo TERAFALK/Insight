@@ -360,6 +360,21 @@ async def create_ticket(
         if own_contact:
             db.add(TicketContact(id=str(uuid.uuid4()), ticket_id=ticket.id, contact_id=own_contact.id))
 
+    # In-app-notis: nytt ärende → alla admins (utom den som skapade det).
+    # Om ärendet redan är tilldelat notifieras bara den tilldelade.
+    from app.core.notify import notify_admins, notify_user
+    _cust = await db.get(Customer, body.customer_id)
+    _cust_name = _cust.name if _cust else ""
+    if ticket.assigned_to_user_id:
+        await notify_user(db, ticket.assigned_to_user_id, "ticket_created",
+                          f"Nytt ärende {ticket_number}", f"{_cust_name}: {body.title}",
+                          link_ticket_id=ticket.id, icon="ti-ticket")
+    else:
+        await notify_admins(db, "ticket_created",
+                            f"Nytt ärende {ticket_number}", f"{_cust_name}: {body.title}",
+                            link_ticket_id=ticket.id, icon="ti-ticket",
+                            exclude_user_id=user.id)
+
     await db.commit()
 
     # Bekräftelsemejl — skickas till den kundanvändare som skapade ärendet.
@@ -465,6 +480,13 @@ async def update_ticket(
         await _add_history(db, ticket.id, user.id, "assigned_to",
                            ticket.assigned_to_user_id, body.assigned_to_user_id or None)
         ticket.assigned_to_user_id = body.assigned_to_user_id or None
+        # In-app-notis till den nya ägaren (om någon annan än den som tilldelar)
+        if ticket.assigned_to_user_id and ticket.assigned_to_user_id != user.id:
+            from app.core.notify import notify_user
+            _cn = ticket.customer.name if ticket.customer else ""
+            await notify_user(db, ticket.assigned_to_user_id, "ticket_assigned",
+                              f"Tilldelad {ticket.ticket_number}", f"{_cn}: {ticket.title}",
+                              link_ticket_id=ticket.id, icon="ti-user-check")
 
     if "category_id" in fields_set:
         ticket.category_id = body.category_id or None
@@ -804,9 +826,19 @@ async def post_message(
                     select(User).where(User.role == "admin", User.is_active == True)
                 )).all()
                 from app.graph.ticket_mailer import send_ticket_mention
+                from app.core.notify import notify_user
+                _mentioned_any = False
+                _who = user.full_name or user.email
                 for mu in admins:
                     if mu.email.lower() in mentioned and mu.id != user.id:
                         await send_ticket_mention(ticket, mu, safe_body, user)
+                        await notify_user(db, mu.id, "ticket_mention",
+                                          f"{_who} nämnde dig",
+                                          f"{ticket.ticket_number}: {ticket.title}",
+                                          link_ticket_id=ticket.id, icon="ti-at")
+                        _mentioned_any = True
+                if _mentioned_any:
+                    await db.commit()
         except Exception as e:
             logger.warning("Kunde inte skicka mention-notis för %s: %s", ticket.ticket_number, e)
 

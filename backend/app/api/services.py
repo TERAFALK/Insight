@@ -12,10 +12,20 @@ from app.api.auth import current_user, require_admin
 from app.core.audit import log_action
 from app.db.database import get_db
 from app.db.models import Customer, CustomerService, Service, User
+from app.integrations.registry import INTEGRATIONS
 
 router = APIRouter()
 
 _VALID_STATUS = ("active", "paused", "ended")
+
+
+def _norm_integration(value: str | None) -> str | None:
+    """Tom sträng → None. Validera mot kända integrationstyper."""
+    if not value:
+        return None
+    if value not in INTEGRATIONS:
+        raise HTTPException(400, f"Okänd integrationstyp: {value}")
+    return value
 
 
 # ── Serialisering ─────────────────────────────────────────────────────────────
@@ -27,6 +37,8 @@ def _service_dict(s: Service) -> dict:
         "description": s.description,
         "icon": s.icon,
         "color": s.color,
+        "monthly_price": s.monthly_price,
+        "integration_type": s.integration_type,
         "position": s.position,
         "is_active": s.is_active,
     }
@@ -34,16 +46,21 @@ def _service_dict(s: Service) -> dict:
 
 def _assignment_dict(cs: CustomerService) -> dict:
     svc = cs.service
+    catalog_price = svc.monthly_price if svc else 0
     return {
         "id": cs.id,
         "service_id": cs.service_id,
         "status": cs.status,
         "start_date": cs.start_date.isoformat() if cs.start_date else None,
         "notes": cs.notes,
+        "price": cs.price,                              # överskrivning (kan vara None)
+        "effective_price": cs.price if cs.price is not None else catalog_price,
+        "catalog_price": catalog_price,
         "name": svc.name if svc else "—",
         "icon": svc.icon if svc else "ti-shield-check",
         "color": svc.color if svc else "#0047A3",
         "description": svc.description if svc else "",
+        "integration_type": svc.integration_type if svc else None,
     }
 
 
@@ -67,6 +84,8 @@ class ServiceBody(BaseModel):
     description: str = ""
     icon: str = "ti-shield-check"
     color: str = "#0047A3"
+    monthly_price: int = 0
+    integration_type: str | None = None
     position: int = 0
     is_active: bool = True
 
@@ -84,6 +103,7 @@ async def create_service(
         raise HTTPException(400, "En tjänst med det namnet finns redan")
     s = Service(**body.model_dump())
     s.name = body.name.strip()
+    s.integration_type = _norm_integration(body.integration_type)
     db.add(s)
     await db.flush()
     await log_action(db, admin, "service.create", "service", s.id, f"Skapade tjänst {s.name}")
@@ -97,6 +117,8 @@ class ServiceUpdate(BaseModel):
     description: str | None = None
     icon: str | None = None
     color: str | None = None
+    monthly_price: int | None = None
+    integration_type: str | None = None
     position: int | None = None
     is_active: bool | None = None
 
@@ -111,7 +133,12 @@ async def update_service(
     s = await db.get(Service, service_id)
     if not s:
         raise HTTPException(404, "Tjänst hittades inte")
-    for field, value in body.model_dump(exclude_none=True).items():
+    data = body.model_dump(exclude_none=True)
+    # Tillåt att nolla integrationskopplingen: hantera separat (exclude_none tar bort None/"").
+    if "integration_type" in body.model_fields_set:
+        s.integration_type = _norm_integration(body.integration_type)
+        data.pop("integration_type", None)
+    for field, value in data.items():
         setattr(s, field, value)
     await log_action(db, admin, "service.update", "service", s.id, f"Uppdaterade tjänst {s.name}")
     await db.commit()
@@ -159,6 +186,7 @@ class AssignBody(BaseModel):
     status: str = "active"
     start_date: date | None = None
     notes: str = ""
+    price: int | None = None
 
 
 @router.post("/customer/{customer_id}", status_code=201)
@@ -190,6 +218,7 @@ async def assign_service(
         status=body.status,
         start_date=body.start_date,
         notes=body.notes,
+        price=body.price,
     )
     db.add(cs)
     await db.flush()
@@ -207,6 +236,7 @@ class AssignUpdate(BaseModel):
     status: str | None = None
     start_date: date | None = None
     notes: str | None = None
+    price: int | None = None
 
 
 @router.put("/customer/{customer_id}/{assignment_id}")
