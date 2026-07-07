@@ -149,6 +149,8 @@ class Domain(Base):
     dmarc_status: Mapped[str] = mapped_column(String, default="", server_default="")   # ok|weak|missing|error
     dmarc_policy: Mapped[str] = mapped_column(String, default="", server_default="")    # none|quarantine|reject
     spf_status: Mapped[str] = mapped_column(String, default="", server_default="")      # ok|missing|error
+    dkim_status: Mapped[str] = mapped_column(String, default="", server_default="")     # ok|missing|error
+    dkim_selector: Mapped[str] = mapped_column(String, default="", server_default="")   # valfri selektor (annars vanliga testas)
     ssl_expiry: Mapped[date | None] = mapped_column(Date, nullable=True)
     site_status: Mapped[int | None] = mapped_column(Integer, nullable=True)             # HTTP-statuskod
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

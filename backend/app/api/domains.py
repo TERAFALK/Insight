@@ -42,6 +42,8 @@ def _domain_dict(dm: Domain) -> dict:
         "dmarc_status": dm.dmarc_status,
         "dmarc_policy": dm.dmarc_policy,
         "spf_status": dm.spf_status,
+        "dkim_status": dm.dkim_status,
+        "dkim_selector": dm.dkim_selector,
         "ssl_expiry": dm.ssl_expiry.isoformat() if dm.ssl_expiry else None,
         "days_to_ssl": _days_until(dm.ssl_expiry),
         "site_status": dm.site_status,
@@ -71,6 +73,7 @@ class DomainBody(BaseModel):
     website_url: str = ""
     notes: str = ""
     renewal_manual: date | None = None
+    dkim_selector: str = ""
 
 
 def _clean_name(name: str) -> str:
@@ -102,6 +105,7 @@ async def create_domain(
         website_url=body.website_url.strip(),
         notes=body.notes,
         renewal_manual=body.renewal_manual,
+        dkim_selector=body.dkim_selector.strip(),
     )
     db.add(dm)
     await db.flush()
@@ -117,6 +121,7 @@ class DomainUpdate(BaseModel):
     website_url: str | None = None
     notes: str | None = None
     renewal_manual: date | None = None
+    dkim_selector: str | None = None
 
 
 @router.put("/{domain_id}")
@@ -157,12 +162,14 @@ async def delete_domain(
 
 
 async def _run_check(dm: Domain, db: AsyncSession) -> None:
-    res = await check_domain(dm.name, dm.monitor_type, dm.website_url)
+    res = await check_domain(dm.name, dm.monitor_type, dm.website_url, dm.dkim_selector)
     dm.expiry_date = res["expiry_date"]
     dm.registrar = res["registrar"] or ""
     dm.dmarc_status = res["dmarc_status"]
     dm.dmarc_policy = res["dmarc_policy"]
     dm.spf_status = res["spf_status"]
+    dm.dkim_status = res["dkim_status"]
+    dm.dkim_selector = res["dkim_selector"] or dm.dkim_selector
     dm.ssl_expiry = res["ssl_expiry"]
     dm.site_status = res["site_status"]
     dm.check_error = res["check_error"]

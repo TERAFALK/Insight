@@ -96,6 +96,7 @@ async def list_customers(
         .options(
             selectinload(Customer.credentials),
             selectinload(Customer.service_articles).selectinload(CustomerServiceArticle.article).selectinload(ServiceArticle.service),
+            selectinload(Customer.domains),
         )
         .order_by(Customer.name)
         .offset(skip)
@@ -108,6 +109,7 @@ async def list_customers(
     for c in rows.all():
         verified = {cr.integration_type for cr in c.credentials if cr.is_verified}
         configured = {cr.integration_type for cr in c.credentials}
+        domains_count = sum(1 for d in c.domains if d.is_active)
         # Distinkta aktiva tjänster (härledda ur artiklarna kunden har)
         active_svc_map = {}
         for csa in c.service_articles:
@@ -123,6 +125,7 @@ async def list_customers(
             "integrations_configured": list(configured),
             "integrations_verified": list(verified),
             "services": active_services,
+            "domains_count": domains_count,
         })
     return result
 
@@ -166,6 +169,7 @@ async def get_customer(
             selectinload(Customer.credentials),
             selectinload(Customer.reports),
             selectinload(Customer.service_articles).selectinload(CustomerServiceArticle.article).selectinload(ServiceArticle.service),
+            selectinload(Customer.domains),
         )
     )
     if not c:
@@ -199,6 +203,7 @@ async def get_customer(
         "city": c.city,
         "report_frequency": c.report_frequency,
         "report_day": c.report_day,
+        "domains_count": sum(1 for d in c.domains if d.is_active),
         "integrations": integrations_status,
         # Sammanfattning av aktiva tjänster (härledda ur artiklarna) för hero/underrubrik.
         # Full artikel-lista hämtas separat via /api/services/customer/{id}.

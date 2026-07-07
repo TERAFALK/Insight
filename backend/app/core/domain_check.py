@@ -11,6 +11,7 @@ Varje delkontroll är isolerad — ett fel i en påverkar inte de andra.
 
 import asyncio
 import logging
+import re
 import socket
 import ssl
 from datetime import date, datetime
@@ -21,6 +22,49 @@ logger = logging.getLogger(__name__)
 
 _DOH_URL = "https://dns.google/resolve"
 _RDAP_URL = "https://rdap.org/domain/"
+
+# Vanliga DKIM-selektorer som testas när ingen är angiven (körs parallellt, gräns nedan).
+_DKIM_SELECTORS = [
+    # Microsoft 365 / Outlook
+    "selector1", "selector2",
+    # Google Workspace
+    "google",
+    # Generiska / webbhotell / cPanel
+    "default", "dkim", "mail", "email", "smtp", "mx",
+    "k1", "k2", "k3", "s1", "s2", "key1", "key2", "s1024", "s2048",
+    # Amazon SES
+    "amazonses",
+    # SendGrid
+    "sendgrid", "smtpapi",
+    # Mailchimp / Mandrill
+    "mandrill", "mte1", "mte2",
+    # Mailgun
+    "mailo", "mg", "pic", "krs",
+    # Zoho
+    "zoho", "zmail",
+    # Proton Mail
+    "protonmail", "protonmail2", "protonmail3",
+    # Postmark / Fastmail
+    "pm", "fm1", "fm2", "fm3", "mesmtp",
+    # Mailjet / SMTP2GO / Brevo
+    "mailjet", "s2go", "em",
+    # Yahoo / AOL
+    "y1", "y2", "yp1", "ecdsa1",
+    # Salesforce/Pardot / Zendesk / Freshdesk / Klaviyo / HubSpot
+    "pardot", "sf", "zendesk1", "zendesk2", "fd", "kl", "kl2", "hs1", "hs2",
+    # Svenska / EU-webbhotell (Loopia, One.com, OVH, Binero)
+    "loopia", "one", "ovhmx", "ovh", "binero",
+]
+
+# Max antal parallella DKIM-DNS-uppslag (undviker att spamma DoH-tjänsten).
+_DKIM_CONCURRENCY = 10
+
+# WHOIS-servrar för TLD:er som saknar RDAP (annars slås de upp via IANA).
+_WHOIS_FALLBACK = {
+    "se": "whois.iis.se", "nu": "whois.iis.nu",
+    "dk": "whois.dk-hostmaster.dk", "no": "whois.norid.no",
+    "fi": "whois.fi", "is": "whois.isnic.is",
+}
 
 
 async def _dns_txt(client: httpx.AsyncClient, name: str) -> list[str]:
@@ -96,6 +140,89 @@ async def _rdap(client: httpx.AsyncClient, domain: str) -> tuple[date | None, st
     return expiry, registrar
 
 
+def _whois_query(server: str, query: str) -> str:
+    with socket.create_connection((server, 43), timeout=10) as s:
+        s.sendall((query + "\r\n").encode())
+        data = b""
+        while True:
+            chunk = s.recv(4096)
+            if not chunk:
+                break
+            data += chunk
+    return data.decode("utf-8", "replace")
+
+
+def _parse_whois_date(text: str) -> date | None:
+    # Leta efter en rad med expiry/paid-till/renewal och plocka ut ett datum
+    for line in text.splitlines():
+        low = line.lower()
+        if any(k in low for k in ("expir", "paid-till", "renewal date", "renewal:")):
+            m = re.search(r"(\d{4})[-.](\d{2})[-.](\d{2})", line)
+            if m:
+                try:
+                    return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                except ValueError:
+                    pass
+            m = re.search(r"(\d{2})[-/](\w{3})[-/](\d{4})", line)  # 09-Mar-2031
+            if m:
+                try:
+                    return datetime.strptime(m.group(0).replace("/", "-"), "%d-%b-%Y").date()
+                except ValueError:
+                    pass
+    return None
+
+
+def _parse_whois_registrar(text: str) -> str:
+    for line in text.splitlines():
+        m = re.match(r"\s*registrar:\s*(.+)", line, re.I)
+        if m:
+            return m.group(1).strip()
+    return ""
+
+
+def _whois_lookup_blocking(domain: str) -> tuple[date | None, str]:
+    """WHOIS-fallback (port 43) för TLD:er utan RDAP. Returnerar (förnyelse, registrar)."""
+    tld = domain.rsplit(".", 1)[-1].lower()
+    server = _WHOIS_FALLBACK.get(tld)
+    if not server:
+        try:
+            iana = _whois_query("whois.iana.org", tld)
+            m = re.search(r"whois:\s*(\S+)", iana)
+            if m:
+                server = m.group(1)
+        except Exception:
+            server = None
+    if not server:
+        return None, ""
+    try:
+        resp = _whois_query(server, domain)
+    except Exception:
+        return None, ""
+    return _parse_whois_date(resp), _parse_whois_registrar(resp)
+
+
+async def _check_dkim(client: httpx.AsyncClient, domain: str, selector: str) -> tuple[str, str]:
+    """Returnerar (status, hittad_selektor). Testar angiven selektor, annars vanliga."""
+    selectors = [selector] if selector else _DKIM_SELECTORS
+
+    async def _probe(sel: str) -> str | None:
+        try:
+            txts = await _dns_txt(client, f"{sel}._domainkey.{domain}")
+        except Exception:
+            return None
+        for t in txts:
+            low = t.lower()
+            if "v=dkim1" in low or "k=rsa" in low or "p=" in low:
+                return sel
+        return None
+
+    results = await asyncio.gather(*[_probe(s) for s in selectors], return_exceptions=True)
+    for r in results:
+        if isinstance(r, str) and r:
+            return "ok", r
+    return "missing", ""
+
+
 def _ssl_expiry_blocking(host: str) -> date | None:
     ctx = ssl.create_default_context()
     with socket.create_connection((host, 443), timeout=8) as sock:
@@ -115,16 +242,17 @@ def _host_from(domain: str, website_url: str) -> str:
     return domain
 
 
-async def check_domain(name: str, monitor_type: str = "domain", website_url: str = "") -> dict:
+async def check_domain(name: str, monitor_type: str = "domain", website_url: str = "", dkim_selector: str = "") -> dict:
     """Kör alla kontroller för en domän och returnerar ett resultat-dict."""
     result: dict = {
         "expiry_date": None, "registrar": "",
         "dmarc_status": "", "dmarc_policy": "", "spf_status": "",
+        "dkim_status": "", "dkim_selector": dkim_selector,
         "ssl_expiry": None, "site_status": None, "check_error": "",
     }
     errors = []
     try:
-        await _run_checks(name, monitor_type, website_url, result, errors)
+        await _run_checks(name, monitor_type, website_url, dkim_selector, result, errors)
     except Exception as e:  # yttersta skyddsnät — får aldrig fälla anropet
         errors.append(f"Oväntat fel: {e}")
 
@@ -132,7 +260,8 @@ async def check_domain(name: str, monitor_type: str = "domain", website_url: str
     return result
 
 
-async def _run_checks(name: str, monitor_type: str, website_url: str, result: dict, errors: list) -> None:
+async def _run_checks(name: str, monitor_type: str, website_url: str, dkim_selector: str,
+                      result: dict, errors: list) -> None:
     async with httpx.AsyncClient() as client:
         # DMARC
         try:
@@ -148,11 +277,28 @@ async def _run_checks(name: str, monitor_type: str, website_url: str, result: di
         except Exception as e:
             result["spf_status"] = "error"
             errors.append(f"SPF: {e}")
-        # Förnyelse + registrar (RDAP)
+        # DKIM
+        try:
+            result["dkim_status"], found_sel = await _check_dkim(client, name, dkim_selector)
+            if found_sel:
+                result["dkim_selector"] = found_sel
+        except Exception as e:
+            result["dkim_status"] = "error"
+            errors.append(f"DKIM: {e}")
+        # Förnyelse + registrar (RDAP → WHOIS-fallback)
         try:
             result["expiry_date"], result["registrar"] = await _rdap(client, name)
         except Exception as e:
             errors.append(f"RDAP: {e}")
+        if not result["expiry_date"] or not result["registrar"]:
+            try:
+                w_exp, w_reg = await asyncio.to_thread(_whois_lookup_blocking, name)
+                if not result["expiry_date"] and w_exp:
+                    result["expiry_date"] = w_exp
+                if not result["registrar"] and w_reg:
+                    result["registrar"] = w_reg
+            except Exception as e:
+                errors.append(f"WHOIS: {e}")
 
         if monitor_type == "site":
             host = _host_from(name, website_url)

@@ -2124,7 +2124,10 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <option value="site">Webbplats + domän (även SSL &amp; status)</option>
       </select></div>
     <div class="fr" style="margin-top:14px;display:none" id="md-url-row"><label class="fl">Webbadress <span style="font-weight:400;color:var(--muted)">(tom = https://domän)</span></label><input class="fi" id="md-url" placeholder="https://exempel.se"></div>
-    <div class="fr" style="margin-top:14px"><label class="fl">Förnyelsedatum <span style="font-weight:400;color:var(--muted)">(valfritt — hämtas annars automatiskt)</span></label><input class="fi" id="md-renewal" type="date"></div>
+    <div class="f2" style="margin-top:14px">
+      <div class="fr" style="margin:0"><label class="fl">Förnyelsedatum <span style="font-weight:400;color:var(--muted)">(valfritt)</span></label><input class="fi" id="md-renewal" type="date"></div>
+      <div class="fr" style="margin:0"><label class="fl">DKIM-selektor <span style="font-weight:400;color:var(--muted)">(valfritt)</span></label><input class="fi" id="md-dkim" placeholder="t.ex. selector1"></div>
+    </div>
     <div class="fr" style="margin-top:14px"><label class="fl">Notering</label><textarea class="fi" id="md-notes" rows="2" placeholder="Valfri notering (registrar, konto…)"></textarea></div>
     <input type="hidden" id="md-edit-id">
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
@@ -3210,11 +3213,13 @@ async function loadCustomersList() {
     tbody.innerHTML = customers.map(c => {
       const verified = c.integrations_verified || [];
       const allKnown = ['unifi', 'microsoft'];
-      const chips = allKnown.filter(k => verified.includes(k)).map(k => {
+      const chipArr = allKnown.filter(k => verified.includes(k)).map(k => {
         const icon = { unifi: 'ti-router', microsoft: 'ti-brand-windows' }[k];
         const label = { unifi: 'UniFi', microsoft: 'M365' }[k];
         return `<span class="chip ch-on" style="font-size:10px"><i class="ti ${icon}"></i> ${label}</span>`;
-      }).join(' ') || `<span class="b b-muted">Ingen</span>`;
+      });
+      if (c.domains_count > 0) chipArr.push(`<span class="chip ch-on" style="font-size:10px"><i class="ti ti-world-www"></i> Domän${c.domains_count>1?' ×'+c.domains_count:''}</span>`);
+      const chips = chipArr.join(' ') || `<span class="b b-muted">Ingen</span>`;
 
       // Bygg statusbadge från issue-data om tillgänglig
       const issue = _customerIssueMap[c.id];
@@ -3425,10 +3430,13 @@ async function loadCustomerDetail(customerId) {
         </div>
       </div>`).join('')
       // Webb & Domän finns alltid som ett övervakningsalternativ
-      + `<div class="int-p on" id="tab-pill-domains" onclick="switchIntegrationTab('domains')">
-           <i class="ti ti-world-www"></i>
-           <div><div class="int-pn">Webb &amp; Domän</div><div class="int-ps">Domänövervakning</div></div>
-         </div>`;
+      + (() => {
+          const dc = customer.domains_count || 0;
+          return `<div class="int-p ${dc ? 'on' : ''}" id="tab-pill-domains" onclick="switchIntegrationTab('domains')">
+             <i class="ti ti-world-www"></i>
+             <div><div class="int-pn">Webb &amp; Domän</div><div class="int-ps">${dc ? `Övervakad (${dc})` : 'Ej konfigurerad'}</div></div>
+           </div>`;
+        })();
 
     const isCustomerRole = currentUser && currentUser.role === 'customer';
     const adminActions = document.getElementById('cd-admin-actions');
@@ -3495,6 +3503,11 @@ function _spfBadge(d) {
   const m = { ok: ['b-ok', 'SPF ok'], missing: ['b-err', 'SPF saknas'], error: ['b-muted', 'SPF ?'] }[d.spf_status] || ['b-muted', 'SPF —'];
   return `<span class="b ${m[0]}">${m[1]}</span>`;
 }
+function _dkimBadge(d) {
+  const m = { ok: ['b-ok', 'DKIM' + (d.dkim_selector ? ' (' + d.dkim_selector + ')' : ' ok')],
+    missing: ['b-warn', 'DKIM saknas'], error: ['b-muted', 'DKIM ?'] }[d.dkim_status] || ['b-muted', 'DKIM —'];
+  return `<span class="b ${m[0]}">${m[1]}</span>`;
+}
 function _siteBadge(d) {
   if (d.site_status == null) return `<span class="b b-muted">Webb —</span>`;
   const ok = d.site_status < 400;
@@ -3514,7 +3527,7 @@ function _domainCard(d, isAdmin) {
     : `<span style="color:var(--muted)">Okänt — ange manuellt</span>`;
   const tiles = [
     _domainStat('Förnyelse', renewal),
-    _domainStat('E-postsäkerhet', `${_dmarcBadge(d)} ${_spfBadge(d)}`),
+    _domainStat('E-postsäkerhet', `<div style="display:flex;flex-wrap:wrap;gap:4px">${_dmarcBadge(d)} ${_spfBadge(d)} ${_dkimBadge(d)}</div>`),
   ];
   if (d.monitor_type === 'site') {
     tiles.push(_domainStat('SSL-certifikat', d.ssl_expiry ? `${d.ssl_expiry} ${_daysBadge(d.days_to_ssl, 21, 7)}` : '<span style="color:var(--muted)">—</span>'));
@@ -3577,6 +3590,7 @@ function openDomainModal(domainId) {
   document.getElementById('md-type').value = d ? d.monitor_type : 'domain';
   document.getElementById('md-url').value = d ? (d.website_url || '') : '';
   document.getElementById('md-renewal').value = d ? (d.renewal_manual || '') : '';
+  document.getElementById('md-dkim').value = d ? (d.dkim_selector || '') : '';
   document.getElementById('md-notes').value = d ? (d.notes || '') : '';
   onMdTypeChange();
   openModal('modal-domain');
@@ -3588,9 +3602,10 @@ async function saveDomain() {
   const monitor_type = document.getElementById('md-type').value;
   const website_url = document.getElementById('md-url').value.trim();
   const renewal_manual = document.getElementById('md-renewal').value || null;
+  const dkim_selector = document.getElementById('md-dkim').value.trim();
   const notes = document.getElementById('md-notes').value.trim();
   if (!name) { t('Domännamn krävs', 'err'); return; }
-  const body = { name, monitor_type, website_url, renewal_manual, notes };
+  const body = { name, monitor_type, website_url, renewal_manual, dkim_selector, notes };
   try {
     if (editId) {
       await api('/api/domains/' + editId, { method: 'PUT', body: JSON.stringify(body) });

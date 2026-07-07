@@ -62,6 +62,9 @@ async def init_db() -> None:
             "ALTER TABLE customer_service_articles ADD COLUMN IF NOT EXISTS binding_months INTEGER NOT NULL DEFAULT 0",
             # Kostnad per artikel → vinst/marginal på dashboarden
             "ALTER TABLE service_articles ADD COLUMN IF NOT EXISTS cost INTEGER NOT NULL DEFAULT 0",
+            # Domän: DKIM-övervakning
+            "ALTER TABLE domains ADD COLUMN IF NOT EXISTS dkim_status VARCHAR NOT NULL DEFAULT ''",
+            "ALTER TABLE domains ADD COLUMN IF NOT EXISTS dkim_selector VARCHAR NOT NULL DEFAULT ''",
             # En äldre audit_logs-design hade extra NOT NULL-kolumner (t.ex. user_email)
             # som blockerar inserts från den nya modellen. Droppa alla kolumner som
             # inte tillhör den nuvarande modellen (no-op på fräscha installationer).
