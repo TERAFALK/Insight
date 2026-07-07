@@ -204,12 +204,14 @@ def _whois_lookup_blocking(domain: str) -> tuple[date | None, str]:
 async def _check_dkim(client: httpx.AsyncClient, domain: str, selector: str) -> tuple[str, str]:
     """Returnerar (status, hittad_selektor). Testar angiven selektor, annars vanliga."""
     selectors = [selector] if selector else _DKIM_SELECTORS
+    sem = asyncio.Semaphore(_DKIM_CONCURRENCY)
 
     async def _probe(sel: str) -> str | None:
-        try:
-            txts = await _dns_txt(client, f"{sel}._domainkey.{domain}")
-        except Exception:
-            return None
+        async with sem:
+            try:
+                txts = await _dns_txt(client, f"{sel}._domainkey.{domain}")
+            except Exception:
+                return None
         for t in txts:
             low = t.lower()
             if "v=dkim1" in low or "k=rsa" in low or "p=" in low:
@@ -217,6 +219,7 @@ async def _check_dkim(client: httpx.AsyncClient, domain: str, selector: str) -> 
         return None
 
     results = await asyncio.gather(*[_probe(s) for s in selectors], return_exceptions=True)
+    # Behåll ordningen (mest sannolika selektorer först)
     for r in results:
         if isinstance(r, str) and r:
             return "ok", r
