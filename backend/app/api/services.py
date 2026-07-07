@@ -48,10 +48,17 @@ def _add_months(d: date, n: int) -> date:
 
 
 def _monthly_value(article: ServiceArticle | None, qty: int) -> int:
-    """Normaliserat månadsvärde (informativt): MSRP ÷ cykel × antal."""
+    """Normaliserat månadsintäkt (informativt): MSRP ÷ cykel × antal."""
     if not article or not article.billing_cycle_months:
         return 0
     return round(article.msrp / article.billing_cycle_months) * qty
+
+
+def _monthly_cost(article: ServiceArticle | None, qty: int) -> int:
+    """Normaliserad månadskostnad: cost ÷ cykel × antal."""
+    if not article or not article.billing_cycle_months:
+        return 0
+    return round(article.cost / article.billing_cycle_months) * qty
 
 
 def _article_dict(a: ServiceArticle) -> dict:
@@ -62,6 +69,7 @@ def _article_dict(a: ServiceArticle) -> dict:
         "article_number": a.article_number,
         "billing_cycle_months": a.billing_cycle_months,
         "msrp": a.msrp,
+        "cost": a.cost,
         "position": a.position,
         "is_active": a.is_active,
     }
@@ -100,11 +108,14 @@ def _assignment_dict(csa: CustomerServiceArticle) -> dict:
         "binding_end": binding_end,
         "notes": csa.notes,
         "monthly_value": _monthly_value(a, csa.quantity),
+        "monthly_cost": _monthly_cost(a, csa.quantity),
+        "monthly_profit": _monthly_value(a, csa.quantity) - _monthly_cost(a, csa.quantity),
         # Artikel-/tjänstinfo
         "article_name": a.name if a else "—",
         "article_number": a.article_number if a else "",
         "billing_cycle_months": a.billing_cycle_months if a else 1,
         "msrp": a.msrp if a else 0,
+        "cost": a.cost if a else 0,
         "service_id": svc.id if svc else None,
         "service_name": svc.name if svc else "—",
         "icon": svc.icon if svc else "ti-shield-check",
@@ -224,6 +235,7 @@ class ArticleBody(BaseModel):
     article_number: str = ""
     billing_cycle_months: int = 1
     msrp: int = 0
+    cost: int = 0
     position: int = 0
 
 
@@ -247,6 +259,7 @@ async def create_article(
         article_number=body.article_number.strip(),
         billing_cycle_months=body.billing_cycle_months,
         msrp=body.msrp,
+        cost=max(0, body.cost),
         position=body.position,
     )
     db.add(a)
@@ -263,6 +276,7 @@ class ArticleUpdate(BaseModel):
     article_number: str | None = None
     billing_cycle_months: int | None = None
     msrp: int | None = None
+    cost: int | None = None
     position: int | None = None
     is_active: bool | None = None
 

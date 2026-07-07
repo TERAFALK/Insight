@@ -56,6 +56,9 @@ class Customer(Base):
     service_articles: Mapped[list["CustomerServiceArticle"]] = relationship(
         back_populates="customer", cascade="all, delete-orphan"
     )
+    domains: Mapped[list["Domain"]] = relationship(
+        back_populates="customer", cascade="all, delete-orphan"
+    )
 
 
 class Service(Base):
@@ -90,6 +93,7 @@ class ServiceArticle(Base):
     article_number: Mapped[str] = mapped_column(String, default="", server_default="")  # anges manuellt
     billing_cycle_months: Mapped[int] = mapped_column(Integer, default=1, server_default="1")  # fakturering: 1=månadsvis, 12=årsvis
     msrp: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # pris per faktureringsperiod (SEK)
+    cost: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # kostnad per faktureringsperiod (SEK)
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -118,6 +122,39 @@ class CustomerServiceArticle(Base):
 
     customer: Mapped["Customer"] = relationship(back_populates="service_articles")
     article: Mapped["ServiceArticle"] = relationship()
+
+
+class Domain(Base):
+    """En domän (och ev. webbplats) som övervakas för en kund."""
+
+    __tablename__ = "domains"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    customer_id: Mapped[str] = mapped_column(
+        String, ForeignKey("customers.id"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String, nullable=False)  # t.ex. terafalk.com
+    # "domain" = bara domänen, "site" = webbplats + domän
+    monitor_type: Mapped[str] = mapped_column(String, default="domain", server_default="domain")
+    website_url: Mapped[str] = mapped_column(String, default="", server_default="")
+    notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    # Manuellt förnyelsedatum (för TLD:er utan RDAP-datum, t.ex. .se)
+    renewal_manual: Mapped[date | None] = mapped_column(Date, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    # Cachade kontrollresultat (uppdateras av domän-checkern)
+    expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True)        # från RDAP
+    registrar: Mapped[str] = mapped_column(String, default="", server_default="")
+    dmarc_status: Mapped[str] = mapped_column(String, default="", server_default="")   # ok|weak|missing|error
+    dmarc_policy: Mapped[str] = mapped_column(String, default="", server_default="")    # none|quarantine|reject
+    spf_status: Mapped[str] = mapped_column(String, default="", server_default="")      # ok|missing|error
+    ssl_expiry: Mapped[date | None] = mapped_column(Date, nullable=True)
+    site_status: Mapped[int | None] = mapped_column(Integer, nullable=True)             # HTTP-statuskod
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    check_error: Mapped[str] = mapped_column(String, default="", server_default="")
+
+    customer: Mapped["Customer"] = relationship(back_populates="domains")
 
 
 class CustomerContact(Base):

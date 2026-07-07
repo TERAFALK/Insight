@@ -25,7 +25,7 @@ from app.db.models import (
     Ticket,
     User,
 )
-from app.api.services import _monthly_value
+from app.api.services import _monthly_value, _monthly_cost
 from app.integrations.registry import get_client
 
 router = APIRouter()
@@ -286,32 +286,38 @@ async def admin_dashboard(
     per_service: dict[str, dict] = {}
     per_customer: dict[str, dict] = {}
     mrr_total = 0
+    cost_total = 0
     for a in assignments:
         art = a.article
         svc = art.service if art else None
         if not svc:
             continue
         val = _monthly_value(art, a.quantity)
+        cost = _monthly_cost(art, a.quantity)
+        profit = val - cost
         mrr_total += val
+        cost_total += cost
         ps = per_service.setdefault(svc.id, {
-            "name": svc.name, "icon": svc.icon, "color": svc.color, "customers": set(), "mrr": 0,
+            "name": svc.name, "icon": svc.icon, "color": svc.color, "customers": set(), "mrr": 0, "profit": 0,
         })
         ps["customers"].add(a.customer_id)
         ps["mrr"] += val
+        ps["profit"] += profit
         pc = per_customer.setdefault(a.customer_id, {
-            "name": a.customer.name if a.customer else "—", "mrr": 0,
+            "name": a.customer.name if a.customer else "—", "mrr": 0, "profit": 0,
         })
         pc["mrr"] += val
+        pc["profit"] += profit
 
     service_adoption = sorted(
         [{"name": v["name"], "icon": v["icon"], "color": v["color"],
-          "count": len(v["customers"]), "mrr": v["mrr"]} for v in per_service.values()],
-        key=lambda x: (-x["mrr"], x["name"]),
+          "count": len(v["customers"]), "mrr": v["mrr"], "profit": v["profit"]} for v in per_service.values()],
+        key=lambda x: (-x["profit"], x["name"]),
     )
     active_services_total = len(assignments)
     top_customers = sorted(
-        [{"id": cid, "name": v["name"], "mrr": v["mrr"]} for cid, v in per_customer.items()],
-        key=lambda x: -x["mrr"],
+        [{"id": cid, "name": v["name"], "mrr": v["mrr"], "profit": v["profit"]} for cid, v in per_customer.items()],
+        key=lambda x: -x["profit"],
     )[:6]
 
     return {
@@ -327,6 +333,8 @@ async def admin_dashboard(
         "services": {
             "active_total": int(active_services_total),
             "mrr_total": int(mrr_total),
+            "cost_total": int(cost_total),
+            "profit_total": int(mrr_total - cost_total),
             "adoption": service_adoption,
             "top_customers": top_customers,
         },

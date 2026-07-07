@@ -910,8 +910,8 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <div class="sv" id="stat-sla"><span class="skel-box" style="display:inline-block;width:24px;height:28px;vertical-align:middle"></span></div><div class="sh">Öppna med brutet SLA</div>
         </div>
         <div class="stat clk" onclick="nav('billing')">
-          <div class="stat-hd"><div class="stat-ico" style="background:#EAF7EF;color:var(--ok)"><i class="ti ti-cash"></i></div><div class="sl">MRR</div></div>
-          <div class="sv" id="stat-mrr"><span class="skel-box" style="display:inline-block;width:60px;height:28px;vertical-align:middle"></span></div><div class="sh" id="stat-mrr-sub">Återkommande intäkt</div>
+          <div class="stat-hd"><div class="stat-ico" style="background:#EAF7EF;color:var(--ok)"><i class="ti ti-cash"></i></div><div class="sl">MRR-vinst</div></div>
+          <div class="sv" id="stat-mrr"><span class="skel-box" style="display:inline-block;width:60px;height:28px;vertical-align:middle"></span></div><div class="sh" id="stat-mrr-sub">Återkommande vinst</div>
         </div>
       </div>
 
@@ -1130,6 +1130,18 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           </div>
         </div>
       </div>
+
+        <!-- Sektion: Webb & Domän -->
+        <div id="cd-domains-section" style="display:none">
+          <div class="ph" style="margin-bottom:14px">
+            <div><div class="ph-title" style="font-size:16px">Webb &amp; Domän</div><div class="ph-sub">Förnyelse, DMARC/SPF, SSL och webbstatus</div></div>
+            <div style="display:flex;gap:8px" id="cd-domains-actions">
+              <button class="btn btn-g btn-sm" onclick="checkAllDomains()"><i class="ti ti-refresh"></i> <span class="btn-label">Kontrollera</span></button>
+              <button class="btn btn-p btn-sm" onclick="openDomainModal()"><i class="ti ti-plus"></i> Lägg till domän</button>
+            </div>
+          </div>
+          <div id="cd-domains-list"><div class="skel" style="padding:32px">Laddar domäner...</div></div>
+        </div>
 
         <div id="cd-no-data" class="alert al-info" style="display:none">
           <i class="ti ti-info-circle"></i>
@@ -2078,20 +2090,46 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div class="fr" style="margin:0"><label class="fl">Artikelnamn</label><input class="fi" id="ma-name" placeholder="t.ex. Per Device"></div>
       <div class="fr" style="margin:0"><label class="fl">Artikelnummer</label><input class="fi" id="ma-number" placeholder="TFS-000001"></div>
     </div>
+    <div class="fr" style="margin-top:14px"><label class="fl">Fakturering</label>
+      <select class="fi" id="ma-cycle">
+        <option value="1">Månadsvis</option>
+        <option value="12">Årsvis</option>
+      </select></div>
     <div class="f2" style="margin-top:14px">
-      <div class="fr" style="margin:0"><label class="fl">Fakturering</label>
-        <select class="fi" id="ma-cycle">
-          <option value="1">Månadsvis</option>
-          <option value="12">Årsvis</option>
-        </select></div>
-      <div class="fr" style="margin:0"><label class="fl">MSRP (kr) <span style="font-weight:400;color:var(--muted)">per period</span></label><input class="fi" id="ma-msrp" type="number" min="0" step="10" value="0"></div>
+      <div class="fr" style="margin:0"><label class="fl">MSRP (kr) <span style="font-weight:400;color:var(--muted)">pris/period</span></label><input class="fi" id="ma-msrp" type="number" min="0" step="10" value="0" oninput="updateMaMargin()"></div>
+      <div class="fr" style="margin:0"><label class="fl">Kostnad (kr) <span style="font-weight:400;color:var(--muted)">din kostnad/period</span></label><input class="fi" id="ma-cost" type="number" min="0" step="10" value="0" oninput="updateMaMargin()"></div>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-top:10px"><i class="ti ti-info-circle"></i> Bindningstid avtalas per kund och sätts när du lägger artikeln på kunden.</div>
+    <div id="ma-margin" style="font-size:12px;color:var(--sub);margin-top:8px"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px"><i class="ti ti-info-circle"></i> Bindningstid avtalas per kund och sätts när du lägger artikeln på kunden.</div>
     <input type="hidden" id="ma-edit-id">
     <input type="hidden" id="ma-service-id">
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
       <button class="btn btn-g" onclick="closeModal('modal-article')">Avbryt</button>
       <button class="btn btn-p" onclick="saveArticle()"><i class="ti ti-check"></i> Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Domän -->
+<div id="modal-domain" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal('modal-domain')">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700" id="md-title">Lägg till domän</div>
+      <button class="btn btn-g btn-sm btn-ico" onclick="closeModal('modal-domain')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="fr" style="margin:0"><label class="fl">Domän</label><input class="fi" id="md-name" placeholder="exempel.se"></div>
+    <div class="fr" style="margin-top:14px"><label class="fl">Övervakning</label>
+      <select class="fi" id="md-type" onchange="onMdTypeChange()">
+        <option value="domain">Bara domänen (förnyelse, DMARC, SPF)</option>
+        <option value="site">Webbplats + domän (även SSL &amp; status)</option>
+      </select></div>
+    <div class="fr" style="margin-top:14px;display:none" id="md-url-row"><label class="fl">Webbadress <span style="font-weight:400;color:var(--muted)">(tom = https://domän)</span></label><input class="fi" id="md-url" placeholder="https://exempel.se"></div>
+    <div class="fr" style="margin-top:14px"><label class="fl">Förnyelsedatum <span style="font-weight:400;color:var(--muted)">(valfritt — hämtas annars automatiskt)</span></label><input class="fi" id="md-renewal" type="date"></div>
+    <div class="fr" style="margin-top:14px"><label class="fl">Notering</label><textarea class="fi" id="md-notes" rows="2" placeholder="Valfri notering (registrar, konto…)"></textarea></div>
+    <input type="hidden" id="md-edit-id">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-g" onclick="closeModal('modal-domain')">Avbryt</button>
+      <button class="btn btn-p" onclick="saveDomain()"><i class="ti ti-check"></i> Spara</button>
     </div>
   </div>
 </div>
@@ -2689,16 +2727,17 @@ async function loadDashboard() {
     slaEl.textContent = slaN;
     slaEl.style.color = slaN > 0 ? 'var(--err)' : 'var(--text)';
     const mrrTotal = adm?.services?.mrr_total ?? 0;
-    document.getElementById('stat-mrr').textContent = fmtSek(mrrTotal);
+    const profitTotal = adm?.services?.profit_total ?? 0;
+    document.getElementById('stat-mrr').textContent = fmtSek(profitTotal);
     document.getElementById('stat-mrr-sub').textContent =
-      `${adm?.services?.active_total ?? 0} aktiva tjänster · kr/mån`;
+      `Vinst/mån · av ${fmtSek(mrrTotal)} intäkt`;
 
     // Nya paneler
     renderDashMyTickets(adm?.tickets?.my_open || [], adm?.tickets?.my_open_total || 0);
     renderDashTickets(adm?.tickets?.recent_open || [], adm?.tickets?.open_total || 0);
     renderDashTrend(adm?.tickets?.trend || []);
     renderDashAttention(customers);
-    renderDashAdoption(adm?.services?.adoption || [], mrrTotal);
+    renderDashAdoption(adm?.services?.adoption || [], profitTotal);
     renderDashTopCustomers(adm?.services?.top_customers || []);
 
     // UniFi aggregat-panel
@@ -2801,7 +2840,7 @@ function renderDashTopCustomers(list) {
   el.innerHTML = list.map(c => `
     <div class="att-row" onclick="openCustomer('${c.id}')">
       <div style="flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.name)}</div>
-      <span class="svc-price">${fmtSek(c.mrr)}<small>/mån</small></span>
+      <span class="svc-price" style="color:var(--ok)">${fmtSek(c.profit != null ? c.profit : c.mrr)}<small style="color:var(--muted)">vinst/mån</small></span>
     </div>`).join('');
 }
 
@@ -2836,10 +2875,10 @@ function renderDashAttention(customers) {
     </div>`).join('');
 }
 
-function renderDashAdoption(adoption, mrrTotal) {
+function renderDashAdoption(adoption, profitTotal) {
   const el = document.getElementById('dash-adoption');
   const badge = document.getElementById('dash-mrr-badge');
-  if (badge) badge.textContent = mrrTotal != null ? `${fmtSek(mrrTotal)}/mån` : '';
+  if (badge) badge.textContent = profitTotal != null ? `${fmtSek(profitTotal)} vinst/mån` : '';
   if (!adoption.length) {
     el.innerHTML = `<div style="color:var(--muted);font-size:13px">Inga tjänster i katalogen än.</div>`;
     return;
@@ -2851,7 +2890,7 @@ function renderDashAdoption(adoption, mrrTotal) {
       <span style="width:118px;flex-shrink:0;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(a.name)}</span>
       <div class="adopt-bar"><div class="adopt-fill" style="width:${Math.round(a.count/max*100)}%;background:${a.color}"></div></div>
       <span style="width:24px;text-align:right;flex-shrink:0;font-weight:700;color:var(--text)">${a.count}</span>
-      <span style="width:66px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted)">${a.mrr!=null?fmtSek(a.mrr):''}</span>
+      <span style="width:70px;text-align:right;flex-shrink:0;font-size:11px;color:var(--ok)" title="Vinst/mån">${a.profit!=null?fmtSek(a.profit):''}</span>
     </div>`).join('');
 }
 
@@ -3384,7 +3423,12 @@ async function loadCustomerDetail(customerId) {
           <div class="int-pn">${escapeHtml(i.display_name)}</div>
           <div class="int-ps">${i.verified ? 'Verifierad' : (i.configured ? 'Ej verifierad' : 'Ej konfigurerad')}</div>
         </div>
-      </div>`).join('');
+      </div>`).join('')
+      // Webb & Domän finns alltid som ett övervakningsalternativ
+      + `<div class="int-p on" id="tab-pill-domains" onclick="switchIntegrationTab('domains')">
+           <i class="ti ti-world-www"></i>
+           <div><div class="int-pn">Webb &amp; Domän</div><div class="int-ps">Domänövervakning</div></div>
+         </div>`;
 
     const isCustomerRole = currentUser && currentUser.role === 'customer';
     const adminActions = document.getElementById('cd-admin-actions');
@@ -3395,15 +3439,10 @@ async function loadCustomerDetail(customerId) {
     if (usersCard) usersCard.style.display = 'none';
     if (!isCustomerRole) loadCustomerUsers(customerId);
 
-    if (!verifiedKeys.length) {
-      document.getElementById('cd-no-data').style.display = 'flex';
-      if (!isCustomerRole) document.getElementById('cd-send-btn').disabled = true;
-      return;
-    }
-    if (!isCustomerRole) document.getElementById('cd-send-btn').disabled = false;
+    if (!isCustomerRole) document.getElementById('cd-send-btn').disabled = !verifiedKeys.length;
 
-    // Öppna första verifierade tab automatiskt
-    await switchIntegrationTab(verifiedKeys[0], customerId, gen);
+    // Öppna första verifierade tab automatiskt, annars Webb & Domän
+    await switchIntegrationTab(verifiedKeys.length ? verifiedKeys[0] : 'domains', customerId, gen);
   } catch (e) {
     if (_navGen !== gen) return;
     document.getElementById('cd-error-msg').textContent = e.message;
@@ -3423,12 +3462,172 @@ async function switchIntegrationTab(key, customerId, gen) {
   // Dölj alla sektioner
   document.getElementById('cd-unifi-section').style.display = 'none';
   document.getElementById('cd-microsoft-section').style.display = 'none';
+  document.getElementById('cd-domains-section').style.display = 'none';
+  document.getElementById('cd-no-data').style.display = 'none';
 
   if (key === 'unifi') {
     await loadUnifiSection(customerId, gen);
   } else if (key === 'microsoft') {
     await loadMicrosoftSection(customerId, gen);
+  } else if (key === 'domains') {
+    document.getElementById('cd-domains-section').style.display = 'block';
+    await loadDomains(customerId, gen);
   }
+}
+
+// ── Webb & Domän ────────────────────────────────────────────────────────────
+
+let _domainsCache = [];
+
+function _daysBadge(days, warnAt, critAt, label) {
+  if (days == null) return `<span class="b b-muted">—</span>`;
+  const cls = days <= critAt ? 'b-err' : days <= warnAt ? 'b-warn' : 'b-ok';
+  const txt = days < 0 ? `Utgått ${-days} d sedan` : `${days} d kvar`;
+  return `<span class="b ${cls}">${txt}</span>`;
+}
+
+function _dmarcBadge(d) {
+  const m = { ok: ['b-ok', 'DMARC ' + (d.dmarc_policy || 'ok')], weak: ['b-warn', 'DMARC svag (' + (d.dmarc_policy || 'none') + ')'],
+    missing: ['b-err', 'DMARC saknas'], error: ['b-muted', 'DMARC ?'] }[d.dmarc_status] || ['b-muted', 'DMARC —'];
+  return `<span class="b ${m[0]}">${m[1]}</span>`;
+}
+function _spfBadge(d) {
+  const m = { ok: ['b-ok', 'SPF ok'], missing: ['b-err', 'SPF saknas'], error: ['b-muted', 'SPF ?'] }[d.spf_status] || ['b-muted', 'SPF —'];
+  return `<span class="b ${m[0]}">${m[1]}</span>`;
+}
+function _siteBadge(d) {
+  if (d.site_status == null) return `<span class="b b-muted">Webb —</span>`;
+  const ok = d.site_status < 400;
+  return `<span class="b ${ok ? 'b-ok' : 'b-err'}">Webb ${d.site_status}</span>`;
+}
+
+function _domainStat(label, valueHtml) {
+  return `<div style="background:var(--tint);border-radius:8px;padding:9px 11px">
+    <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">${label}</div>
+    <div style="font-size:12px;font-weight:600">${valueHtml}</div>
+  </div>`;
+}
+
+function _domainCard(d, isAdmin) {
+  const renewal = d.effective_renewal
+    ? `${d.effective_renewal} ${_daysBadge(d.days_to_renewal, 60, 14)}${d.renewal_manual ? ' <span class="b b-muted">manuell</span>' : ''}`
+    : `<span style="color:var(--muted)">Okänt — ange manuellt</span>`;
+  const tiles = [
+    _domainStat('Förnyelse', renewal),
+    _domainStat('E-postsäkerhet', `${_dmarcBadge(d)} ${_spfBadge(d)}`),
+  ];
+  if (d.monitor_type === 'site') {
+    tiles.push(_domainStat('SSL-certifikat', d.ssl_expiry ? `${d.ssl_expiry} ${_daysBadge(d.days_to_ssl, 21, 7)}` : '<span style="color:var(--muted)">—</span>'));
+    tiles.push(_domainStat('Webbstatus', _siteBadge(d)));
+  }
+  if (d.registrar) tiles.push(_domainStat('Registrar', escapeHtml(d.registrar)));
+  const checked = d.last_checked_at ? `Kontrollerad ${new Date(d.last_checked_at).toLocaleString('sv-SE', { dateStyle: 'short', timeStyle: 'short' })}` : 'Aldrig kontrollerad';
+  const admin = isAdmin ? `<div style="display:flex;gap:6px">
+      <button class="btn btn-g btn-sm btn-ico" onclick="checkDomain('${d.id}')" title="Kontrollera nu"><i class="ti ti-refresh"></i></button>
+      <button class="btn btn-g btn-sm btn-ico" onclick="openDomainModal('${d.id}')" title="Redigera"><i class="ti ti-edit"></i></button>
+      <button class="btn btn-danger btn-sm btn-ico" onclick="deleteDomain('${d.id}','${escapeHtml(d.name)}')" title="Ta bort"><i class="ti ti-trash"></i></button>
+    </div>` : '';
+  return `<div class="card" style="margin-bottom:12px">
+    <div class="ch">
+      <span class="cht" style="display:flex;align-items:center;gap:9px">
+        <i class="ti ti-world-www" style="color:var(--blue)"></i>
+        <a href="https://${escapeHtml(d.name)}" target="_blank" rel="noopener" style="color:var(--text)">${escapeHtml(d.name)}</a>
+        <span class="b b-muted" style="font-weight:500">${d.monitor_type === 'site' ? 'Webb + domän' : 'Domän'}</span>
+      </span>
+      ${admin}
+    </div>
+    <div class="cb">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">${tiles.join('')}</div>
+      ${d.notes ? `<div style="font-size:12px;color:var(--sub);margin-top:10px">${escapeHtml(d.notes)}</div>` : ''}
+      <div style="font-size:11px;color:var(--muted);margin-top:10px">${checked}${d.check_error ? ` · <span style="color:var(--warn)">${escapeHtml(d.check_error.slice(0,120))}</span>` : ''}</div>
+    </div>
+  </div>`;
+}
+
+async function loadDomains(customerId, gen) {
+  const el = document.getElementById('cd-domains-list');
+  if (!el) return;
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  document.getElementById('cd-domains-actions').style.display = isAdmin ? 'flex' : 'none';
+  el.innerHTML = '<div class="skel" style="padding:28px">Laddar domäner...</div>';
+  try {
+    const items = await api('/api/domains/customer/' + customerId);
+    if (gen !== undefined && _navGen !== gen) return;
+    _domainsCache = items;
+    if (!items.length) {
+      el.innerHTML = `<div class="empty"><i class="ti ti-world-off"></i>Inga domäner${isAdmin ? ' — klicka "Lägg till domän".' : ' tillagda.'}</div>`;
+      return;
+    }
+    el.innerHTML = items.map(d => _domainCard(d, isAdmin)).join('');
+  } catch (e) {
+    el.innerHTML = `<div class="empty"><i class="ti ti-alert-circle"></i>${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function onMdTypeChange() {
+  document.getElementById('md-url-row').style.display =
+    document.getElementById('md-type').value === 'site' ? '' : 'none';
+}
+
+function openDomainModal(domainId) {
+  const d = domainId ? _domainsCache.find(x => x.id === domainId) : null;
+  document.getElementById('md-title').textContent = d ? 'Redigera domän' : 'Lägg till domän';
+  document.getElementById('md-edit-id').value = d ? d.id : '';
+  document.getElementById('md-name').value = d ? d.name : '';
+  document.getElementById('md-type').value = d ? d.monitor_type : 'domain';
+  document.getElementById('md-url').value = d ? (d.website_url || '') : '';
+  document.getElementById('md-renewal').value = d ? (d.renewal_manual || '') : '';
+  document.getElementById('md-notes').value = d ? (d.notes || '') : '';
+  onMdTypeChange();
+  openModal('modal-domain');
+}
+
+async function saveDomain() {
+  const editId = document.getElementById('md-edit-id').value;
+  const name = document.getElementById('md-name').value.trim();
+  const monitor_type = document.getElementById('md-type').value;
+  const website_url = document.getElementById('md-url').value.trim();
+  const renewal_manual = document.getElementById('md-renewal').value || null;
+  const notes = document.getElementById('md-notes').value.trim();
+  if (!name) { t('Domännamn krävs', 'err'); return; }
+  const body = { name, monitor_type, website_url, renewal_manual, notes };
+  try {
+    if (editId) {
+      await api('/api/domains/' + editId, { method: 'PUT', body: JSON.stringify(body) });
+      t('Domän uppdaterad');
+    } else {
+      await api('/api/domains/customer/' + currentCustomerId, { method: 'POST', body: JSON.stringify(body) });
+      t('Domän tillagd — kör Kontrollera för att hämta status');
+    }
+    closeModal('modal-domain');
+    loadDomains(currentCustomerId);
+  } catch (e) { t(e.message, 'err'); }
+}
+
+async function deleteDomain(id, name) {
+  if (!confirm(`Ta bort domänen "${name}" från övervakning?`)) return;
+  try {
+    await api('/api/domains/' + id, { method: 'DELETE' });
+    t('Domän borttagen');
+    loadDomains(currentCustomerId);
+  } catch (e) { t(e.message, 'err'); }
+}
+
+async function checkDomain(id) {
+  t('Kontrollerar…');
+  try {
+    await api('/api/domains/' + id + '/check', { method: 'POST' });
+    loadDomains(currentCustomerId);
+  } catch (e) { t(e.message, 'err'); }
+}
+
+async function checkAllDomains() {
+  if (!_domainsCache.length) { openDomainModal(); return; }
+  t('Kontrollerar alla domäner…');
+  try {
+    await api('/api/domains/customer/' + currentCustomerId + '/check-all', { method: 'POST' });
+    loadDomains(currentCustomerId);
+  } catch (e) { t(e.message, 'err'); }
 }
 
 
@@ -6844,13 +7043,15 @@ async function loadServicesSettings() {
           <td data-label="Artikel">${escapeHtml(a.name)}</td>
           <td data-label="Artikelnr" style="font-family:monospace;font-size:12px;color:var(--sub)">${escapeHtml(a.article_number || '—')}</td>
           <td data-label="Fakturering">${_billingLabel(a.billing_cycle_months)}</td>
+          <td data-label="Kostnad" style="text-align:right;color:var(--muted)">${a.cost?fmtSek(a.cost):'—'}</td>
           <td data-label="MSRP" style="text-align:right;font-weight:600">${fmtSek(a.msrp)}</td>
+          <td data-label="Vinst" style="text-align:right;font-weight:600;color:${(a.msrp-a.cost)>0?'var(--ok)':'var(--muted)'}">${fmtSek(a.msrp-a.cost)}</td>
           <td data-label="" style="text-align:right;white-space:nowrap">
             <button class="btn btn-g btn-sm btn-ico" onclick="openArticleModal('${s.id}','${a.id}')" title="Redigera"><i class="ti ti-edit"></i></button>
             <button class="btn btn-danger btn-sm btn-ico" onclick="deleteArticle('${a.id}','${escapeHtml(a.name)}')" title="Ta bort"><i class="ti ti-trash"></i></button>
           </td>
         </tr>`).join('')
-        : `<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:14px;font-size:12px">Inga artiklar än.</td></tr>`;
+        : `<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:14px;font-size:12px">Inga artiklar än.</td></tr>`;
       return `
       <div class="card" style="margin-bottom:14px">
         <div class="ch">
@@ -6866,7 +7067,7 @@ async function loadServicesSettings() {
         </div>
         <div class="cb0">
           <table class="tbl svc-cat-tbl">
-            <thead><tr><th>Item</th><th>Item #</th><th>Fakturering</th><th style="text-align:right">MSRP</th><th style="width:90px"></th></tr></thead>
+            <thead><tr><th>Item</th><th>Item #</th><th>Fakturering</th><th style="text-align:right">Kostnad</th><th style="text-align:right">MSRP</th><th style="text-align:right">Vinst</th><th style="width:90px"></th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
@@ -6954,7 +7155,18 @@ function openArticleModal(serviceId, articleId) {
   document.getElementById('ma-number').value = art ? (art.article_number || '') : _suggestArticleNumber();
   document.getElementById('ma-cycle').value = art ? art.billing_cycle_months : '1';
   document.getElementById('ma-msrp').value = art ? art.msrp : 0;
+  document.getElementById('ma-cost').value = art ? (art.cost || 0) : 0;
+  updateMaMargin();
   openModal('modal-article');
+}
+
+function updateMaMargin() {
+  const msrp = parseInt(document.getElementById('ma-msrp').value, 10) || 0;
+  const cost = parseInt(document.getElementById('ma-cost').value, 10) || 0;
+  const profit = msrp - cost;
+  const pct = msrp > 0 ? Math.round(profit / msrp * 100) : 0;
+  document.getElementById('ma-margin').innerHTML =
+    `Vinst per period: <strong style="color:${profit>0?'var(--ok)':'var(--muted)'}">${fmtSek(profit)}</strong>${msrp>0?` · marginal ${pct}%`:''}`;
 }
 
 async function saveArticle() {
@@ -6964,8 +7176,9 @@ async function saveArticle() {
   const article_number = document.getElementById('ma-number').value.trim();
   const billing_cycle_months = parseInt(document.getElementById('ma-cycle').value, 10) || 1;
   const msrp = parseInt(document.getElementById('ma-msrp').value, 10) || 0;
+  const cost = parseInt(document.getElementById('ma-cost').value, 10) || 0;
   if (!name) { t('Artikelnamn krävs', 'err'); return; }
-  const body = { name, article_number, billing_cycle_months, msrp };
+  const body = { name, article_number, billing_cycle_months, msrp, cost };
   try {
     if (editId) {
       await api('/api/services/articles/' + editId, { method: 'PUT', body: JSON.stringify(body) });

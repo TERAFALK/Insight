@@ -17,7 +17,7 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.db.database import init_db
 from app.db.seed import seed_first_admin
-from app.api import auth, customers, reports, integrations, notifications, scheduler as scheduler_router, users, ms_auth, admin_settings, dashboard, orders, phase_templates, tickets, ticket_settings, audit_log, canned_responses, public, services, inbox, billing
+from app.api import auth, customers, reports, integrations, notifications, scheduler as scheduler_router, users, ms_auth, admin_settings, dashboard, orders, phase_templates, tickets, ticket_settings, audit_log, canned_responses, public, services, inbox, billing, domains
 from app.core import app_settings
 from app.core.scheduler import start_scheduler
 
@@ -71,6 +71,7 @@ app.include_router(public.router,             prefix="/api/public",             
 app.include_router(services.router,           prefix="/api/services",            tags=["Services"])
 app.include_router(inbox.router,              prefix="/api/inbox",               tags=["Inbox"])
 app.include_router(billing.router,            prefix="/api/billing",             tags=["Billing"])
+app.include_router(domains.router,            prefix="/api/domains",             tags=["Domains"])
 
 
 @app.get("/api/health")
