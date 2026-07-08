@@ -85,6 +85,7 @@ def _service_dict(s: Service, include_inactive_articles: bool = False) -> dict:
         "description": s.description,
         "icon": s.icon,
         "color": s.color,
+        "monitor_type": s.monitor_type,
         "position": s.position,
         "is_active": s.is_active,
         "articles": [_article_dict(a) for a in arts],
@@ -138,11 +139,15 @@ async def list_services(
     return [_service_dict(s, include_inactive_articles=include_inactive) for s in rows.all()]
 
 
+_VALID_MONITOR = ("", "network", "microsoft", "web")
+
+
 class ServiceBody(BaseModel):
     name: str
     description: str = ""
     icon: str = "ti-shield-check"
     color: str = "#0047A3"
+    monitor_type: str = ""
     position: int = 0
     is_active: bool = True
 
@@ -156,6 +161,8 @@ async def create_service(
     name = body.name.strip()
     if not name:
         raise HTTPException(400, "Namn krävs")
+    if body.monitor_type not in _VALID_MONITOR:
+        raise HTTPException(400, "Ogiltig driftmodul")
     exists = await db.scalar(
         select(Service).where(Service.name == name).options(selectinload(Service.articles))
     )
@@ -166,6 +173,7 @@ async def create_service(
         exists.description = body.description
         exists.icon = body.icon
         exists.color = body.color
+        exists.monitor_type = body.monitor_type
         exists.is_active = True
         await log_action(db, admin, "service.create", "service", exists.id, f"Återaktiverade tjänst {name}")
         await db.commit()
@@ -173,7 +181,7 @@ async def create_service(
         return _service_dict(exists)
     s = Service(
         name=name, description=body.description, icon=body.icon, color=body.color,
-        position=body.position, is_active=body.is_active,
+        monitor_type=body.monitor_type, position=body.position, is_active=body.is_active,
     )
     db.add(s)
     await db.flush()
@@ -190,6 +198,7 @@ class ServiceUpdate(BaseModel):
     description: str | None = None
     icon: str | None = None
     color: str | None = None
+    monitor_type: str | None = None
     position: int | None = None
     is_active: bool | None = None
 
@@ -206,6 +215,9 @@ async def update_service(
     )
     if not s:
         raise HTTPException(404, "Tjänst hittades inte")
+    if body.monitor_type is not None and body.monitor_type not in _VALID_MONITOR:
+        raise HTTPException(400, "Ogiltig driftmodul")
+    # monitor_type kan sättas till '' (Ingen) → hantera separat (exclude_none tar bort det inte, men "" är inte None)
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(s, field, value)
     await log_action(db, admin, "service.update", "service", s.id, f"Uppdaterade tjänst {s.name}")

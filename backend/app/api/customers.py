@@ -66,6 +66,20 @@ def _active_service_summary(service_articles) -> list[dict]:
     return sorted(seen.values(), key=lambda s: s["name"])
 
 
+# Fast ordning på driftmoduler i UI:t
+_MONITOR_ORDER = ["network", "microsoft", "web"]
+
+
+def _active_monitor_types(service_articles) -> list[str]:
+    """Distinkta driftmoduler bland kundens aktiva tjänster, i fast ordning."""
+    types = set()
+    for csa in service_articles:
+        svc = csa.article.service if csa.article else None
+        if csa.status == "active" and svc and svc.monitor_type:
+            types.add(svc.monitor_type)
+    return [m for m in _MONITOR_ORDER if m in types]
+
+
 def _contact_dict(c: "CustomerContact") -> dict:
     return {
         "id": c.id, "name": c.name, "email": c.email, "phone": c.phone, "title": c.title,
@@ -204,6 +218,7 @@ async def get_customer(
         "report_frequency": c.report_frequency,
         "report_day": c.report_day,
         "domains_count": sum(1 for d in c.domains if d.is_active),
+        "monitor_types": _active_monitor_types(c.service_articles),
         "integrations": integrations_status,
         # Sammanfattning av aktiva tjänster (härledda ur artiklarna) för hero/underrubrik.
         # Full artikel-lista hämtas separat via /api/services/customer/{id}.

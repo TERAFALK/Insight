@@ -71,6 +71,8 @@ class Service(Base):
     description: Mapped[str] = mapped_column(String, default="", server_default="")
     icon: Mapped[str] = mapped_column(String, default="ti-shield-check", server_default="ti-shield-check")
     color: Mapped[str] = mapped_column(String, default="#0047A3", server_default="#0047A3")
+    # Kopplar tjänsten till en driftmodul: ''|network|microsoft|web (framtid: app)
+    monitor_type: Mapped[str] = mapped_column(String, default="", server_default="")
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

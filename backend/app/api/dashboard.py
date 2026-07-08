@@ -5,7 +5,7 @@ Hämtar data parallellt och fyller på cache om den saknas.
 
 import asyncio
 import logging
-from datetime import timedelta
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
@@ -19,6 +19,7 @@ from app.db.database import get_db
 from app.db.models import (
     Customer,
     CustomerServiceArticle,
+    Domain,
     IntegrationCredential,
     Report,
     ServiceArticle,
@@ -33,6 +34,23 @@ logger = logging.getLogger(__name__)
 
 # Ärendestatusar som räknas som "öppna" (kräver fortfarande arbete)
 OPEN_TICKET_STATUSES = ("new", "open", "in_progress", "pending_customer")
+
+
+def _domain_alerts(domains: list[Domain]) -> dict:
+    """Sammanställer domänlarm (förnyelse ≤30d, SSL ≤21d, sajt nere) för en kund."""
+    today = date.today()
+    renew_soon = ssl_soon = down = 0
+    for d in domains:
+        renewal = d.renewal_manual or d.expiry_date
+        if renewal is not None and (renewal - today).days <= 30:
+            renew_soon += 1
+        if d.ssl_expiry is not None and (d.ssl_expiry - today).days <= 21:
+            ssl_soon += 1
+        if d.site_status is not None and d.site_status >= 400:
+            down += 1
+    if renew_soon or ssl_soon or down:
+        return {"renew_soon": renew_soon, "ssl_soon": ssl_soon, "down": down}
+    return {}
 
 
 async def _ensure_cached(customer_id: str, integration_type: str, cred: IntegrationCredential) -> dict | None:
@@ -102,6 +120,14 @@ async def dashboard_summary(
     ms_secure_score_max_sum = 0
     ms_customers_with_score = 0
 
+    # Domänlarm per kund (cachade kontrollresultat, ingen live-koll)
+    domain_rows = (await db.scalars(
+        select(Domain).where(Domain.is_active == True)
+    )).all()
+    domains_by_customer: dict[str, list[Domain]] = {}
+    for d in domain_rows:
+        domains_by_customer.setdefault(d.customer_id, []).append(d)
+
     customer_summaries = []
     for c in customers:
         cdata = data_by_customer.get(c.id, {})
@@ -115,6 +141,9 @@ async def dashboard_summary(
             "contact_name": c.contact_name,
             "integrations_verified": [cr.integration_type for cr in c.credentials if cr.is_verified],
         }
+        _dalerts = _domain_alerts(domains_by_customer.get(c.id, []))
+        if _dalerts:
+            summary["domain"] = _dalerts
 
         if unifi:
             devices = unifi.get("devices") or []
@@ -426,6 +455,19 @@ async def customer_dashboard(
             "mfa_pct": round(mfa_reg / mfa_tot * 100) if mfa_tot else None,
             "secure_score": ms.data.get("secure_score"),
             "secure_score_max": ms.data.get("secure_score_max"),
+        }
+
+    # Webb & Domän-hälsa (cachade domänkontroller)
+    cust_domains = (await db.scalars(
+        select(Domain).where(Domain.customer_id == cid, Domain.is_active == True)
+    )).all()
+    if cust_domains:
+        alerts = _domain_alerts(cust_domains)
+        health["web"] = {
+            "total": len(cust_domains),
+            "renew_soon": alerts.get("renew_soon", 0),
+            "ssl_soon": alerts.get("ssl_soon", 0),
+            "down": alerts.get("down", 0),
         }
 
     # Senaste rapport

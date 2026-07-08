@@ -65,6 +65,12 @@ async def init_db() -> None:
             # Domän: DKIM-övervakning
             "ALTER TABLE domains ADD COLUMN IF NOT EXISTS dkim_status VARCHAR NOT NULL DEFAULT ''",
             "ALTER TABLE domains ADD COLUMN IF NOT EXISTS dkim_selector VARCHAR NOT NULL DEFAULT ''",
+            # Tjänst → driftmodul (styr vilken driftstatus som visas på kunden)
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS monitor_type VARCHAR NOT NULL DEFAULT ''",
+            # Auto-mappa befintliga tjänster utifrån namn (körs bara på rader utan modul)
+            "UPDATE services SET monitor_type='network' WHERE monitor_type='' AND (name ILIKE '%network%' OR name ILIKE '%nätverk%' OR name ILIKE '%unifi%')",
+            "UPDATE services SET monitor_type='microsoft' WHERE monitor_type='' AND (name ILIKE '%microsoft%' OR name ILIKE '%365%')",
+            "UPDATE services SET monitor_type='web' WHERE monitor_type='' AND (name ILIKE '%web%' OR name ILIKE '%hosting%' OR name ILIKE '%domän%' OR name ILIKE '%domain%')",
             # En äldre audit_logs-design hade extra NOT NULL-kolumner (t.ex. user_email)
             # som blockerar inserts från den nya modellen. Droppa alla kolumner som
             # inte tillhör den nuvarande modellen (no-op på fräscha installationer).
@@ -177,23 +183,25 @@ async def _seed_services() -> None:
         count = await session.scalar(select(sqlfunc.count()).select_from(Service))
         if count and count > 0:
             return
-        # (name, description, icon, color, [artiklar])
+        # (name, description, icon, color, monitor_type, [artiklar])
         # artikel = (variantnamn, artikelnr, faktureringscykel_mån, msrp, cost)
         defaults = [
-            ("Managed Network", "Övervakning, patchning och drift av nätverk", "ti-router", "#0047A3", [
+            ("Managed Network", "Övervakning, patchning och drift av nätverk", "ti-router", "#0047A3", "network", [
                 ("Small Site", "TFS-000006", 1, 890, 450),
                 ("Per Device", "TFS-000007", 1, 89, 40),
                 ("Small Site", "TFS-000008", 12, 10680, 5400),
                 ("Per Device", "TFS-000009", 12, 1068, 480),
             ]),
-            ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED", []),
-            ("Managed Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9", []),
-            ("Managed Endpoint", "Övervakning och säkerhet för klienter/servrar", "ti-device-desktop", "#16A34A", []),
+            ("Microsoft 365", "Licenshantering, säkerhet och MFA-uppföljning", "ti-brand-windows", "#0EA5E9", "microsoft", []),
+            ("Web Hosting", "Drift och övervakning av webbplatser", "ti-world-www", "#0EA5E9", "web", []),
+            ("Domäner", "Förnyelse, DNS och e-postsäkerhet", "ti-at", "#16A34A", "web", []),
+            ("Managed Backup", "Säkerhetskopiering och återställningstest", "ti-database", "#7C3AED", "", []),
         ]
-        for pos, (name, desc, icon, color, articles) in enumerate(defaults):
+        for pos, (name, desc, icon, color, monitor, articles) in enumerate(defaults):
             sid = str(_uuid_mod.uuid4())
             session.add(Service(
                 id=sid, name=name, description=desc, icon=icon, color=color, position=pos,
+                monitor_type=monitor,
             ))
             for apos, (aname, anum, cycle, msrp, cost) in enumerate(articles):
                 session.add(ServiceArticle(

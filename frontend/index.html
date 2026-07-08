@@ -910,7 +910,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <div class="sv" id="stat-sla"><span class="skel-box" style="display:inline-block;width:24px;height:28px;vertical-align:middle"></span></div><div class="sh">Öppna med brutet SLA</div>
         </div>
         <div class="stat clk" onclick="nav('billing')">
-          <div class="stat-hd"><div class="stat-ico" style="background:#EAF7EF;color:var(--ok)"><i class="ti ti-cash"></i></div><div class="sl">MRR-vinst</div></div>
+          <div class="stat-hd"><div class="stat-ico" style="background:#EAF7EF;color:var(--ok)"><i class="ti ti-cash"></i></div><div class="sl">Återkommande vinst</div></div>
           <div class="sv" id="stat-mrr"><span class="skel-box" style="display:inline-block;width:60px;height:28px;vertical-align:middle"></span></div><div class="sh" id="stat-mrr-sub">Återkommande vinst</div>
         </div>
       </div>
@@ -943,7 +943,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
             <div class="cb" id="dash-adoption"><div class="skel" style="padding:18px">Laddar...</div></div>
           </div>
           <div class="card" style="margin-bottom:0">
-            <div class="ch"><span class="cht"><i class="ti ti-trophy" style="margin-right:6px;opacity:.7"></i>Topp-kunder (MRR)</span></div>
+            <div class="ch"><span class="cht"><i class="ti ti-trophy" style="margin-right:6px;opacity:.7"></i>Största kunder (vinst/mån)</span></div>
             <div class="cb0" id="dash-top-customers"><div class="skel" style="padding:18px">Laddar...</div></div>
           </div>
         </div>
@@ -953,7 +953,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
       <div id="dash-agg-panels" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
         <!-- UniFi panel -->
         <div class="card" id="dash-unifi-panel">
-          <div class="ch"><span class="cht"><i class="ti ti-router" style="margin-right:6px;opacity:0.7"></i>UniFi Överblick</span><span id="dash-unifi-badge"></span></div>
+          <div class="ch"><span class="cht"><i class="ti ti-router" style="margin-right:6px;opacity:0.7"></i>Nätverk</span><span id="dash-unifi-badge"></span></div>
           <div class="cb" id="dash-unifi-body" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
             <div class="skel-box" style="height:56px;border-radius:8px"></div>
             <div class="skel-box" style="height:56px;border-radius:8px"></div>
@@ -1016,9 +1016,10 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
         <div class="cd-tab" data-tab="contacts" onclick="switchCdTab('contacts')"><i class="ti ti-users"></i> Kontakter</div>
       </div>
 
-      <!-- Flik: Nätverk -->
+      <!-- Flik: Driftstatus (moduler styrs av kundens tjänster) -->
       <div class="cd-tab-pane active" id="cd-pane-network">
         <div class="int-row" id="cd-int-row"></div>
+        <div id="cd-monitor-prompt" style="display:none"></div>
         <div id="cd-microsoft-section" style="display:none">
         <div class="ms-grid" style="margin-bottom:13px">
           <div class="card">
@@ -1143,9 +1144,9 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <div id="cd-domains-list"><div class="skel" style="padding:32px">Laddar domäner...</div></div>
         </div>
 
-        <div id="cd-no-data" class="alert al-info" style="display:none">
-          <i class="ti ti-info-circle"></i>
-          <span>Ingen integration är verifierad för denna kund än. Gå till <strong>Integrationer</strong> för att koppla på UniFi eller andra tjänster.</span>
+        <div id="cd-no-data" class="empty" style="display:none">
+          <i class="ti ti-activity-heartbeat"></i>
+          Den här kunden har inga driftade tjänster ännu. Lägg till en tjänst med en driftmodul under fliken <strong>Tjänster</strong> för att aktivera driftstatus.
         </div>
         <div id="cd-error" class="alert al-e" style="display:none">
           <i class="ti ti-alert-circle"></i>
@@ -1283,7 +1284,7 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
           <div class="fr" style="margin:0"><label class="fl">Kontaktperson</label><input class="fi" id="ac-contact" placeholder="Förnamn Efternamn"></div>
           <div class="fr" style="margin:0"><label class="fl">Ort</label><input class="fi" id="ac-city" placeholder="Lidköping"></div>
         </div>
-        <div class="fh" style="margin-bottom:14px">Integrationer (UniFi, Microsoft 365, Acronis) läggs till efter att kunden skapats under <strong>Integrationer</strong>. Rapportmottagare hanteras under kundens <strong>Kontakter</strong>-flik.</div>
+        <div class="fh" style="margin-bottom:14px">Tjänster och datakällor (Nätverk, Microsoft 365, Webb &amp; Domän) kopplas efter att kunden skapats — under kundens flikar <strong>Tjänster</strong> och <strong>Driftstatus</strong>. Rapportmottagare hanteras under <strong>Kontakter</strong>.</div>
         <div style="display:flex;gap:9px;margin-top:14px">
           <button class="btn btn-p" id="ac-submit-btn" onclick="submitNewCustomer()"><i class="ti ti-check"></i> Spara</button>
           <button class="btn btn-g" onclick="nav('customers')">Avbryt</button>
@@ -1487,8 +1488,15 @@ body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);font-
               </div>
               <div class="f2" style="margin-top:12px">
                 <div class="fr" style="margin:0"><label class="fl">Färg</label><input class="fi" id="svc-color" type="color" value="#0047A3" style="height:40px;padding:4px"></div>
-                <div class="fr" style="margin:0"><label class="fl">Beskrivning</label><input class="fi" id="svc-desc" placeholder="Kort beskrivning"></div>
+                <div class="fr" style="margin:0"><label class="fl">Driftmodul <span style="font-weight:400;color:var(--muted)">— aktiverar driftstatus</span></label>
+                  <select class="fi" id="svc-monitor">
+                    <option value="">Ingen</option>
+                    <option value="network">Nätverk (UniFi)</option>
+                    <option value="microsoft">Microsoft 365</option>
+                    <option value="web">Webb &amp; Domän</option>
+                  </select></div>
               </div>
+              <div class="fr" style="margin-top:12px"><label class="fl">Beskrivning</label><input class="fi" id="svc-desc" placeholder="Kort beskrivning"></div>
               <div style="display:flex;gap:8px;margin-top:14px">
                 <button class="btn btn-p btn-sm" id="svc-save-btn" onclick="saveService()"><i class="ti ti-check"></i> Spara tjänst</button>
                 <button class="btn btn-g btn-sm" onclick="cancelEditService()">Avbryt</button>
@@ -2750,8 +2758,8 @@ async function loadDashboard() {
     const uWanDown = u.wan_down || 0;
     document.getElementById('dash-unifi-badge').innerHTML =
       (uOffline + uWanDown + uUpdate) === 0
-        ? `<span class="b b-ok">Allt OK</span>`
-        : `<span class="b b-err">Åtgärd krävs</span>`;
+        ? `<span class="b b-ok">OK</span>`
+        : `<span class="b b-err">Kräver åtgärd</span>`;
     document.getElementById('dash-unifi-body').innerHTML = [
       _aggMetric(u.total_devices ?? '—', 'Totalt antal enheter', 'ti-router', 'var(--text)'),
       _aggMetric(uOffline, 'Offline enheter', 'ti-wifi-off', uOffline > 0 ? 'var(--err)' : 'var(--ok)'),
@@ -2768,8 +2776,8 @@ async function loadDashboard() {
     const inactive = m.inactive_licensed || 0;
     document.getElementById('dash-ms-badge').innerHTML =
       (mfaPct === null || mfaPct >= 80)
-        ? `<span class="b b-ok">Allt OK</span>`
-        : `<span class="b b-err">Åtgärd krävs</span>`;
+        ? `<span class="b b-ok">OK</span>`
+        : `<span class="b b-err">Kräver åtgärd</span>`;
     document.getElementById('dash-ms-body').innerHTML = [
       _aggMetric(m.total_users ?? '—', 'Totalt antal användare', 'ti-users', 'var(--text)'),
       _aggMetric(mfaPct !== null ? `${mfaPct}%` : '—', 'MFA-täckning', 'ti-shield-check',
@@ -2785,7 +2793,7 @@ async function loadDashboard() {
     document.getElementById('dash-updated').textContent = 'Senast uppdaterat ' + new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
     if (_navGen !== gen) return;
-    errToast('Kunde inte ladda dashboard', e);
+    errToast('Kunde inte ladda översikten', e);
   }
 }
 
@@ -2862,6 +2870,13 @@ function renderDashAttention(customers) {
       const pct = Math.round(m.mfa_registered / m.mfa_total * 100);
       if (pct < 80) items.push({ cid: c.id, name: c.name, icon: 'ti-shield-off', color: 'var(--warn)', txt: `MFA endast ${pct}%` });
     }
+    const d = c.domain;
+    if (d && d.down > 0)
+      items.push({ cid: c.id, name: c.name, icon: 'ti-world-off', color: 'var(--err)', txt: `${d.down} webbplats(er) svarar inte` });
+    if (d && d.ssl_soon > 0)
+      items.push({ cid: c.id, name: c.name, icon: 'ti-lock-exclamation', color: 'var(--warn)', txt: `${d.ssl_soon} SSL-certifikat går snart ut` });
+    if (d && d.renew_soon > 0)
+      items.push({ cid: c.id, name: c.name, icon: 'ti-calendar-exclamation', color: 'var(--warn)', txt: `${d.renew_soon} domän(er) ska förnyas snart` });
   });
   if (!items.length) {
     el.innerHTML = `<div class="empty" style="padding:28px 20px"><i class="ti ti-circle-check" style="color:var(--ok)"></i>Inga larm just nu.</div>`;
@@ -2971,11 +2986,21 @@ async function loadCustomerDashboard(gen) {
     const healthCards = [];
     if (h.unifi) {
       const ok = h.unifi.offline_devices === 0 && h.unifi.wan_down === 0;
-      healthCards.push(`<div class="card" style="margin:0"><div class="ch"><span class="cht"><i class="ti ti-router" style="margin-right:6px;opacity:.7"></i>Nätverk</span>${ok?'<span class="b b-ok">OK</span>':'<span class="b b-err">Åtgärd krävs</span>'}</div>
+      healthCards.push(`<div class="card" style="margin:0"><div class="ch"><span class="cht"><i class="ti ti-router" style="margin-right:6px;opacity:.7"></i>Nätverk</span>${ok?'<span class="b b-ok">OK</span>':'<span class="b b-err">Kräver åtgärd</span>'}</div>
         <div class="cb" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           ${_aggMetric(h.unifi.total_devices, 'Enheter', 'ti-router', 'var(--text)')}
           ${_aggMetric(h.unifi.offline_devices, 'Offline', 'ti-wifi-off', h.unifi.offline_devices>0?'var(--err)':'var(--ok)')}
           ${_aggMetric(h.unifi.wan_total?`${h.unifi.wan_total-h.unifi.wan_down}/${h.unifi.wan_total}`:'—', 'WAN online', 'ti-world', h.unifi.wan_down>0?'var(--err)':'var(--ok)')}
+        </div></div>`);
+    }
+    if (h.web) {
+      const w = h.web, ok = w.down === 0 && w.ssl_soon === 0 && w.renew_soon === 0;
+      healthCards.push(`<div class="card" style="margin:0"><div class="ch"><span class="cht"><i class="ti ti-world-www" style="margin-right:6px;opacity:.7"></i>Webb & Domän</span>${ok?'<span class="b b-ok">OK</span>':'<span class="b b-warn">Kräver åtgärd</span>'}</div>
+        <div class="cb" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${_aggMetric(w.total, 'Domäner', 'ti-world', 'var(--text)')}
+          ${_aggMetric(w.down, 'Sajter nere', 'ti-world-off', w.down>0?'var(--err)':'var(--ok)')}
+          ${_aggMetric(w.ssl_soon, 'SSL går ut', 'ti-lock', w.ssl_soon>0?'var(--warn)':'var(--ok)')}
+          ${_aggMetric(w.renew_soon, 'Förnyas snart', 'ti-calendar', w.renew_soon>0?'var(--warn)':'var(--ok)')}
         </div></div>`);
     }
     if (h.microsoft) {
@@ -3215,7 +3240,7 @@ async function loadCustomersList() {
       const allKnown = ['unifi', 'microsoft'];
       const chipArr = allKnown.filter(k => verified.includes(k)).map(k => {
         const icon = { unifi: 'ti-router', microsoft: 'ti-brand-windows' }[k];
-        const label = { unifi: 'UniFi', microsoft: 'M365' }[k];
+        const label = { unifi: 'Nätverk', microsoft: 'Microsoft 365' }[k];
         return `<span class="chip ch-on" style="font-size:10px"><i class="ti ${icon}"></i> ${label}</span>`;
       });
       if (c.domains_count > 0) chipArr.push(`<span class="chip ch-on" style="font-size:10px"><i class="ti ti-world-www"></i> Domän${c.domains_count>1?' ×'+c.domains_count:''}</span>`);
@@ -3236,8 +3261,8 @@ async function loadCustomersList() {
           (unifi?.needs_update > 0) ||
           (mfaPct !== null && mfaPct < 80);
         statusBadge = needsAction
-          ? `<span class="b b-err">Åtgärd krävs</span>`
-          : `<span class="b b-ok">Allt OK</span>`;
+          ? `<span class="b b-err">Kräver åtgärd</span>`
+          : `<span class="b b-ok">OK</span>`;
       } else {
         statusBadge = `<span class="b b-ok">Aktiv</span>`;
       }
@@ -3417,26 +3442,25 @@ async function loadCustomerDetail(customerId) {
     if (freqEl) freqEl.value = customer.report_frequency || 'monthly';
     if (dayEl) dayEl.value = customer.report_day ?? 0;
 
-    // Integrationspillar — klickbara tabs för verifierade integrationer
-    const verifiedKeys = customer.integrations.filter(i => i.verified).map(i => i.key);
+    // Driftmoduler styrs av kundens aktiva tjänster (det du säljer är det du driftar).
+    const modules = customer.monitor_types || [];
+    _cdMonitor = {
+      verified: new Set(customer.integrations.filter(i => i.verified).map(i => i.key)),
+      domainsCount: customer.domains_count || 0,
+    };
     const intRow = document.getElementById('cd-int-row');
-    intRow.innerHTML = customer.integrations.map(i => `
-      <div class="int-p ${i.verified ? 'on' : ''}" id="tab-pill-${i.key}"
-           ${i.verified ? `onclick="switchIntegrationTab('${i.key}')"` : ''}>
-        <i class="ti ${i.icon}"></i>
-        <div>
-          <div class="int-pn">${escapeHtml(i.display_name)}</div>
-          <div class="int-ps">${i.verified ? 'Verifierad' : (i.configured ? 'Ej verifierad' : 'Ej konfigurerad')}</div>
-        </div>
-      </div>`).join('')
-      // Webb & Domän finns alltid som ett övervakningsalternativ
-      + (() => {
-          const dc = customer.domains_count || 0;
-          return `<div class="int-p ${dc ? 'on' : ''}" id="tab-pill-domains" onclick="switchIntegrationTab('domains')">
-             <i class="ti ti-world-www"></i>
-             <div><div class="int-pn">Webb &amp; Domän</div><div class="int-ps">${dc ? `Övervakad (${dc})` : 'Ej konfigurerad'}</div></div>
-           </div>`;
-        })();
+    intRow.innerHTML = modules.map(m => {
+      const mod = MONITOR_MODULES[m];
+      if (!mod) return '';
+      const ready = mod.isReady();
+      return `<div class="int-p on" id="tab-pill-${m}" onclick="switchIntegrationTab('${m}')">
+          <i class="ti ${mod.icon}"></i>
+          <div>
+            <div class="int-pn">${mod.name}</div>
+            <div class="int-ps">${ready ? mod.readyText() : 'Kom igång'}</div>
+          </div>
+        </div>`;
+    }).join('');
 
     const isCustomerRole = currentUser && currentUser.role === 'customer';
     const adminActions = document.getElementById('cd-admin-actions');
@@ -3446,11 +3470,13 @@ async function loadCustomerDetail(customerId) {
     const usersCard = document.getElementById('cd-users-card');
     if (usersCard) usersCard.style.display = 'none';
     if (!isCustomerRole) loadCustomerUsers(customerId);
+    if (!isCustomerRole) document.getElementById('cd-send-btn').disabled = false;
 
-    if (!isCustomerRole) document.getElementById('cd-send-btn').disabled = !verifiedKeys.length;
-
-    // Öppna första verifierade tab automatiskt, annars Webb & Domän
-    await switchIntegrationTab(verifiedKeys.length ? verifiedKeys[0] : 'domains', customerId, gen);
+    if (!modules.length) {
+      document.getElementById('cd-no-data').style.display = 'block';
+    } else {
+      await switchIntegrationTab(modules[0], customerId, gen);
+    }
   } catch (e) {
     if (_navGen !== gen) return;
     document.getElementById('cd-error-msg').textContent = e.message;
@@ -3458,29 +3484,80 @@ async function loadCustomerDetail(customerId) {
   }
 }
 
+// Kundens driftläge (sätts i loadCustomerDetail) — används av modulväxlingen.
+let _cdMonitor = { verified: new Set(), domainsCount: 0 };
+
+const MONITOR_LABEL = { network: 'Nätverk', microsoft: 'Microsoft 365', web: 'Webb & Domän' };
+
+// Driftmoduler: styr pill, sektion och "kom igång"-läge.
+const MONITOR_MODULES = {
+  network: {
+    name: 'Nätverk', icon: 'ti-router', section: 'cd-unifi-section',
+    isReady: () => _cdMonitor.verified.has('unifi'),
+    readyText: () => 'Ansluten',
+    prompt: { icon: 'ti-router', title: 'Koppla nätverksövervakning',
+      text: 'Anslut kundens UniFi-konto under Integrationer för att se enheter, WAN och ISP-status.',
+      action: 'Öppna integrationer', onclick: 'nav(\'integrations\')' },
+  },
+  microsoft: {
+    name: 'Microsoft 365', icon: 'ti-brand-windows', section: 'cd-microsoft-section',
+    isReady: () => _cdMonitor.verified.has('microsoft'),
+    readyText: () => 'Ansluten',
+    prompt: { icon: 'ti-brand-windows', title: 'Koppla Microsoft 365',
+      text: 'Anslut kundens Microsoft 365 under Integrationer för att se användare, MFA och säkerhetspoäng.',
+      action: 'Öppna integrationer', onclick: 'nav(\'integrations\')' },
+  },
+  web: {
+    name: 'Webb & Domän', icon: 'ti-world-www', section: 'cd-domains-section',
+    isReady: () => _cdMonitor.domainsCount > 0,
+    readyText: () => `${_cdMonitor.domainsCount} bevakad${_cdMonitor.domainsCount === 1 ? '' : 'e'}`,
+    prompt: { icon: 'ti-world-www', title: 'Lägg till en domän eller webbplats',
+      text: 'Lägg till kundens domäner för att bevaka förnyelse, e-postsäkerhet, SSL och drifttid.',
+      action: 'Lägg till domän', onclick: 'openDomainModal()' },
+  },
+};
+
+function _monitorPrompt(mod) {
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const p = mod.prompt;
+  return `<div class="card"><div class="cb" style="text-align:center;padding:40px 24px">
+    <div class="svc-ico" style="width:46px;height:46px;font-size:22px;border-radius:12px;background:var(--tint2);color:var(--blue);margin:0 auto 14px"><i class="ti ${p.icon}"></i></div>
+    <div style="font-weight:700;font-size:15px;margin-bottom:6px">${p.title}</div>
+    <div style="font-size:13px;color:var(--muted);max-width:360px;margin:0 auto 16px;line-height:1.5">${p.text}</div>
+    ${isAdmin ? `<button class="btn btn-p btn-sm" onclick="${p.onclick}"><i class="ti ti-plus"></i> ${p.action}</button>` : '<span class="b b-muted">Ännu inte aktiverad</span>'}
+  </div></div>`;
+}
+
 async function switchIntegrationTab(key, customerId, gen) {
   customerId = customerId || currentCustomerId;
   gen = gen !== undefined ? gen : _navGen;
+  const mod = MONITOR_MODULES[key];
+  if (!mod) return;
 
-  // Uppdatera active-style på pills
   document.querySelectorAll('[id^="tab-pill-"]').forEach(el => el.classList.remove('active'));
   const pill = document.getElementById('tab-pill-' + key);
   if (pill) pill.classList.add('active');
 
-  // Dölj alla sektioner
-  document.getElementById('cd-unifi-section').style.display = 'none';
-  document.getElementById('cd-microsoft-section').style.display = 'none';
-  document.getElementById('cd-domains-section').style.display = 'none';
+  ['cd-unifi-section', 'cd-microsoft-section', 'cd-domains-section', 'cd-monitor-prompt'].forEach(id =>
+    document.getElementById(id).style.display = 'none');
   document.getElementById('cd-no-data').style.display = 'none';
 
-  if (key === 'unifi') {
-    await loadUnifiSection(customerId, gen);
-  } else if (key === 'microsoft') {
-    await loadMicrosoftSection(customerId, gen);
-  } else if (key === 'domains') {
+  // Webb & Domän har en egen tom-vy (lägg till-flöde) → visa alltid sektionen
+  if (key === 'web') {
     document.getElementById('cd-domains-section').style.display = 'block';
     await loadDomains(customerId, gen);
+    return;
   }
+  // Nätverk/Microsoft kräver en ansluten datakälla — annars "kom igång"-kort
+  if (!mod.isReady()) {
+    const p = document.getElementById('cd-monitor-prompt');
+    p.innerHTML = _monitorPrompt(mod);
+    p.style.display = 'block';
+    return;
+  }
+  document.getElementById(mod.section).style.display = 'block';
+  if (key === 'network') await loadUnifiSection(customerId, gen);
+  else if (key === 'microsoft') await loadMicrosoftSection(customerId, gen);
 }
 
 // ── Webb & Domän ────────────────────────────────────────────────────────────
@@ -3883,7 +3960,7 @@ async function loadUnifiSection(customerId, gen) {
     renderUnifiData(data);
   } catch (e) {
     if (_navGen !== gen) return;
-    document.getElementById('cd-unifi-section').innerHTML = `<div class="alert al-e"><i class="ti ti-alert-circle"></i><span>Kunde inte hämta UniFi-data: ${e.message}</span></div>`;
+    document.getElementById('cd-unifi-section').innerHTML = `<div class="alert al-e"><i class="ti ti-alert-circle"></i><span>Kunde inte hämta nätverksdata: ${e.message}</span></div>`;
   }
 }
 
@@ -3919,7 +3996,7 @@ function renderUnifiData(data) {
   // ── WAN-panel: visa per host om flera, annars direkt ──
   const wanEl = document.getElementById('cd-wan-rows');
   const badgeEl = document.getElementById('cd-wan-status-badge');
-  badgeEl.textContent = onlineWans === allWans.length && allWans.length ? 'Allt OK' : allWans.length ? 'Åtgärd krävs' : '—';
+  badgeEl.textContent = onlineWans === allWans.length && allWans.length ? 'OK' : allWans.length ? 'Kräver åtgärd' : '—';
   badgeEl.className = 'b ' + (onlineWans === allWans.length && allWans.length ? 'b-ok' : allWans.length ? 'b-err' : 'b-muted');
 
   const multiHost = hosts.length > 1;
@@ -7073,6 +7150,7 @@ async function loadServicesSettings() {
           <span class="cht" style="display:flex;align-items:center;gap:10px">
             <span class="svc-ico" style="width:30px;height:30px;font-size:15px;border-radius:7px;background:${s.color}"><i class="ti ${s.icon}"></i></span>
             ${escapeHtml(s.name)}
+            ${s.monitor_type ? `<span class="b b-info" style="font-weight:500"><i class="ti ti-activity" style="font-size:11px"></i> ${MONITOR_LABEL[s.monitor_type] || s.monitor_type}</span>` : ''}
           </span>
           <span style="display:flex;gap:6px">
             <button class="btn btn-g btn-sm" onclick="openArticleModal('${s.id}')"><i class="ti ti-plus"></i> Artikel</button>
@@ -7098,6 +7176,7 @@ function _resetServiceForm() {
   document.getElementById('svc-name').value = '';
   document.getElementById('svc-icon').value = 'ti-shield-check';
   document.getElementById('svc-color').value = '#0047A3';
+  document.getElementById('svc-monitor').value = '';
   document.getElementById('svc-desc').value = '';
   document.getElementById('svc-form-title').textContent = 'Ny tjänst';
 }
@@ -7120,6 +7199,7 @@ function editServiceForm(id) {
   document.getElementById('svc-name').value = s.name;
   document.getElementById('svc-icon').value = s.icon || 'ti-shield-check';
   document.getElementById('svc-color').value = s.color || '#0047A3';
+  document.getElementById('svc-monitor').value = s.monitor_type || '';
   document.getElementById('svc-desc').value = s.description || '';
   document.getElementById('svc-form-title').textContent = 'Redigera ' + s.name;
   document.getElementById('svc-form').style.display = '';
@@ -7131,9 +7211,10 @@ async function saveService() {
   const name = document.getElementById('svc-name').value.trim();
   const icon = document.getElementById('svc-icon').value.trim() || 'ti-shield-check';
   const color = document.getElementById('svc-color').value || '#0047A3';
+  const monitor_type = document.getElementById('svc-monitor').value;
   const description = document.getElementById('svc-desc').value.trim();
   if (!name) { t('Namn krävs', 'err'); return; }
-  const body = { name, icon, color, description };
+  const body = { name, icon, color, monitor_type, description };
   try {
     if (editId) {
       await api('/api/services/' + editId, { method: 'PUT', body: JSON.stringify(body) });
